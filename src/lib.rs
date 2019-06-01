@@ -36,14 +36,14 @@ pub fn draw(
         // ncollide2d::shape::Segment::new(Point2::new(100.0, 550.0), Point2::new(500.0, 561.0)),
     ];
 
-    let cx = (width / 2) as f32 + 10.0;
-    let cy = (height / 2) as f32;
+    let cx = (width / 2) as line::float + 10.0;
+    let cy = (height / 2) as line::float;
 
     for i in 0..10 {
-        let theta = i as f32 / 10.0 * std::f32::consts::PI * 2.0;
+        let theta = i as line::float / 10.0 * line::PI * 2.0;
         let r0 = 50.0;
         let r1 = 200.0;
-        let td = std::f32::consts::PI / 5.0 + i as f32 * 0.1;
+        let td = line::PI / 5.0 + i as line::float * 0.1;
         walls.push(ncollide2d::shape::Segment::new(
             Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
             Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
@@ -68,19 +68,19 @@ pub fn draw(
 
 use nalgebra::{Point2, Vector2};
 
-fn xy(point: &Point2<f32>) -> (f32, f32) {
+fn xy(point: &Point2<line::float>) -> (line::float, line::float) {
     (point.x, point.y)
 }
 
 use ncollide2d::query::Ray;
 
 fn bounce_ray(
-    ray: &mut Ray<f32>,
-    toi: f32,
+    ray: &mut Ray<line::float>,
+    toi: line::float,
     wall_index: usize,
-    normal: Vector2<f32>,
-) -> (Point2<f32>, bool) {
-    let r = random::<f32>();
+    normal: Vector2<line::float>,
+) -> (Point2<line::float>, bool) {
+    let r = random::<line::float>();
     // absorb
     if wall_index % 2 == 0 {
         (ray.point_at(toi), true)
@@ -94,7 +94,7 @@ fn bounce_ray(
         let normal_dir = normal.y.atan2(normal.x) + 3.14159 / 2.0;
 
         #[inline]
-        fn angle_norm(angle: f32) -> f32 {
+        fn angle_norm(angle: line::float) -> line::float {
             let reduced = angle % (3.14159 * 2.0);
             if reduced > 3.14159 {
                 reduced - 3.14159 * 2.0
@@ -106,7 +106,7 @@ fn bounce_ray(
         }
 
         #[inline]
-        fn reflect(one: f32, by: f32) -> f32 {
+        fn reflect(one: line::float, by: line::float) -> line::float {
             let transformed = angle_norm(angle_norm(one) - angle_norm(by));
             angle_norm((-transformed) + by)
         }
@@ -128,7 +128,7 @@ fn bounce_ray(
 
 use ncollide2d::shape::Segment;
 
-fn find_collision(walls: &[Segment<f32>], ray: &Ray<f32>) -> Option<(f32, usize, Vector2<f32>)> {
+fn find_collision(walls: &[Segment<line::float>], ray: &Ray<line::float>) -> Option<(line::float, usize, Vector2<line::float>)> {
     let mut closest = None;
 
     use ncollide2d::query::ray_internal::ray::RayCast;
@@ -146,18 +146,18 @@ fn find_collision(walls: &[Segment<f32>], ray: &Ray<f32>) -> Option<(f32, usize,
     closest
 }
 
-fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
+fn zen_photon(walls: &[Segment<line::float>], width: usize, height: usize) -> Vec<u8> {
     let _timer = Timer::new("Calculate");
 
     let mut brightness_data = vec![0; width * height];
 
     // if we don't draw at all, we're still getting only 400k/sec
-    let point = Point2::new(width as f32 / 2.0, height as f32 / 2.0);
+    let point = Point2::new(width as line::float / 2.0, height as line::float / 2.0);
 
     for _ in 0..50_000 {
-        let direction = random::<f32>() * 3.14159 * 2.0;
+        let direction = random::<line::float>() * 3.14159 * 2.0;
         let mut ray = ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
-        let max_brightness = 255.0;
+        let max_brightness = 5.0;
 
         for _ in 0..30 {
             match find_collision(walls, &ray) {
@@ -189,7 +189,7 @@ fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
     }
 
     let mut data = vec![0; width * height * 4];
-    let top = top as f32;
+    let top = top as line::float;
     for x in 0..width {
         for y in 0..height {
             let index = (x + y * width) * 4;
@@ -197,7 +197,7 @@ fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
             data[index] = 255;
             data[index + 1] = 255;
             data[index + 2] = 255;
-            data[index + 3] = ((brightness as f32 / top).sqrt().sqrt() * 255.0) as u8;
+            data[index + 3] = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
             // data[index + 3] = 255;
         }
     }

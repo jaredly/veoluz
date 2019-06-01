@@ -2,13 +2,25 @@ extern crate num_traits;
 use num_traits::{Float, NumAssignOps, NumCast, Signed};
 use std::mem::swap;
 
+pub type float = f32;
+pub type int = i16;
+pub type uint = u16;
+pub const PI: float = std::f32::consts::PI;
+
+#[inline]
+fn draw(data: &mut [uint], width: usize, full: float, x: int, y: int, amount: float) {
+    let index = (y as usize) * width + x as usize;
+    let brightness = (amount * full) as uint;
+    data[index] += brightness;
+}
+
 pub fn draw_line(
-    mut start: Point<f32>,
-    mut end: Point<f32>,
-    data: &mut [usize],
+    mut start: Point<float>,
+    mut end: Point<float>,
+    data: &mut [uint],
     width: usize,
     height: usize,
-    full: f32,
+    full: float,
 ) {
     // -- The Setup part
 
@@ -30,79 +42,79 @@ pub fn draw_line(
         gradient = 1.0;
     }
 
-    let mut x = start.0.round() as i16;
-    let mut y = start.1;
-    let end_x = end.0.round() as i16;
-    let mut lower = false;
-
     // -- the algorithm
 
-    #[inline]
-    fn draw(data: &mut [usize], width: usize, full: f32, x: i16, y: i16, amount: f32) {
-        let index = (y as usize) * width + x as usize;
-        let brightness = (amount * full) as usize;
-        data[index] += brightness;
-    }
+    let mut y = start.1;
 
-    for x in start.0.round() as i16..end.0.round() as i16 {
+    /*
+    for x in start.0.round() as int..end.0.round() as int {
         let fpart = y.fract();
-        let mut yy = y as i16;
+        let yy = y as int;
 
         // Get the point
         let point = if steep { (yy, x) } else { (x, yy) };
 
-        if point.0 >= 0 && point.1 >= 0 && point.0 < width as i16 && point.1 < height as i16 {
+        // TODO get rid of these if blocks by ensuring we're in scope to start with
+        if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
             draw(data, width, full, point.0, point.1, 1.0 - fpart)
         }
 
         if fpart > 0.0 {
             let point = if steep { (yy + 1, x) } else { (x, yy + 1) };
-            if point.0 >= 0 && point.1 >= 0 && point.0 < width as i16 && point.1 < height as i16 {
+            if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
                 draw(data, width, full, point.0, point.1, fpart)
             }
         }
         y += gradient;
     }
+    */
 
-    // backing out this loop took us from 322 - 302 for 50k
-    // loop {
-    //     if x <= end_x {
-    //         let fpart = y.fract();
-    //         let mut yy = y as i16;
-    //         if lower {
-    //             yy += 1;
-    //         }
+    if steep {
+        for x in start.0.round() as int..end.0.round() as int {
+            let fpart = y.fract();
+            let yy = y as int;
 
-    //         // Get the point
-    //         let point = if steep { (yy, x) } else { (x, yy) };
+            // Get the point
+            let point = (yy, x);
 
-    //         if point.0 >= 0 && point.1 >= 0 && point.0 < width as i16 && point.1 < height as i16 {
-    //             draw(data, width, full, point.0, point.1, if lower { fpart } else { 1.0 - fpart })
-    //         }
+            // TODO get rid of these if blocks by ensuring we're in scope to start with
+            if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
+                draw(data, width, full, point.0, point.1, 1.0 - fpart)
+            }
 
-    //         if lower {
-    //             lower = false;
-    //             x += 1;
-    //             y += gradient;
-    //         } else {
-    //             if fpart > 0.0 {
-    //                 lower = true;
-    //             } else {
-    //                 x += 1;
-    //                 y += gradient;
-    //             }
-    //         }
-    //     } else {
-    //         break;
-    //     };
+            if fpart > 0.0 {
+                let point = (yy + 1, x);
+                if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int
+                {
+                    draw(data, width, full, point.0, point.1, fpart)
+                }
+            }
+            y += gradient;
+        }
+    } else {
+        for x in start.0.round() as int..end.0.round() as int {
+            let fpart = y.fract();
+            let yy = y as int;
 
-    //     // if x >= 0 && y >= 0 && x < width as i16 && y < height as i16 {
-    //     //     draw(data, width, full, x, y, amount)
-    //     // }
-    // }
+            // Get the point
+            let point = (x, yy);
+
+            // TODO get rid of these if blocks by ensuring we're in scope to start with
+            if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
+                draw(data, width, full, point.0, point.1, 1.0 - fpart)
+            }
+
+            if fpart > 0.0 {
+                let point = (x, yy + 1);
+                if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int
+                {
+                    draw(data, width, full, point.0, point.1, fpart)
+                }
+            }
+            y += gradient;
+        }
+    }
 }
-
-
 
 /// An implementation of [Xiaolin Wu's line algorithm].
 ///
@@ -118,7 +130,7 @@ pub fn draw_line(
 /// use line_drawing::XiaolinWu;
 ///
 /// fn main() {
-///     for ((x, y), value) in XiaolinWu::<f32, i16>::new((0.0, 0.0), (3.0, 6.0)) {
+///     for ((x, y), value) in XiaolinWu::<float, int>::new((0.0, 0.0), (3.0, 6.0)) {
 ///         print!("(({}, {}), {}), ", x, y, value);
 ///     }
 /// }
@@ -147,9 +159,9 @@ macro_rules! log {
     }
 }
 
-impl XiaolinWu<f32, i16> {
+impl XiaolinWu<float, int> {
     #[inline]
-    pub fn new(mut start: Point<f32>, mut end: Point<f32>) -> Self {
+    pub fn new(mut start: Point<float>, mut end: Point<float>) -> Self {
         let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
 
         if steep {
@@ -171,19 +183,19 @@ impl XiaolinWu<f32, i16> {
         Self {
             steep,
             gradient,
-            x: start.0.round() as i16,
+            x: start.0.round() as int,
             y: start.1,
-            end_x: end.0.round() as i16,
+            end_x: end.0.round() as int,
             lower: false,
         }
     }
 }
 
-impl XiaolinWu<f32, i16> {
+impl XiaolinWu<float, int> {
     // #[inline]
     // pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
     //     for ((x, y), amount) in self {
-    //         if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+    //         if x < 0 || y < 0 || x >= width as int || y >= height as int {
     //             continue;
     //         }
     //         let index = ((y as usize) * width + x as usize) * 4;
@@ -196,7 +208,7 @@ impl XiaolinWu<f32, i16> {
     // }
 
     #[inline]
-    pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: f32) {
+    pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: float) {
         loop {
             let ((x, y), amount) = if self.x <= self.end_x {
                 // get the fractional part of y
@@ -234,7 +246,7 @@ impl XiaolinWu<f32, i16> {
                 // log!("Bailing {}, {}", self.x, self.end_x);
                 break;
             };
-            if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+            if x < 0 || y < 0 || x >= width as int || y >= height as int {
                 continue;
             }
             let index = (y as usize) * width + x as usize;
@@ -245,7 +257,7 @@ impl XiaolinWu<f32, i16> {
         // :: this is the slower way
 
         // for ((x, y), amount) in self {
-        //     if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+        //     if x < 0 || y < 0 || x >= width as int || y >= height as int {
         //         continue;
         //     }
         //     let index = (y as usize) * width + x as usize;
@@ -255,8 +267,8 @@ impl XiaolinWu<f32, i16> {
     }
 }
 
-// impl Iterator for XiaolinWu<f32, i16> {
-//     type Item = (Point<i16>, f32);
+// impl Iterator for XiaolinWu<float, int> {
+//     type Item = (Point<int>, float);
 
 //     #[inline]
 //     fn next(&mut self) -> Option<Self::Item> {
