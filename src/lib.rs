@@ -27,7 +27,6 @@ pub fn draw(
     real: f64,
     imaginary: f64,
 ) -> Result<(), JsValue> {
-
     let _timer = Timer::new("draw all");
 
     let mut walls = vec![
@@ -45,9 +44,10 @@ pub fn draw(
         let r0 = 50.0;
         let r1 = 200.0;
         let td = std::f32::consts::PI / 5.0 + i as f32 * 0.1;
-        walls.push(
-            ncollide2d::shape::Segment::new(Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0), Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1))
-        )
+        walls.push(ncollide2d::shape::Segment::new(
+            Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
+            Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
+        ))
     }
 
     let mut data = zen_photon(&walls, width as usize, height as usize);
@@ -61,7 +61,7 @@ pub fn draw(
         ctx.move_to(wall.a().x as f64, wall.a().y as f64);
         ctx.line_to(wall.b().x as f64, wall.b().y as f64);
         ctx.stroke();
-    };
+    }
 
     Ok(())
 }
@@ -72,7 +72,82 @@ fn xy(point: &Point2<f32>) -> (f32, f32) {
     (point.x, point.y)
 }
 
-fn zen_photon(walls: &[ncollide2d::shape::Segment<f32>], width: usize, height: usize) -> Vec<u8> {
+use ncollide2d::query::Ray;
+
+fn bounce_ray(
+    ray: &mut Ray<f32>,
+    toi: f32,
+    wall_index: usize,
+    normal: Vector2<f32>,
+) -> (Point2<f32>, bool) {
+    let r = random::<f32>();
+    // absorb
+    if wall_index % 2 == 0 {
+        (ray.point_at(toi), true)
+    // pass through
+    } else if r < 0.1 {
+        (ray.point_at(toi + 1.0), false)
+    // reflect
+    } else {
+        let new_origin = ray.point_at(toi - 1.0);
+        let ray_dir = ray.dir.y.atan2(ray.dir.x);
+        let normal_dir = normal.y.atan2(normal.x) + 3.14159 / 2.0;
+
+        #[inline]
+        fn angle_norm(angle: f32) -> f32 {
+            let reduced = angle % (3.14159 * 2.0);
+            if reduced > 3.14159 {
+                reduced - 3.14159 * 2.0
+            } else if reduced < -3.14159 {
+                reduced + 3.14159 * 2.0
+            } else {
+                reduced
+            }
+        }
+
+        #[inline]
+        fn reflect(one: f32, by: f32) -> f32 {
+            let transformed = angle_norm(angle_norm(one) - angle_norm(by));
+            angle_norm((-transformed) + by)
+        }
+
+        let ray_reflected = reflect(ray_dir, normal_dir);
+        // log!(
+        //     "Bouncing ray: {}, normal: {}, reflected: {}",
+        //     ray_dir * 180.0 / 3.14,
+        //     normal_dir * 180.0 / 3.14,
+        //     ray_reflected * 180.0 / 3.14
+        // );
+        // log!("Ray from {} bounce at {}", ray.origin, new_origin);
+
+        // draw from ray.origin to new_origin
+        ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
+        (new_origin, false)
+    }
+}
+
+use ncollide2d::shape::Segment;
+
+fn find_collision(walls: &[Segment<f32>], ray: &Ray<f32>) -> Option<(f32, usize, Vector2<f32>)> {
+    let mut closest = None;
+
+    use ncollide2d::query::ray_internal::ray::RayCast;
+
+    for (i, wall) in walls.iter().enumerate() {
+        match wall.toi_and_normal_with_ray(&nalgebra::geometry::Isometry::identity(), &ray, true) {
+            None => (),
+            Some(intersection) => match closest {
+                Some((dist, _, _)) if intersection.toi > dist => (),
+                None | Some(_) => closest = Some((intersection.toi, i, intersection.normal)),
+            },
+        }
+    }
+
+    closest
+}
+
+fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
+    let _timer = Timer::new("Calculate");
 
     let mut brightness_data = vec![0; width * height];
 
@@ -82,8 +157,6 @@ fn zen_photon(walls: &[ncollide2d::shape::Segment<f32>], width: usize, height: u
     //     let mut line = line::XiaolinWu::<f32, i16>::new(xy(&wall.a()), xy(&wall.b()));
     //     line.draw(&mut data, width, height, 255, 0, 0);
     // }
-
-    use ncollide2d::query::ray_internal::ray::RayCast;
 
     // optimized build, takes about 2.4 seconds to render 100k rays.
     for _ in 0..30_000 {
@@ -95,84 +168,21 @@ fn zen_photon(walls: &[ncollide2d::shape::Segment<f32>], width: usize, height: u
 
         // 30 bounces
         for _ in 0..300 {
-
-            let mut closest = None;
-
-            for (i, wall) in walls.iter().enumerate() {
-                match wall.toi_and_normal_with_ray(
-                    &nalgebra::geometry::Isometry::identity(),
-                    &ray,
-                    true,
-                ) {
-                    None => (),
-                    Some(intersection) => {
-                        match closest {
-                            Some((dist, _, _)) if intersection.toi > dist => (),
-                            None | Some(_) => {
-                                closest = Some((intersection.toi, i, intersection.normal))
-                            }
-                        }
-                    }
-                }
-            }
-
-            match closest {
+            match find_collision(walls, &ray) {
                 None => {
-                    let mut line =
-                        line::XiaolinWu::<f32, i16>::new(xy(&ray.origin), xy(&ray.point_at(1000.0)));
+                    let mut line = line::XiaolinWu::<f32, i16>::new(
+                        xy(&ray.origin),
+                        xy(&ray.point_at(1000.0)),
+                    );
                     line.draw_brightness(&mut brightness_data, width, height, max_brightness);
                     // log!("No collision");
                     break;
                 }
                 Some((toi, wall_index, normal)) => {
-                    let wall = &walls[wall_index];
+                    // let wall = &walls[wall_index];
 
-                    let r = random::<f32>();
+                    let (new_origin, stop) = bounce_ray(&mut ray, toi, wall_index, normal);
 
-                    let (new_origin, stop) =
-                    // absorb
-                    if wall_index % 2 == 0 {
-                        (ray.point_at(toi), true)
-                    // pass through
-                    } else if r < 0.1 {
-                        (ray.point_at(toi + 1.0), false)
-                    // reflect
-                    } else {
-                        let new_origin = ray.point_at(toi - 1.0);
-                        let ray_dir = ray.dir.y.atan2(ray.dir.x);
-                        let normal_dir = normal.y.atan2(normal.x) + 3.14159 / 2.0;
-
-                        #[inline]
-                        fn angle_norm(angle: f32) -> f32 {
-                            let reduced = angle % (3.14159 * 2.0);
-                            if reduced > 3.14159 {
-                                reduced - 3.14159 * 2.0
-                            } else if reduced < -3.14159 {
-                                reduced + 3.14159 * 2.0
-                            } else {
-                                reduced
-                            }
-                        }
-
-                        #[inline]
-                        fn reflect(one: f32, by: f32) -> f32 {
-                            let transformed = angle_norm(angle_norm(one) - angle_norm(by));
-                            angle_norm((-transformed) + by)
-                        }
-
-                        let ray_reflected = reflect(ray_dir, normal_dir);
-                        // log!(
-                        //     "Bouncing ray: {}, normal: {}, reflected: {}",
-                        //     ray_dir * 180.0 / 3.14,
-                        //     normal_dir * 180.0 / 3.14,
-                        //     ray_reflected * 180.0 / 3.14
-                        // );
-                        // log!("Ray from {} bounce at {}", ray.origin, new_origin);
-
-                        // draw from ray.origin to new_origin
-                        ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
-                        (new_origin, false)
-                    };
                     let mut line =
                         line::XiaolinWu::<f32, i16>::new(xy(&ray.origin), xy(&new_origin));
                     line.draw_brightness(&mut brightness_data, width, height, max_brightness);
@@ -180,12 +190,15 @@ fn zen_photon(walls: &[ncollide2d::shape::Segment<f32>], width: usize, height: u
                     ray.origin = new_origin;
 
                     if stop {
-                        break
+                        break;
                     }
                 }
             }
         }
     }
+
+    // something like 5% of the time is here
+    let _timer = Timer::new("Last bit");
 
     let mut top = 0;
     for x in 0..width {
@@ -210,8 +223,6 @@ fn zen_photon(walls: &[ncollide2d::shape::Segment<f32>], width: usize, height: u
 
     data
 }
-
-
 
 pub struct Timer<'a> {
     name: &'a str,

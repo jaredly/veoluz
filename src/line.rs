@@ -78,24 +78,60 @@ impl XiaolinWu<f32, i16> {
 }
 
 impl XiaolinWu<f32, i16> {
-    #[inline]
-    pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
-        for ((x, y), amount) in self {
-            if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
-                continue;
-            }
-            let index = ((y as usize) * width + x as usize) * 4;
-            let brightness = (amount * 255.0) as u8;
-            data[index] = r;
-            data[index + 1] = g;
-            data[index + 2] = b;
-            data[index + 3] = brightness;
-        }
-    }
+    // #[inline]
+    // pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
+    //     for ((x, y), amount) in self {
+    //         if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+    //             continue;
+    //         }
+    //         let index = ((y as usize) * width + x as usize) * 4;
+    //         let brightness = (amount * 255.0) as u8;
+    //         data[index] = r;
+    //         data[index + 1] = g;
+    //         data[index + 2] = b;
+    //         data[index + 3] = brightness;
+    //     }
+    // }
 
     #[inline]
     pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: f32) {
-        for ((x, y), amount) in self {
+        loop {
+            let ((x, y), amount) = if self.x <= self.end_x {
+                // get the fractional part of y
+                let fpart = self.y - self.y.floor();
+
+                // Calculate the integer value of y
+                let mut y = NumCast::from(self.y).unwrap();
+                if self.lower {
+                    y += 1;
+                }
+
+                // Get the point
+                let point = if self.steep { (y, self.x) } else { (self.x, y) };
+
+                if self.lower {
+                    // Return the lower point
+                    self.lower = false;
+                    self.x += 1;
+                    self.y += self.gradient;
+                    (point, fpart)
+                } else {
+                    if fpart > 0.0 {
+                        // Set to return the lower point if the fractional part is > 0
+                        self.lower = true;
+                    } else {
+                        // Otherwise move on
+                        self.x += 1;
+                        self.y += self.gradient;
+                    }
+
+                    // Return the remainer of the fractional part
+                    (point, 1.0 - fpart)
+                }
+            } else {
+                // log!("Bailing {}, {}", self.x, self.end_x);
+                break;
+            };
             if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
                 continue;
             }
@@ -103,49 +139,60 @@ impl XiaolinWu<f32, i16> {
             let brightness = (amount * full) as usize;
             data[index] += brightness;
         }
+
+        // :: this is the slower way
+
+        // for ((x, y), amount) in self {
+        //     if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+        //         continue;
+        //     }
+        //     let index = (y as usize) * width + x as usize;
+        //     let brightness = (amount * full) as usize;
+        //     data[index] += brightness;
+        // }
     }
 }
 
-impl Iterator for XiaolinWu<f32, i16> {
-    type Item = (Point<i16>, f32);
+// impl Iterator for XiaolinWu<f32, i16> {
+//     type Item = (Point<i16>, f32);
 
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.x <= self.end_x {
-            // get the fractional part of y
-            let fpart = self.y - self.y.floor();
+//     #[inline]
+//     fn next(&mut self) -> Option<Self::Item> {
+//         if self.x <= self.end_x {
+//             // get the fractional part of y
+//             let fpart = self.y - self.y.floor();
 
-            // Calculate the integer value of y
-            let mut y = NumCast::from(self.y).unwrap();
-            if self.lower {
-                y += 1;
-            }
+//             // Calculate the integer value of y
+//             let mut y = NumCast::from(self.y).unwrap();
+//             if self.lower {
+//                 y += 1;
+//             }
 
-            // Get the point
-            let point = if self.steep { (y, self.x) } else { (self.x, y) };
+//             // Get the point
+//             let point = if self.steep { (y, self.x) } else { (self.x, y) };
 
-            if self.lower {
-                // Return the lower point
-                self.lower = false;
-                self.x += 1;
-                self.y += self.gradient;
-                Some((point, fpart))
-            } else {
-                if fpart > 0.0 {
-                    // Set to return the lower point if the fractional part is > 0
-                    self.lower = true;
-                } else {
-                    // Otherwise move on
-                    self.x += 1;
-                    self.y += self.gradient;
-                }
+//             if self.lower {
+//                 // Return the lower point
+//                 self.lower = false;
+//                 self.x += 1;
+//                 self.y += self.gradient;
+//                 Some((point, fpart))
+//             } else {
+//                 if fpart > 0.0 {
+//                     // Set to return the lower point if the fractional part is > 0
+//                     self.lower = true;
+//                 } else {
+//                     // Otherwise move on
+//                     self.x += 1;
+//                     self.y += self.gradient;
+//                 }
 
-                // Return the remainer of the fractional part
-                Some((point, 1.0 - fpart))
-            }
-        } else {
-            // log!("Bailing {}, {}", self.x, self.end_x);
-            None
-        }
-    }
-}
+//                 // Return the remainer of the fractional part
+//                 Some((point, 1.0 - fpart))
+//             }
+//         } else {
+//             // log!("Bailing {}, {}", self.x, self.end_x);
+//             None
+//         }
+//     }
+// }
