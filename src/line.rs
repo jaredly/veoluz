@@ -44,6 +44,8 @@ pub fn draw_line(
 
     // -- the algorithm
 
+    // TODO once I clamp the poisitions to be in bounds, I can use unsigned things for x & y instead of signed...
+
     let mut y = start.1;
 
     /*

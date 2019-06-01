@@ -112,13 +112,6 @@ fn bounce_ray(
         }
 
         let ray_reflected = reflect(ray_dir, normal_dir);
-        // log!(
-        //     "Bouncing ray: {}, normal: {}, reflected: {}",
-        //     ray_dir * 180.0 / 3.14,
-        //     normal_dir * 180.0 / 3.14,
-        //     ray_reflected * 180.0 / 3.14
-        // );
-        // log!("Ray from {} bounce at {}", ray.origin, new_origin);
 
         // draw from ray.origin to new_origin
         ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
@@ -154,7 +147,7 @@ fn zen_photon(walls: &[Segment<line::float>], width: usize, height: usize) -> Ve
     // if we don't draw at all, we're still getting only 400k/sec
     let point = Point2::new(width as line::float / 2.0, height as line::float / 2.0);
 
-    for _ in 0..50_000 {
+    for _ in 0..100_000 {
         let direction = random::<line::float>() * 3.14159 * 2.0;
         let mut ray = ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
         let max_brightness = 5.0;
@@ -190,6 +183,7 @@ fn zen_photon(walls: &[Segment<line::float>], width: usize, height: usize) -> Ve
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;
+    // let scale = 
     for x in 0..width {
         for y in 0..height {
             let index = (x + y * width) * 4;
