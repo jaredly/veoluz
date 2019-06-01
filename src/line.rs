@@ -16,7 +16,7 @@ use std::mem::swap;
 /// use line_drawing::XiaolinWu;
 ///
 /// fn main() {
-///     for ((x, y), value) in XiaolinWu::<f32, i8>::new((0.0, 0.0), (3.0, 6.0)) {
+///     for ((x, y), value) in XiaolinWu::<f32, i16>::new((0.0, 0.0), (3.0, 6.0)) {
 ///         print!("(({}, {}), {}), ", x, y, value);
 ///     }
 /// }
@@ -38,9 +38,16 @@ pub struct XiaolinWu<I, O> {
 
 pub type Point<T> = (T, T);
 
-impl<I: Float, O: Signed + NumCast> XiaolinWu<I, O> {
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+impl XiaolinWu<f32, i16> {
     #[inline]
-    pub fn new(mut start: Point<I>, mut end: Point<I>) -> Self {
+    pub fn new(mut start: Point<f32>, mut end: Point<f32>) -> Self {
         let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
 
         if steep {
@@ -51,26 +58,45 @@ impl<I: Float, O: Signed + NumCast> XiaolinWu<I, O> {
         if start.0 > end.0 {
             swap(&mut start, &mut end);
         }
+        // log!("Line xs = {} - {}", start.0, end.0);
 
         let mut gradient = (end.1 - start.1) / (end.0 - start.0);
 
-        if gradient == I::zero() {
-            gradient = I::one();
+        if gradient == 0.0 {
+            gradient = 1.0;
         }
 
         Self {
             steep,
             gradient,
-            x: NumCast::from(start.0.round()).unwrap(),
+            x: start.0.round() as i16,
             y: start.1,
-            end_x: NumCast::from(end.0.round()).unwrap(),
+            end_x: end.0.round() as i16,
             lower: false,
+        }
+    }
+
+}
+
+impl XiaolinWu<f32, i16> {
+    #[inline]
+    pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
+        for ((x, y), amount) in self {
+            if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+                continue
+            }
+            let index = ((y as usize) * width + x as usize) * 4;
+            let brightness = (amount * 255.0) as u8;
+            data[index] = r;
+            data[index + 1] = g;
+            data[index + 2] = b;
+            data[index + 3] = brightness;
         }
     }
 }
 
-impl<I: Float + NumAssignOps, O: Signed + NumAssignOps + Ord + NumCast + Copy> Iterator for XiaolinWu<I, O> {
-    type Item = (Point<O>, I);
+impl Iterator for XiaolinWu<f32, i16> {
+    type Item = (Point<i16>, f32);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -81,7 +107,7 @@ impl<I: Float + NumAssignOps, O: Signed + NumAssignOps + Ord + NumCast + Copy> I
             // Calculate the integer value of y
             let mut y = NumCast::from(self.y).unwrap();
             if self.lower {
-                y += O::one();
+                y += 1;
             }
 
             // Get the point
@@ -90,23 +116,24 @@ impl<I: Float + NumAssignOps, O: Signed + NumAssignOps + Ord + NumCast + Copy> I
             if self.lower {
                 // Return the lower point
                 self.lower = false;
-                self.x += O::one();
+                self.x += 1;
                 self.y += self.gradient;
                 Some((point, fpart))
             } else {
-                if fpart > I::zero() {
+                if fpart > 0.0 {
                     // Set to return the lower point if the fractional part is > 0
                     self.lower = true;
                 } else {
                     // Otherwise move on
-                    self.x += O::one();
+                    self.x += 1;
                     self.y += self.gradient;
                 }
 
                 // Return the remainer of the fractional part
-                Some((point, I::one() - fpart))
+                Some((point, 1.0 - fpart))
             }
         } else {
+            // log!("Bailing {}, {}", self.x, self.end_x);
             None
         }
     }
