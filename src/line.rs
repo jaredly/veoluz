@@ -1,5 +1,5 @@
 extern crate num_traits;
-use num_traits::{Float, Signed, NumAssignOps, NumCast};
+use num_traits::{Float, NumAssignOps, NumCast, Signed};
 use std::mem::swap;
 
 /// An implementation of [Xiaolin Wu's line algorithm].
@@ -75,7 +75,6 @@ impl XiaolinWu<f32, i16> {
             lower: false,
         }
     }
-
 }
 
 impl XiaolinWu<f32, i16> {
@@ -83,7 +82,7 @@ impl XiaolinWu<f32, i16> {
     pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
         for ((x, y), amount) in self {
             if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
-                continue
+                continue;
             }
             let index = ((y as usize) * width + x as usize) * 4;
             let brightness = (amount * 255.0) as u8;
@@ -91,6 +90,18 @@ impl XiaolinWu<f32, i16> {
             data[index + 1] = g;
             data[index + 2] = b;
             data[index + 3] = brightness;
+        }
+    }
+
+    #[inline]
+    pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: f32) {
+        for ((x, y), amount) in self {
+            if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+                continue;
+            }
+            let index = (y as usize) * width + x as usize;
+            let brightness = (amount * full) as usize;
+            data[index] += brightness;
         }
     }
 }
