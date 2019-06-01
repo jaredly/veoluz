@@ -77,6 +77,87 @@ impl XiaolinWu<f32, i16> {
     }
 }
 
+pub fn draw_line(
+    mut start: Point<f32>,
+    mut end: Point<f32>,
+    data: &mut [usize],
+    width: usize,
+    height: usize,
+    full: f32,
+) {
+    // -- The Setup part 
+
+    let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
+
+    if steep {
+        start = (start.1, start.0);
+        end = (end.1, end.0);
+    }
+
+    if start.0 > end.0 {
+        swap(&mut start, &mut end);
+    }
+    // log!("Line xs = {} - {}", start.0, end.0);
+
+    let mut gradient = (end.1 - start.1) / (end.0 - start.0);
+
+    if gradient == 0.0 {
+        gradient = 1.0;
+    }
+
+    let mut x = start.0.round() as i16;
+    let mut y = start.1;
+    let mut end_x = end.0.round() as i16;
+    let mut lower = false;
+
+    // -- the algorithm
+
+    loop {
+        let ((x, y), amount) = if x <= end_x {
+            // get the fractional part of y
+            let fpart = y - y.floor();
+
+            // Calculate the integer value of y
+            let mut yy = NumCast::from(y).unwrap();
+            if lower {
+                yy += 1;
+            }
+
+            // Get the point
+            let point = if steep { (yy, x) } else { (x, yy) };
+
+            if lower {
+                // Return the lower point
+                lower = false;
+                x += 1;
+                y += gradient;
+                (point, fpart)
+            } else {
+                if fpart > 0.0 {
+                    // Set to return the lower point if the fractional part is > 0
+                    lower = true;
+                } else {
+                    // Otherwise move on
+                    x += 1;
+                    y += gradient;
+                }
+
+                // Return the remainer of the fractional part
+                (point, 1.0 - fpart)
+            }
+        } else {
+            // log!("Bailing {}, {}", x, end_x);
+            break;
+        };
+        if x < 0 || y < 0 || x >= width as i16 || y >= height as i16 {
+            continue;
+        }
+        let index = (y as usize) * width + x as usize;
+        let brightness = (amount * full) as usize;
+        data[index] += brightness;
+    }
+}
+
 impl XiaolinWu<f32, i16> {
     // #[inline]
     // pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {

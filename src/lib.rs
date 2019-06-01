@@ -159,22 +159,31 @@ fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
     // }
 
     // optimized build, takes about 2.4 seconds to render 100k rays.
+    // ok, so we're getting ~97k rays per second, whereas zenphoton is getting ~900k / sec
+    // So there's at least room for a factor of 10 speedup.
+    // Wow ok a ton of time spent iterating off screen to draw the final lines...
+    // Now we're at 120k/sec, getting better. still room for a 7x speedup
+    let point = Point2::new(width as f32 / 2.0, height as f32 / 2.0);
+    let mut ray = ncollide2d::query::Ray::new(point, Vector2::new(0.0, 0.0));
     for _ in 0..30_000 {
         let direction = random::<f32>() * 3.14159 * 2.0;
-        let point = Point2::new(width as f32 / 2.0, height as f32 / 2.0);
-        let mut ray =
-            ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
+        ray = ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
         let max_brightness = 255.0;
 
         // 30 bounces
-        for _ in 0..300 {
+        for _ in 0..30 {
             match find_collision(walls, &ray) {
                 None => {
-                    let mut line = line::XiaolinWu::<f32, i16>::new(
-                        xy(&ray.origin),
-                        xy(&ray.point_at(1000.0)),
-                    );
-                    line.draw_brightness(&mut brightness_data, width, height, max_brightness);
+                    // let mut line = line::XiaolinWu::<f32, i16>::new(
+                    //     xy(&ray.origin),
+                    //     xy(&ray.point_at(1000.0)),
+                    // );
+                    // line.draw_brightness(&mut brightness_data, width, height, max_brightness);
+
+                    // 314 -> 243 (20% savings), from going to direct style for line drawing
+                    // 243 -> 197 (another 20%) going from 1000.0 for outside line to 500.0
+                    // TODO dial the final line back in so it's just on the edge of the screen
+                    line::draw_line(xy(&ray.origin), xy(&ray.point_at(600.0)), &mut brightness_data, width, height, max_brightness);
                     // log!("No collision");
                     break;
                 }
@@ -183,9 +192,12 @@ fn zen_photon(walls: &[Segment<f32>], width: usize, height: usize) -> Vec<u8> {
 
                     let (new_origin, stop) = bounce_ray(&mut ray, toi, wall_index, normal);
 
-                    let mut line =
-                        line::XiaolinWu::<f32, i16>::new(xy(&ray.origin), xy(&new_origin));
-                    line.draw_brightness(&mut brightness_data, width, height, max_brightness);
+                    // 7% gain by switching to direct style, w/o XiaolinWu allocation & indirection
+                    line::draw_line(xy(&ray.origin), xy(&new_origin), &mut brightness_data, width, height, max_brightness);
+
+                    // let mut line =
+                    //     line::XiaolinWu::<f32, i16>::new(xy(&ray.origin), xy(&new_origin));
+                    // line.draw_brightness(&mut brightness_data, width, height, max_brightness);
 
                     ray.origin = new_origin;
 
