@@ -106,7 +106,7 @@ fn ray_arc_collision(
                 Some(RayIntersection::new(
                     dist,
                     normal,
-                    ncollide2d::shape::FeatureId::Face(0),
+                    ncollide2d::shape::FeatureId::Face(1),
                 ))
             } else {
                 None
@@ -124,6 +124,7 @@ fn ray_arc_collision(
                     ncollide2d::shape::FeatureId::Face(0),
                 ))
             } else {
+                // on the inside now
                 let pos = ray.origin + ray.dir * farther - arc.1;
                 let normal = -pos.normalize();
 
@@ -132,7 +133,7 @@ fn ray_arc_collision(
                     Some(RayIntersection::new(
                         farther,
                         normal,
-                        ncollide2d::shape::FeatureId::Face(0),
+                        ncollide2d::shape::FeatureId::Face(1),
                     ))
                 } else {
                     None
@@ -152,10 +153,11 @@ pub fn draw(
 ) -> Result<(), JsValue> {
     let _timer = Timer::new("draw all");
 
-    let cx = (width / 2) as line::float + 10.0;
+    let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
 
     let mut walls = vec![
+
         // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(101.0, 400.0)),
         // ncollide2d::shape::Segment::new(Point2::new(550.0, 100.0), Point2::new(551.0, 500.0)),
         // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(350.0, 101.0)),
@@ -184,26 +186,32 @@ pub fn draw(
 
     let count = 5;
 
+    let radius = 100.0;
+
     for i in 0..count {
         let theta = i as line::float / (count as line::float) * line::PI * 2.0;
-        let r0 = 300.0;
-        let r1 = 350.0;
-        let td = line::PI / (count as line::float * 4.0) + i as line::float * 0.1;
 
-        walls.push(WallType::Line(ncollide2d::shape::Segment::new(
-            Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
-            Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
-        )));
+        // let r0 = 300.0;
+        // let r1 = 350.0;
+        // let td = line::PI / (count as line::float * 4.0) + i as line::float * 0.1;
+        // walls.push(Wall::mirror(WallType::Line(ncollide2d::shape::Segment::new(
+        //     Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
+        //     Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
+        // ))));
 
-        walls.push(WallType::Circle(
-            Ball::new(200.0),
+        walls.push(Wall::mirror(WallType::Circle(
+            Ball::new(radius),
             Point2::new(
-                cx + (theta + td).cos() * 200.0,
-                cy + (theta + td).sin() * 200.0,
+                cx + (theta).cos() * (radius - 20.0),
+                cy + (theta).sin() * (radius - 20.0),
             ),
-            angle_norm(theta - std::f32::consts::PI * 4.0 / 5.0),
-            angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
-        ))
+            0.0 + theta,
+            PI + theta
+            // angle_norm(theta),
+            // angle_norm(theta + 0.1),
+            // angle_norm(theta - std::f32::consts::PI * 4.0 / 5.0),
+            // angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
+        )))
     }
 
     let mut data = zen_photon(&walls, width as usize, height as usize);
@@ -212,9 +220,9 @@ pub fn draw(
     ctx.put_image_data(&data, 0.0, 0.0)?;
 
     ctx.set_stroke_style(&JsValue::from_str("green"));
-    // for wall in walls.iter() {
-    //     wall.draw(&ctx);
-    // }
+    for wall in walls.iter() {
+        // wall.kind.draw(&ctx);
+    }
 
     Ok(())
 }
@@ -246,41 +254,82 @@ fn reflect(one: line::float, by: line::float) -> line::float {
     angle_norm((-transformed) + by)
 }
 
+#[inline]
+fn check(v: f32) -> bool {
+    if v == 0.0 { 
+        false
+    } else if v == 1.0 {
+        true
+    } else {
+        random::<line::float>() < v
+    }
+}
+
 fn bounce_ray(
     ray: &mut Ray<line::float>,
     toi: line::float,
-    wall_index: usize,
+    properties: Properties,
+    left_side: bool,
     normal: Vector2<line::float>,
 ) -> (Point2<line::float>, bool) {
-    let r = random::<line::float>();
-    // absorb
-    // if wall_index % 2 == 0 {
-    //     (ray.point_at(toi), true)
-    // pass through
-    // } else
-    if r < 0.1 {
-        (ray.point_at(toi + 0.1), false)
-    // reflect
-    } else {
+    if check(properties.absorb) {
+        (ray.point_at(toi), true)
+    } else if check(properties.reflect) {
         let new_origin = ray.point_at(toi - 0.1);
-        let ray_dir = ray.dir.y.atan2(ray.dir.x);
-        let normal_dir = normal.y.atan2(normal.x) + 3.14159 / 2.0;
+        let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
+        let ray_reflected = if check(properties.roughness) {
+            normal_dir - random::<line::float>() * PI
+        } else {
+            let ray_dir = ray.dir.y.atan2(ray.dir.x);
+            reflect(ray_dir, normal_dir)
+        };
 
-        let ray_reflected = reflect(ray_dir, normal_dir);
-
-        // draw from ray.origin to new_origin
         ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
         (new_origin, false)
+    } else {
+        // TODO refraction
+        (ray.point_at(toi + 0.1), false)
     }
 }
 
 use ncollide2d::shape::Segment;
 
+#[derive(Clone, Copy)]
+struct Properties {
+    // percentage of incoming light that's just absorbed
+    // TODO(color): this should be a triple, for each rgb component... or something?
+    absorb: f32,
+    // of the light that's not absorbed, how much is reflected (vs transmitted)?
+    reflect: f32,
+    // when reflecting, how much is scattered (vs a pure reflection)
+    roughness: f32,
+    // when transmitting, what's the index of refraction?
+
+    // this is the index of refraction from *left* to *right*
+    // - circle "left" is outside, "right" inside
+    // - line, "left" when at the first point facing the second point.
+    // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
+    // Face(1) is hitting the right side
+    refraction: f32,
+}
+
 struct Wall {
     kind: WallType,
-    reflect: f32,
-    transmit: f32,
-    refraction: f32,
+    properties: Properties,
+}
+
+impl Wall {
+    fn new(kind: WallType) -> Wall {
+        Wall { kind, properties: Properties { reflect: 0.0, absorb: 1.0, roughness: 0.0, refraction: 1.0 }}
+    }
+
+    fn mirror(kind: WallType) -> Wall {
+        Wall { kind, properties: Properties { reflect: 1.0, absorb: 0.0, roughness: 0.0, refraction: 1.0 }}
+    }
+
+    fn transparent(kind: WallType, refraction: f32) -> Wall {
+        Wall { kind, properties: Properties { reflect: 0.0, absorb: 0.0, roughness: 0.0, refraction }}
+    }
 }
 
 enum WallType {
@@ -293,6 +342,8 @@ enum WallType {
     ),
 }
 
+use std::f32::consts::PI;
+
 impl WallType {
     fn toi_and_normal_with_ray(
         &self,
@@ -301,7 +352,21 @@ impl WallType {
         use ncollide2d::query::ray_internal::ray::RayCast;
         match self {
             WallType::Line(wall) => {
-                wall.toi_and_normal_with_ray(&nalgebra::geometry::Isometry::identity(), ray, true)
+                match wall.toi_and_normal_with_ray(&nalgebra::geometry::Isometry::identity(), ray, true) {
+                    None => None,
+                    Some(mut intersection) => {
+                        let delta = wall.b() - wall.a();
+                        let wall_theta = delta.y.atan2(delta.x);
+                        let normal_theta = intersection.normal.y.atan2(intersection.normal.x);
+                        let left_side = if wall_theta >= 0.0 {
+                            normal_theta < wall_theta && normal_theta > wall_theta - PI
+                        } else {
+                            normal_theta < wall_theta || normal_theta > wall_theta + PI
+                        };
+                        intersection.feature = ncollide2d::shape::FeatureId::Face(if left_side { 0 } else { 1 });
+                        Some(intersection)
+                    }
+                }
             }
             WallType::Circle(circle, center, t0, t1) => {
                 ray_arc_collision(&ray, (circle, center, *t0, *t1))
@@ -335,17 +400,17 @@ impl WallType {
 }
 
 fn find_collision(
-    walls: &[WallType],
+    walls: &[Wall],
     ray: &Ray<line::float>,
-) -> Option<(line::float, usize, Vector2<line::float>)> {
+) -> Option<(line::float, Properties, bool, Vector2<line::float>)> {
     let mut closest = None;
 
     for (i, wall) in walls.iter().enumerate() {
-        match wall.toi_and_normal_with_ray(&ray) {
+        match wall.kind.toi_and_normal_with_ray(&ray) {
             None => (),
             Some(intersection) => match closest {
-                Some((dist, _, _)) if intersection.toi > dist => (),
-                None | Some(_) => closest = Some((intersection.toi, i, intersection.normal)),
+                Some((dist, _, _, _)) if intersection.toi > dist => (),
+                None | Some(_) => closest = Some((intersection.toi, wall.properties, match intersection.feature { ncollide2d::shape::FeatureId::Face(0) => true, _ => false }, intersection.normal)),
             },
         }
     }
@@ -353,7 +418,7 @@ fn find_collision(
     closest
 }
 
-fn zen_photon(walls: &[WallType], width: usize, height: usize) -> Vec<u8> {
+fn zen_photon(walls: &[Wall], width: usize, height: usize) -> Vec<u8> {
     let _timer = Timer::new("Calculate");
 
     let mut brightness_data = vec![0; width * height];
@@ -381,8 +446,8 @@ fn zen_photon(walls: &[WallType], width: usize, height: usize) -> Vec<u8> {
                     );
                     break;
                 }
-                Some((toi, wall_index, normal)) => {
-                    let (new_origin, stop) = bounce_ray(&mut ray, toi, wall_index, normal);
+                Some((toi, properties, left_side, normal)) => {
+                    let (new_origin, stop) = bounce_ray(&mut ray, toi, properties, left_side, normal);
                     line::draw_line(
                         xy(&ray.origin),
                         xy(&new_origin),
