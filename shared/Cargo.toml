@@ -1,5 +1,5 @@
 [package]
-name = "zenphoton"
+name = "shared"
 version = "0.1.0"
 authors = ["Jared Forsyth <jared@jaredforsyth.com>"]
 edition = "2018"
@@ -16,7 +16,7 @@ num-traits = "0"
 nalgebra = "*"
 ncollide2d = "*"
 
-shared = { path="./shared" }
+serde = { version = "1.0", features = ["derive"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
