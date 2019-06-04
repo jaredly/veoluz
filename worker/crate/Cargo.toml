@@ -1,22 +1,19 @@
 [package]
-name = "shared"
+authors = ["Jared Forsyth"]
+name = "zenphoton-worker"
 version = "0.1.0"
-authors = ["Jared Forsyth <jared@jaredforsyth.com>"]
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-default = ["console_error_panic_hook"]
-
 [dependencies]
 wasm-bindgen = "0.2"
 num-traits = "0"
-nalgebra = {version = "*", features = ["serde-serialize"] }
-ncollide2d = {version = "*", features = ["serde-serialize"] }
+nalgebra = "*"
+ncollide2d = "*"
 
-serde = { version = "1.0", features = ["derive"] }
+shared = { path="../../shared" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -41,12 +38,5 @@ features = [
   'console',
   'CanvasRenderingContext2d',
   'DedicatedWorkerGlobalScope',
-  'Worker'
+  'MessageEvent'
 ]
-
-[dev-dependencies]
-wasm-bindgen-test = "0.2"
-
-[profile.release]
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"

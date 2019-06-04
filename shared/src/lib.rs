@@ -9,8 +9,8 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-use rand::random;
-use wasm_bindgen::Clamped;
+// use rand::random;
+// use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
 fn rand() -> f32 {
@@ -261,6 +261,7 @@ pub struct Properties {
     refraction: f32,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Wall {
     kind: WallType,
     properties: Properties,
@@ -280,6 +281,7 @@ impl Wall {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum WallType {
     Line(Segment<line::float>),
     Circle(
@@ -289,90 +291,6 @@ pub enum WallType {
         line::float,
     ),
 }
-
-#[derive(Serialize, Deserialize)]
-enum SerializableWallType {
-  Line(SerializableSegment),
-  Circle(line::float, SerializablePoint, line::float, line::float)
-}
-
-impl From<&WallType> for SerializableWallType {
-  fn from(other: &WallType) -> Self {
-    match other {
-      WallType::Line(segment) => SerializableWallType::Line(segment.into()),
-      WallType::Circle(ball, center, t0, t1) => SerializableWallType::Circle(ball.radius(), center.into(), *t0, *t1)
-    }
-  }
-}
-
-impl From<&SerializableWallType> for WallType {
-  fn from(other: &SerializableWallType) -> Self {
-    match other {
-      SerializableWallType::Line(segment) => WallType::Line((*segment).into()),
-      SerializableWallType::Circle(radius, center, t0, t1) => WallType::Circle(Ball::new(*radius), (*center).into(), *t0, *t1)
-    }
-  }
-}
-
-// use serde::ser::{Serializer, SerializeStruct, SerializeTupleVariant};
-
-#[derive(Serialize, Deserialize, Clone, Copy)]
-struct SerializablePoint {
-  x: line::float,
-  y: line::float,
-}
-
-impl From<&Point2<line::float>> for SerializablePoint {
-  fn from(other: &Point2<line::float>) -> Self {
-    SerializablePoint {x: other.x, y: other.y}
-  }
-}
-
-impl Into<Point2<line::float>> for SerializablePoint {
-  fn into(self) -> Point2<line::float> {
-    Point2::new(self.x, self.y)
-  }
-}
-
-#[derive(Serialize, Deserialize, Clone, Copy)]
-struct SerializableSegment {
-  a: SerializablePoint,
-  b: SerializablePoint,
-}
-
-impl From<&Segment<line::float>> for SerializableSegment {
-  fn from(other: &Segment<line::float>) -> Self {
-    SerializableSegment {a: other.a().into(), b: other.b().into()}
-  }
-}
-
-impl Into<Segment<line::float>> for SerializableSegment {
-  fn into(self) -> Segment<line::float> {
-    let m: Point2<line::float> = self.a.into();
-    Segment::new(m, self.b.into())
-  }
-}
-
-// impl Serialize for WallType {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: serde::Serializer,
-//     {
-//       match self {
-//         WallType::Line(segment) => {
-//           serializer.serialize_newtype_variant("WallType", 0, "Line", &SerializableSegment::from(segment))
-//         }
-//         WallType::Circle(ball, center, t0, t1) => {
-//           let mut state = serializer.serialize_tuple_variant("WallType", 1, "Circle", 4)?;
-//           state.serialize_field(&ball.radius())?;
-//           state.serialize_field(&SerializablePoint::from(center))?;
-//           state.serialize_field(&t0)?;
-//           state.serialize_field(&t1)?;
-//           state.end()
-//         }
-//       }
-//     }
-// }
 
 use std::f32::consts::PI;
 

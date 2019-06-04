@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+    <title>My awesome Rust, WebAssembly, and Webpack application</title>
+  </head>
+  <body>
+    <script>
+      console.log('hyessss here')
+      const worker = new Worker('./dist/bundle.js');
+      worker.postMessage("Hello folks")
+      worker.onmessage = evt => {
+        console.log('got message', evt)
+      }
+      console.log('hyessss here')
+      </script>
+    <!-- <script src="./dist/bundle.js"></script> -->
+  </body>
+</html>
+
