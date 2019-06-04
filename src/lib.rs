@@ -13,6 +13,14 @@ use rand::random;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
+// let mut rng = rand::thread_rng();
+
+fn rand() -> f32 {
+    rand::random::<f32>()
+    // rng.gen()
+    // web_sys::js_sys::Math::random() as f32
+}
+
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
@@ -21,6 +29,104 @@ macro_rules! log {
 
 use nalgebra as na;
 use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
+
+#[wasm_bindgen]
+pub fn draw(
+    ctx: &CanvasRenderingContext2d,
+    width: u32,
+    height: u32,
+    _real: f64,
+    _imaginary: f64,
+) -> Result<(), JsValue> {
+    let _timer = Timer::new("draw all");
+
+    let cx = (width / 2) as line::float;
+    let cy = (height / 2) as line::float;
+
+    let mut walls = vec![
+
+        // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(101.0, 400.0)),
+        // ncollide2d::shape::Segment::new(Point2::new(550.0, 100.0), Point2::new(551.0, 500.0)),
+        // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(350.0, 101.0)),
+        // ncollide2d::shape::Segment::new(Point2::new(100.0, 550.0), Point2::new(500.0, 561.0)),
+
+        // Wall::Circle(
+        //     Ball::new(50.0),
+        //     Point2::new(cx, cy - 150.0),
+        //     -std::f32::consts::PI,
+        //     std::f32::consts::PI
+        // ),
+        // Wall::Circle(
+        //     Ball::new(50.0),
+        //     Point2::new(cx + 250.0, cy),
+        //     -std::f32::consts::PI / 2.0,
+        //     std::f32::consts::PI / 2.0
+        // ),
+        // Wall::Circle(
+        //     Ball::new(50.0),
+        //     Point2::new(cx, cy + 250.0),
+        //     0.0,
+        //     std::f32::consts::PI
+        // ),
+
+    ];
+
+    let count = 5;
+
+    let radius = 100.0;
+    let by = line::PI * 2.0 / (count as line::float);
+
+    for i in 0..count {
+        let theta = i as line::float * by;
+
+        let r0 = 100.0;
+        let r1 = 250.0;
+        let td = by / 2.0;
+
+        let index = 0.6;
+
+        // walls.push(Wall::transparent(WallType::Line(ncollide2d::shape::Segment::new(
+        //     Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
+        //     Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
+        // )), 1.1));
+
+        walls.push(Wall::transparent(WallType::Line(ncollide2d::shape::Segment::new(
+            Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
+            Point2::new(cx + (theta + td).cos() * r0, cy + (theta + td).sin() * r0),
+        )), index));
+
+        walls.push(Wall::transparent(WallType::Line(ncollide2d::shape::Segment::new(
+            Point2::new(cx + theta.cos() * r1, cy + theta.sin() * r1),
+            Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
+        )), 1.0 / index));
+
+        // walls.push(Wall::mirror(WallType::Circle(
+        //     Ball::new(radius),
+        //     Point2::new(
+        //         cx + (theta).cos() * (radius - 20.0),
+        //         cy + (theta).sin() * (radius - 20.0),
+        //     ),
+        //     0.0 + theta,
+        //     PI + theta
+        //     // angle_norm(theta),
+        //     // angle_norm(theta + 0.1),
+        //     // angle_norm(theta - std::f32::consts::PI * 4.0 / 5.0),
+        //     // angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
+        // )))
+    }
+
+    let mut data = zen_photon(&walls, width as usize, height as usize);
+
+    let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
+    ctx.put_image_data(&data, 0.0, 0.0)?;
+
+    ctx.set_stroke_style(&JsValue::from_str("green"));
+    for wall in walls.iter() {
+        // wall.kind.draw(&ctx);
+    }
+
+    Ok(())
+}
 
 enum BallResult {
     Inside(line::float),
@@ -143,89 +249,6 @@ fn ray_arc_collision(
     }
 }
 
-#[wasm_bindgen]
-pub fn draw(
-    ctx: &CanvasRenderingContext2d,
-    width: u32,
-    height: u32,
-    _real: f64,
-    _imaginary: f64,
-) -> Result<(), JsValue> {
-    let _timer = Timer::new("draw all");
-
-    let cx = (width / 2) as line::float;
-    let cy = (height / 2) as line::float;
-
-    let mut walls = vec![
-
-        // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(101.0, 400.0)),
-        // ncollide2d::shape::Segment::new(Point2::new(550.0, 100.0), Point2::new(551.0, 500.0)),
-        // ncollide2d::shape::Segment::new(Point2::new(100.0, 100.0), Point2::new(350.0, 101.0)),
-        // ncollide2d::shape::Segment::new(Point2::new(100.0, 550.0), Point2::new(500.0, 561.0)),
-
-        // Wall::Circle(
-        //     Ball::new(50.0),
-        //     Point2::new(cx, cy - 150.0),
-        //     -std::f32::consts::PI,
-        //     std::f32::consts::PI
-        // ),
-        // Wall::Circle(
-        //     Ball::new(50.0),
-        //     Point2::new(cx + 250.0, cy),
-        //     -std::f32::consts::PI / 2.0,
-        //     std::f32::consts::PI / 2.0
-        // ),
-        // Wall::Circle(
-        //     Ball::new(50.0),
-        //     Point2::new(cx, cy + 250.0),
-        //     0.0,
-        //     std::f32::consts::PI
-        // ),
-
-    ];
-
-    let count = 5;
-
-    let radius = 100.0;
-
-    for i in 0..count {
-        let theta = i as line::float / (count as line::float) * line::PI * 2.0;
-
-        // let r0 = 300.0;
-        // let r1 = 350.0;
-        // let td = line::PI / (count as line::float * 4.0) + i as line::float * 0.1;
-        // walls.push(Wall::mirror(WallType::Line(ncollide2d::shape::Segment::new(
-        //     Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
-        //     Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
-        // ))));
-
-        walls.push(Wall::mirror(WallType::Circle(
-            Ball::new(radius),
-            Point2::new(
-                cx + (theta).cos() * (radius - 20.0),
-                cy + (theta).sin() * (radius - 20.0),
-            ),
-            0.0 + theta,
-            PI + theta
-            // angle_norm(theta),
-            // angle_norm(theta + 0.1),
-            // angle_norm(theta - std::f32::consts::PI * 4.0 / 5.0),
-            // angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
-        )))
-    }
-
-    let mut data = zen_photon(&walls, width as usize, height as usize);
-
-    let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
-    ctx.put_image_data(&data, 0.0, 0.0)?;
-
-    ctx.set_stroke_style(&JsValue::from_str("green"));
-    for wall in walls.iter() {
-        // wall.kind.draw(&ctx);
-    }
-
-    Ok(())
-}
 
 use nalgebra::{Point2, Vector2};
 
@@ -261,7 +284,7 @@ fn check(v: f32) -> bool {
     } else if v == 1.0 {
         true
     } else {
-        random::<line::float>() < v
+        rand() < v
     }
 }
 
@@ -278,7 +301,7 @@ fn bounce_ray(
         let new_origin = ray.point_at(toi - 0.1);
         let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
         let ray_reflected = if check(properties.roughness) {
-            normal_dir - random::<line::float>() * PI
+            normal_dir - rand() * PI
         } else {
             let ray_dir = ray.dir.y.atan2(ray.dir.x);
             reflect(ray_dir, normal_dir)
@@ -287,9 +310,36 @@ fn bounce_ray(
         ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
         (new_origin, false)
     } else {
+        let new_origin = ray.point_at(toi + 0.1);
+
+        // sin(t) / sin(t1) = index
+        // t = asin(index * sing(t1))
+        if properties.refraction != 1.0 {
+            let new_dir = refract(&ray.dir, &normal, &properties, left_side);
+            ray.dir = Vector2::new(new_dir.cos(), new_dir.sin());
+        }
         // TODO refraction
-        (ray.point_at(toi + 0.1), false)
+        (new_origin, false)
     }
+}
+
+#[inline]
+fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, properties: &Properties, left_side: bool) -> line::float {
+    let ray_dir = ray_dir.y.atan2(ray_dir.x);
+    let n = normal.y.atan2(normal.x);
+    let normal_dir = n + PI / 2.0;
+
+    #[inline]
+    fn deg(r: f32) -> f32 {
+        r * 180.0 / PI
+    }
+
+    let index = if left_side { properties.refraction } else { 1.0 / properties.refraction};
+    let opposite = angle_norm(n + PI);
+    let diff = ray_dir - opposite;
+    let new_dir = (properties.refraction * diff.sin()).asin() + opposite;
+    // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
+    new_dir
 }
 
 use ncollide2d::shape::Segment;
@@ -426,11 +476,12 @@ fn zen_photon(walls: &[Wall], width: usize, height: usize) -> Vec<u8> {
     // if we don't draw at all, we're still getting only 400k/sec
     let point = Point2::new(width as line::float / 2.0, height as line::float / 2.0);
 
-    for _ in 0..100_000 {
-        let direction = random::<line::float>() * 3.14159 * 2.0;
+    for r in 0..100_000 {
+        let direction = rand() * PI * 2.0;
+        // let direction = (r as f32) / 180.0 * PI;
         let mut ray =
             ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
-        let max_brightness = 5.0;
+        let max_brightness = 100.0;
 
         for _ in 0..30 {
             match find_collision(walls, &ray) {

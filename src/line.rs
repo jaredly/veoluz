@@ -4,7 +4,7 @@ use std::mem::swap;
 
 pub type float = f32;
 pub type int = i16;
-pub type uint = u16;
+pub type uint = u32;
 pub const PI: float = std::f32::consts::PI;
 
 #[inline]
@@ -143,14 +143,14 @@ pub fn draw_line(
 /// ```
 ///
 /// [Xiaolin Wu's line algorithm]: https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
-pub struct XiaolinWu<I, O> {
-    steep: bool,
-    gradient: I,
-    x: O,
-    y: I,
-    end_x: O,
-    lower: bool,
-}
+// pub struct XiaolinWu<I, O> {
+//     steep: bool,
+//     gradient: I,
+//     x: O,
+//     y: I,
+//     end_x: O,
+//     lower: bool,
+// }
 
 pub type Point<T> = (T, T);
 
@@ -161,113 +161,113 @@ macro_rules! log {
     }
 }
 
-impl XiaolinWu<float, int> {
-    #[inline]
-    pub fn new(mut start: Point<float>, mut end: Point<float>) -> Self {
-        let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
+// impl XiaolinWu<float, int> {
+//     #[inline]
+//     pub fn new(mut start: Point<float>, mut end: Point<float>) -> Self {
+//         let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
 
-        if steep {
-            start = (start.1, start.0);
-            end = (end.1, end.0);
-        }
+//         if steep {
+//             start = (start.1, start.0);
+//             end = (end.1, end.0);
+//         }
 
-        if start.0 > end.0 {
-            swap(&mut start, &mut end);
-        }
-        // log!("Line xs = {} - {}", start.0, end.0);
+//         if start.0 > end.0 {
+//             swap(&mut start, &mut end);
+//         }
+//         // log!("Line xs = {} - {}", start.0, end.0);
 
-        let mut gradient = (end.1 - start.1) / (end.0 - start.0);
+//         let mut gradient = (end.1 - start.1) / (end.0 - start.0);
 
-        if gradient == 0.0 {
-            gradient = 1.0;
-        }
+//         if gradient == 0.0 {
+//             gradient = 1.0;
+//         }
 
-        Self {
-            steep,
-            gradient,
-            x: start.0.round() as int,
-            y: start.1,
-            end_x: end.0.round() as int,
-            lower: false,
-        }
-    }
-}
+//         Self {
+//             steep,
+//             gradient,
+//             x: start.0.round() as int,
+//             y: start.1,
+//             end_x: end.0.round() as int,
+//             lower: false,
+//         }
+//     }
+// }
 
-impl XiaolinWu<float, int> {
-    // #[inline]
-    // pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
-    //     for ((x, y), amount) in self {
-    //         if x < 0 || y < 0 || x >= width as int || y >= height as int {
-    //             continue;
-    //         }
-    //         let index = ((y as usize) * width + x as usize) * 4;
-    //         let brightness = (amount * 255.0) as u8;
-    //         data[index] = r;
-    //         data[index + 1] = g;
-    //         data[index + 2] = b;
-    //         data[index + 3] = brightness;
-    //     }
-    // }
+// impl XiaolinWu<float, int> {
+//     // #[inline]
+//     // pub fn draw(&mut self, data: &mut [u8], width: usize, height: usize, r: u8, g: u8, b: u8) {
+//     //     for ((x, y), amount) in self {
+//     //         if x < 0 || y < 0 || x >= width as int || y >= height as int {
+//     //             continue;
+//     //         }
+//     //         let index = ((y as usize) * width + x as usize) * 4;
+//     //         let brightness = (amount * 255.0) as u8;
+//     //         data[index] = r;
+//     //         data[index + 1] = g;
+//     //         data[index + 2] = b;
+//     //         data[index + 3] = brightness;
+//     //     }
+//     // }
 
-    #[inline]
-    pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: float) {
-        loop {
-            let ((x, y), amount) = if self.x <= self.end_x {
-                // get the fractional part of y
-                let fpart = self.y - self.y.floor();
+//     #[inline]
+//     pub fn draw_brightness(&mut self, data: &mut [usize], width: usize, height: usize, full: float) {
+//         loop {
+//             let ((x, y), amount) = if self.x <= self.end_x {
+//                 // get the fractional part of y
+//                 let fpart = self.y - self.y.floor();
 
-                // Calculate the integer value of y
-                let mut y = NumCast::from(self.y).unwrap();
-                if self.lower {
-                    y += 1;
-                }
+//                 // Calculate the integer value of y
+//                 let mut y = NumCast::from(self.y).unwrap();
+//                 if self.lower {
+//                     y += 1;
+//                 }
 
-                // Get the point
-                let point = if self.steep { (y, self.x) } else { (self.x, y) };
+//                 // Get the point
+//                 let point = if self.steep { (y, self.x) } else { (self.x, y) };
 
-                if self.lower {
-                    // Return the lower point
-                    self.lower = false;
-                    self.x += 1;
-                    self.y += self.gradient;
-                    (point, fpart)
-                } else {
-                    if fpart > 0.0 {
-                        // Set to return the lower point if the fractional part is > 0
-                        self.lower = true;
-                    } else {
-                        // Otherwise move on
-                        self.x += 1;
-                        self.y += self.gradient;
-                    }
+//                 if self.lower {
+//                     // Return the lower point
+//                     self.lower = false;
+//                     self.x += 1;
+//                     self.y += self.gradient;
+//                     (point, fpart)
+//                 } else {
+//                     if fpart > 0.0 {
+//                         // Set to return the lower point if the fractional part is > 0
+//                         self.lower = true;
+//                     } else {
+//                         // Otherwise move on
+//                         self.x += 1;
+//                         self.y += self.gradient;
+//                     }
 
-                    // Return the remainer of the fractional part
-                    (point, 1.0 - fpart)
-                }
-            } else {
-                // log!("Bailing {}, {}", self.x, self.end_x);
-                break;
-            };
-            if x < 0 || y < 0 || x >= width as int || y >= height as int {
-                continue;
-            }
-            let index = (y as usize) * width + x as usize;
-            let brightness = (amount * full) as usize;
-            data[index] += brightness;
-        }
+//                     // Return the remainer of the fractional part
+//                     (point, 1.0 - fpart)
+//                 }
+//             } else {
+//                 // log!("Bailing {}, {}", self.x, self.end_x);
+//                 break;
+//             };
+//             if x < 0 || y < 0 || x >= width as int || y >= height as int {
+//                 continue;
+//             }
+//             let index = (y as usize) * width + x as usize;
+//             let brightness = (amount * full) as usize;
+//             data[index] += brightness;
+//         }
 
-        // :: this is the slower way
+//         // :: this is the slower way
 
-        // for ((x, y), amount) in self {
-        //     if x < 0 || y < 0 || x >= width as int || y >= height as int {
-        //         continue;
-        //     }
-        //     let index = (y as usize) * width + x as usize;
-        //     let brightness = (amount * full) as usize;
-        //     data[index] += brightness;
-        // }
-    }
-}
+//         // for ((x, y), amount) in self {
+//         //     if x < 0 || y < 0 || x >= width as int || y >= height as int {
+//         //         continue;
+//         //     }
+//         //     let index = (y as usize) * width + x as usize;
+//         //     let brightness = (amount * full) as usize;
+//         //     data[index] += brightness;
+//         // }
+//     }
+// }
 
 // impl Iterator for XiaolinWu<float, int> {
 //     type Item = (Point<int>, float);
