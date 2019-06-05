@@ -1,12 +1,12 @@
 mod utils;
 
-use shared;
-use shared::line;
-use shared::{WallType, Wall};
-use wasm_bindgen::prelude::*;
 use nalgebra::{Point2, Vector2};
 use ncollide2d::query::Ray;
 use ncollide2d::shape::Ball;
+use shared;
+use shared::line;
+use shared::{Wall, WallType};
+use wasm_bindgen::prelude::*;
 
 use std::f32::consts::PI;
 
@@ -17,7 +17,7 @@ use std::sync::Mutex;
 
 // use rand::random;
 use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData, ImageBitmap};
+use web_sys::{CanvasRenderingContext2d, ImageBitmap, ImageData};
 
 struct State {
     config: shared::Config,
@@ -45,14 +45,14 @@ macro_rules! log {
 fn try_log<F: FnOnce() -> Result<(), JsValue>>(f: F) {
     match f() {
         Ok(()) => (),
-        Err(err) => log!("{:?}", err)
+        Err(err) => log!("{:?}", err),
     }
 }
 
 fn withState<F: FnOnce(&mut State)>(f: F) {
     match STATE.lock().unwrap().as_mut() {
         None => (),
-        Some(mut state) => f(&mut state)
+        Some(mut state) => f(&mut state),
     }
 }
 
@@ -63,38 +63,44 @@ fn tryWithState<F: FnOnce(&mut State) -> Result<(), JsValue>>(f: F) {
 use nalgebra as na;
 use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
 
-
 use wasm_bindgen::JsCast;
 
-
 fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
-    let document = web_sys::window().expect("window").document().expect("Document");
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
     let canvas = document.get_element_by_id("drawing").expect("get Canvas");
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
 
-    let ctx = canvas.get_context("2d").expect("context").unwrap().dyn_into::<web_sys::CanvasRenderingContext2d>()?;
+    let ctx = canvas
+        .get_context("2d")
+        .expect("context")
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
 
     let uarr = js_sys::Uint8ClampedArray::from(evt.data());
     tryWithState(|state| {
         uarr.copy_to(&mut state.buffer);
 
         let mut clamped = Clamped(state.buffer.clone());
-        let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(clamped.as_mut_slice()), state.config.width as u32, state.config.height as u32)?;
+        let data = ImageData::new_with_u8_clamped_array_and_sh(
+            Clamped(clamped.as_mut_slice()),
+            state.config.width as u32,
+            state.config.height as u32,
+        )?;
 
         ctx.put_image_data(&data, 0.0, 0.0)?;
         ctx.set_stroke_style(&JsValue::from_str("green"));
 
         for wall in state.config.walls.iter() {
             wall.kind.draw(&ctx)
-        };
+        }
         Ok(())
     });
 
     Ok(())
-
 }
-
-
 
 #[wasm_bindgen]
 pub fn draw(
@@ -104,8 +110,6 @@ pub fn draw(
     _real: f64,
     _imaginary: f64,
 ) -> Result<(), JsValue> {
-
-
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
 
@@ -156,27 +160,33 @@ pub fn draw(
         //     Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
         // )), 1.1));
 
-        walls.push(Wall::transparent(WallType::Line(ncollide2d::shape::Segment::new(
-            Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
-            Point2::new(cx + (theta + td).cos() * r0, cy + (theta + td).sin() * r0),
-        )), index));
+        walls.push(Wall::transparent(
+            WallType::Line(ncollide2d::shape::Segment::new(
+                Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
+                Point2::new(cx + (theta + td).cos() * r0, cy + (theta + td).sin() * r0),
+            )),
+            index,
+        ));
 
-        walls.push(Wall::transparent(WallType::Line(ncollide2d::shape::Segment::new(
-            Point2::new(cx + theta.cos() * r1, cy + theta.sin() * r1),
-            Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
-        )), 1.0 / index));
+        walls.push(Wall::transparent(
+            WallType::Line(ncollide2d::shape::Segment::new(
+                Point2::new(cx + theta.cos() * r1, cy + theta.sin() * r1),
+                Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
+            )),
+            1.0 / index,
+        ));
 
-        walls.push(Wall::transparent(WallType::Circle(
-            Ball::new(r0 / 5.0),
-            Point2::new(
-                cx + (theta).cos() * r0 / 2.0,
-                cy + (theta).sin() * r0 / 2.0,
+        walls.push(Wall::transparent(
+            WallType::Circle(
+                Ball::new(r0 / 5.0),
+                Point2::new(cx + (theta).cos() * r0 / 2.0, cy + (theta).sin() * r0 / 2.0),
+                // -PI,
+                // PI,
+                theta + PI / 2.0,
+                theta - PI / 2.0,
             ),
-            // -PI,
-            // PI,
-            theta + PI / 2.0,
-            theta - PI / 2.0,
-        ), 0.8));
+            0.8,
+        ));
 
         // walls.push(Wall::mirror(WallType::Circle(
         //     Ball::new(r0 / 5.0),
@@ -208,7 +218,7 @@ pub fn draw(
 
     setState(State {
         config: cloned,
-        buffer: vec![0_u8;(width * height * 4) as usize],
+        buffer: vec![0_u8; (width * height * 4) as usize],
     });
 
     // let mut data = shared::zen_photon(&config);
@@ -216,17 +226,20 @@ pub fn draw(
     // ctx.put_image_data(&data, 0.0, 0.0)?;
 
     let worker = web_sys::Worker::new("../worker/dist/bundle.js")?;
-    let f = Closure::wrap(Box::new(|evt: web_sys::MessageEvent| try_log(|| on_message(evt))) as Box<FnMut(web_sys::MessageEvent)>);
+    let f = Closure::wrap(
+        Box::new(|evt: web_sys::MessageEvent| try_log(|| on_message(evt)))
+            as Box<FnMut(web_sys::MessageEvent)>,
+    );
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
     f.forget();
 
     log!("Sending a message to the working");
     worker.post_message(&JsValue::from_serde(&config).unwrap())?;
 
-            ctx.set_stroke_style(&JsValue::from_str("green"));
-            for wall in config.walls.iter() {
-                wall.kind.draw(&ctx);
-            }
+    ctx.set_stroke_style(&JsValue::from_str("green"));
+    for wall in config.walls.iter() {
+        wall.kind.draw(&ctx);
+    }
 
     // Ok(f.as_ref().unchecked_ref())
     Ok(())
