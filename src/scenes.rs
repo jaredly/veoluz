@@ -1,4 +1,3 @@
-
 use nalgebra::{Point2, Vector2};
 use ncollide2d::query::Ray;
 use ncollide2d::shape::Ball;
@@ -9,13 +8,11 @@ use wasm_bindgen::prelude::*;
 
 use std::f32::consts::PI;
 
-
 pub fn apple() -> shared::Config {
-  let width = 1024;
-  let height = 576;
+    let width = 1024;
+    let height = 576;
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
-
 
     let mut walls = vec![
 
@@ -116,5 +113,5 @@ pub fn apple() -> shared::Config {
         //     // angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
         // )))
     }
-  shared::Config::new(walls, width as usize, height as usize)
+    shared::Config::new(walls, width as usize, height as usize)
 }

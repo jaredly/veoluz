@@ -1,6 +1,6 @@
-
-
 use std::sync::Mutex;
+use wasm_bindgen::prelude::*;
+use web_sys::CanvasRenderingContext2d;
 
 pub struct State {
     pub config: shared::Config,
@@ -29,13 +29,12 @@ pub fn setState(state: State) {
 }
 
 pub fn with<R, F: FnOnce(&mut State) -> R>(f: F) -> R {
-    // f(&mut STATE.lock().unwrap().as_mut().expect("Tried to handle state, but no state found"))
     match STATE.lock().unwrap().as_mut() {
         Some(mut state) => f(&mut state),
         None => {
-          log!("!!! Error: tried to handle state, but no state found");
-          panic!("No state found, must set state first")
-        },
+            log!("!!! Error: tried to handle state, but no state found");
+            panic!("No state found, must set state first")
+        }
     }
 }
 

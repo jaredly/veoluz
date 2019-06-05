@@ -1,43 +1,18 @@
 #[macro_use]
 extern crate lazy_static;
 
-use nalgebra::{Point2, Vector2};
-use ncollide2d::query::Ray;
-use ncollide2d::shape::Ball;
-use shared;
-use shared::line;
-use shared::{Wall, WallType};
 use wasm_bindgen::prelude::*;
-
-use std::f32::consts::PI;
-
-// use rand::random;
 use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageBitmap, ImageData};
-
-use nalgebra as na;
-use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
-
 use wasm_bindgen::JsCast;
+use web_sys::ImageData;
 
 #[macro_use]
 mod utils;
-mod state;
 mod scenes;
+mod state;
+mod ui;
 
 fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
-    let document = web_sys::window()
-        .expect("window")
-        .document()
-        .expect("Document");
-    let canvas = document.get_element_by_id("drawing").expect("get Canvas");
-    let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
-
-    let ctx = canvas
-        .get_context("2d")?
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
-
     let uarr = js_sys::Uint8ClampedArray::from(evt.data());
 
     state::with(|state| -> Result<(), JsValue> {
@@ -50,6 +25,7 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
             state.config.height as u32,
         )?;
 
+        let ctx = ui::ctx()?;
         ctx.put_image_data(&data, 0.0, 0.0)?;
         ctx.set_stroke_style(&JsValue::from_str("green"));
 
@@ -62,20 +38,17 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
     Ok(())
 }
 
-
-
-
-
-
 #[wasm_bindgen]
-pub fn draw(
-    ctx: &CanvasRenderingContext2d,
-    width: u32,
-    height: u32,
-    _real: f64,
-    _imaginary: f64,
-) -> Result<(), JsValue> {
+pub fn run() -> Result<(), JsValue> {
     let config = scenes::apple();
+
+    ui::init(&config)?;
+    let ctx = ui::ctx()?;
+
+    // const canvas = document.getElementById('drawing');
+    // const ctx = canvas.getContext('2d');
+    // canvas.width = 1024
+    // canvas.height = 576
 
     state::setState(config.into());
 
@@ -90,7 +63,6 @@ pub fn draw(
     );
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
     f.forget();
-
 
     state::try_with(|state| {
         log!("Sending a message to the worker");
