@@ -13,12 +13,25 @@ mod state;
 mod ui;
 
 fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
-    let uarr = js_sys::Uint8ClampedArray::from(evt.data());
+    let buff = js_sys::ArrayBuffer::from(evt.data());
+    let uarr = js_sys::Uint32Array::new_with_byte_offset(&buff.dyn_into::<JsValue>()?, 0);
+
 
     state::with(|state| -> Result<(), JsValue> {
-        uarr.copy_to(&mut state.buffer);
+        let mut bright = vec![0_u32;state.config.width * state.config.height];
+        uarr.copy_to(&mut bright);
 
-        let mut clamped = Clamped(state.buffer.clone());
+        let colored = shared::colorize(&state.config, bright);
+        log!("colored array with length {}", colored.len());
+
+        // let uarr = js_sys::Uint8ClampedArray::from(uarr.dyn_into::<JsValue>()?);
+        // log!("8 array with length {}", uarr.length());
+
+        // uarr.copy_to(&mut state.buffer);
+        // uarr.copy_to(&mut state.buffer);
+
+        let mut clamped = Clamped(colored.clone());
+        // let mut clamped = Clamped(state.buffer.clone());
         let data = ImageData::new_with_u8_clamped_array_and_sh(
             Clamped(clamped.as_mut_slice()),
             state.config.width as u32,
@@ -40,6 +53,7 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
+    console_error_panic_hook::set_once();
     let config = scenes::apple();
 
     ui::init(&config)?;

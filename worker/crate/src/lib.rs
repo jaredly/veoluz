@@ -39,13 +39,10 @@ pub fn process(config: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
     let config: shared::Config = config.into_serde().expect("Invalid data");
-    // let mut data = shared::calculate(&config, 10_000);
-    let mut data = shared::zen_photon(&config);
-    log!("Creating a bitmap {}x{}", config.width, config.height);
+    let mut data = shared::calculate(&config, 10_000);
+    log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
-
-    // Ok(Clamped(to_le(&mut data).to_vec()))
-    Ok(Clamped(data))
+    Ok(Clamped(to_le(&mut data).to_vec()))
 }
 
 fn set_panic_hook() {

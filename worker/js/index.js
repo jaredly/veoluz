@@ -7,7 +7,7 @@ onmessage = (evt) => {
 import("../crate/pkg").then(module => {
   let handle = data => {
     let res = module.process(data)
-    postMessage(res, [res.buffer])
+    postMessage(res.buffer, [res.buffer])
   }
   if (waiting) {
     handle(waiting)
