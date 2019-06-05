@@ -107,8 +107,8 @@ pub fn draw(
         walls.push(Wall::transparent(WallType::Circle(
             Ball::new(r0 / 5.0),
             Point2::new(
-                cx + (theta + td / 2.0).cos() * r0 / 4.0,
-                cy + (theta + td / 2.0).sin() * r0 / 4.0,
+                cx + (theta + td / 2.0).cos() * r0 / 2.0,
+                cy + (theta + td / 2.0).sin() * r0 / 2.0,
             ),
             -PI,
             // 0.0,
@@ -154,29 +154,24 @@ pub fn draw(
 
             let ctx = canvas.get_context("2d").expect("context").unwrap().dyn_into::<web_sys::CanvasRenderingContext2d>()?;
 
-            log!("Got back a message");
-            let array_buffer = js_sys::ArrayBuffer::from(evt.data());
-            log!("Got a buffer, it is {} bytes long", array_buffer.byte_length());
-            let uarr = js_sys::Uint8ClampedArray::new(array_buffer.as_ref());
-            // let uarr = js_sys::Uint8ClampedArray::from(evt.data());
-            log!("Uarr");
+            // let array_buffer = js_sys::ArrayBuffer::from(evt.data());
+            let uarr = js_sys::Uint8ClampedArray::from(evt.data());
             let mut dest = vec![0_u8;uarr.length() as usize];
             uarr.copy_to(&mut dest);
             let mut clamped = Clamped(dest);
-            // let mut clamped: Clamped<&mut Vec<u8>> = unsafe { std::mem::transmute(uarr) };
-            log!("Clamped {}, {} -> into {} x {}", uarr.length(), clamped.len(), width as u32, height as u32);
+
             let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(clamped.as_mut_slice()), width as u32, height as u32)?;
-            log!("Dataed");
-            ctx.put_image_data(&data, 0.0, 0.0);
-            log!("Drawed");
+            ctx.put_image_data(&data, 0.0, 0.0)?;
 
             // let data = ImageBitmap::from(evt.data());
             // ctx.draw_image_with_image_bitmap(&data, 0.0, 0.0).expect("Draw it in");
 
             ctx.set_stroke_style(&JsValue::from_str("green"));
+
             // for wall in config.walls.iter() {
             //     wall.kind.draw(&ctx);
             // }
+
             Ok(())
         }
 
@@ -191,6 +186,11 @@ pub fn draw(
 
     log!("Sending a message to the working");
     worker.post_message(&JsValue::from_serde(&config).unwrap())?;
+
+            ctx.set_stroke_style(&JsValue::from_str("green"));
+            for wall in config.walls.iter() {
+                wall.kind.draw(&ctx);
+            }
 
     // Ok(f.as_ref().unchecked_ref())
     Ok(())
