@@ -132,13 +132,14 @@ pub fn draw(
         // )))
     }
 
-    let mut data = shared::zen_photon(&walls, width as usize, height as usize);
+    let config = shared::Config::new(walls, width as usize, height as usize);
+    let mut data = shared::zen_photon(&config);
 
     let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
     ctx.put_image_data(&data, 0.0, 0.0)?;
 
     ctx.set_stroke_style(&JsValue::from_str("green"));
-    for wall in walls.iter() {
+    for wall in config.walls.iter() {
         // wall.kind.draw(&ctx);
     }
 

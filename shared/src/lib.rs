@@ -368,8 +368,28 @@ fn find_collision(
     closest
 }
 
-pub fn zen_photon(walls: &[Wall], width: usize, height: usize) -> Vec<u8> {
+// #[derive(Serialize, Deserialize)]
+// pub enum Msg {
+
+// }
+
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub walls: Vec<Wall>,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Config {
+    pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
+        Config { walls, width, height }
+    }
+}
+
+pub fn zen_photon(config: &Config) -> Vec<u8> {
     let _timer = Timer::new("Calculate");
+    let width = config.width;
+    let height = config.height;
 
     let mut brightness_data = vec![0; width * height];
 
@@ -384,7 +404,7 @@ pub fn zen_photon(walls: &[Wall], width: usize, height: usize) -> Vec<u8> {
         let max_brightness = 100.0;
 
         for _ in 0..30 {
-            match find_collision(walls, &ray) {
+            match find_collision(&config.walls, &ray) {
                 // match None {
                 None => {
                     line::draw_line(
