@@ -24,13 +24,6 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
         }
 
         let colored = shared::colorize(&state.config, &state.buffer);
-        log!("colored array with length {}", colored.len());
-
-        // let uarr = js_sys::Uint8ClampedArray::from(uarr.dyn_into::<JsValue>()?);
-        // log!("8 array with length {}", uarr.length());
-
-        // uarr.copy_to(&mut state.buffer);
-        // uarr.copy_to(&mut state.buffer);
 
         let mut clamped = Clamped(colored.clone());
         // let mut clamped = Clamped(state.buffer.clone());
@@ -53,16 +46,7 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
     Ok(())
 }
 
-#[wasm_bindgen]
-pub fn run() -> Result<(), JsValue> {
-    console_error_panic_hook::set_once();
-    let config = scenes::apple();
-
-    ui::init(&config)?;
-    let ctx = ui::ctx()?;
-
-    state::setState(config.into());
-
+fn make_worker() -> Result<web_sys::Worker, JsValue> {
     let worker = web_sys::Worker::new("../worker/dist/bundle.js")?;
     let f = Closure::wrap(
         Box::new(|evt: web_sys::MessageEvent| utils::try_log(|| on_message(evt)))
@@ -71,19 +55,25 @@ pub fn run() -> Result<(), JsValue> {
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
     f.forget();
 
-    // let worker2 = web_sys::Worker::new("../worker/dist/bundle.js")?;
-    // let f = Closure::wrap(
-    //     Box::new(|evt: web_sys::MessageEvent| utils::try_log(|| on_message(evt)))
-    //         as Box<FnMut(web_sys::MessageEvent)>,
-    // );
-    // worker2.set_onmessage(Some(f.as_ref().unchecked_ref()));
-    // f.forget();
+    Ok(worker)
+}
+
+#[wasm_bindgen]
+pub fn run() -> Result<(), JsValue> {
+    console_error_panic_hook::set_once();
+    let config = scenes::apple();
+
+    ui::init(&config)?;
+    let ctx = ui::ctx()?;
+
+    let worker = make_worker()?;
+
+    state::setState(config.into());
 
     state::try_with(|state| {
         log!("Sending a message to the worker");
         // TODO here I need to clean out the state.buffer probably
         worker.post_message(&JsValue::from_serde(&state.config).unwrap())?;
-        // worker2.post_message(&JsValue::from_serde(&state.config).unwrap())?;
         ctx.set_stroke_style(&JsValue::from_str("green"));
         for wall in state.config.walls.iter() {
             wall.kind.draw(&ctx);
@@ -91,6 +81,5 @@ pub fn run() -> Result<(), JsValue> {
         Ok(())
     });
 
-    // Ok(f.as_ref().unchecked_ref())
     Ok(())
 }

@@ -4,9 +4,12 @@ onmessage = (evt) => {
   waiting = evt.data
 }
 
+let timeout = null
+let requestId = 0;
+
 let loop = (times, fn) => {
   if (times === 0) return
-  setTimeout(() => {
+  timeout = setTimeout(() => {
     fn();
     loop(times - 1, fn)
   }, 1)
@@ -14,12 +17,13 @@ let loop = (times, fn) => {
 
 import("../crate/pkg").then(module => {
   let handle = data => {
+    clearTimeout(timeout);
     let res = module.process(data)
     postMessage(res.buffer, [res.buffer])
-    loop(20, () => {
-      let res = module.process(data)
-      postMessage(res.buffer, [res.buffer])
-    })
+    // loop(20, () => {
+    //   let res = module.process(data)
+    //   postMessage(res.buffer, [res.buffer])
+    // })
     // res = module.process(data)
     // postMessage(res.buffer, [res.buffer])
     // res = module.process(data)
