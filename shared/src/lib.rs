@@ -263,7 +263,7 @@ pub struct Properties {
 
 #[derive(Serialize, Deserialize)]
 pub struct Wall {
-    kind: WallType,
+    pub kind: WallType,
     properties: Properties,
 }
 
@@ -369,8 +369,8 @@ fn find_collision(
 }
 
 // #[derive(Serialize, Deserialize)]
-// pub enum Msg {
-
+// pub enum WorkerMsg {
+//     Finished(JsValue)
 // }
 
 #[derive(Serialize, Deserialize)]

@@ -9,6 +9,7 @@ module.exports = {
   entry: "./js/index.js",
   target: 'webworker',
   mode: 'production',
+  // mode: 'development',
   output: {
     path: dist,
     filename: "bundle.js"
@@ -24,6 +25,7 @@ module.exports = {
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "crate"),
       forceMode: 'production'
+      // forceMode: 'development',
     }),
   ]
 };

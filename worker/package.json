@@ -1,6 +1,7 @@
 {
   "scripts": {
     "start": "webpack-dev-server -d",
+    "watch": "webpack -w",
     "build": "webpack"
   },
   "devDependencies": {

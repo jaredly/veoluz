@@ -39,9 +39,15 @@ features = [
 version = "0.3.4"
 features = [
   'ImageData',
+  'ImageBitmap',
   'console',
   'CanvasRenderingContext2d',
+  'HtmlCanvasElement',
   'DedicatedWorkerGlobalScope',
+  'MessageEvent',
+  'Window',
+  'Document',
+  'Element',
   'Worker'
 ]
 

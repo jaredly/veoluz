@@ -4,7 +4,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData};
+use web_sys::{CanvasRenderingContext2d, ImageData, ImageBitmap};
+
+#[wasm_bindgen]
+extern "C" {
+    type DedicatedWorkerGlobalScope;
+    #[wasm_bindgen(js_namespace = global)]
+    pub fn createImageBitmap(data: &JsValue) -> js_sys::Promise;
+}
 
 fn global() -> web_sys::DedicatedWorkerGlobalScope {
     let glob: JsValue = js_sys::global().into();
@@ -31,25 +38,37 @@ pub struct IntervalHandle {
 pub fn run() -> Result<IntervalHandle, JsValue> {
     set_panic_hook();
 
+    // global().post_message(
+    //     &"hello".into()
+    // );
+
     let cb = Closure::wrap(Box::new(move |evt: web_sys::MessageEvent| {
         log!("Got a message!");
         let result = {
             let config: shared::Config = evt.data().into_serde().expect("Invalid data");
             let mut data = shared::zen_photon(&config);
             let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), config.width as u32, config.height as u32).expect("failed to make data");
-            let transfer_list = js_sys::Array::new();
-            let _ = transfer_list.push(data.as_ref());
-            global().post_message_with_transfer(
-                data.as_ref(),
-                &transfer_list.into()
-            )
+            log!("Creating a bitmap {}x{}", config.width, config.height);
+            let bitmap =  createImageBitmap(&data.into());
+            let closure = Closure::wrap(Box::new(move |value: JsValue| {
+                log!("Ok sending");
+                let bitmap: ImageBitmap = value.into();
+                let transfer_list = js_sys::Array::new();
+                // let _ = transfer_list.push(bitmap.as_ref());
+                global().post_message_with_transfer(
+                    bitmap.as_ref(),
+                    &transfer_list.into()
+                );
+            }) as Box<FnMut(JsValue)>);
+            bitmap.then(&closure);
+            closure.forget();
         };
-        match result {
-            Ok(()) => (),
-            Err(error) => {
-                log!("Failed I guess {:?}", error)
-            }
-        };
+        // match result {
+        //     Ok(()) => (),
+        //     Err(error) => {
+        //         log!("Failed I guess {:?}", error)
+        //     }
+        // };
         // log!("Data: {}", evt.data().as_string().expect("Expected data to be a string"))
     }) as Box<FnMut(web_sys::MessageEvent)>);
 
@@ -71,6 +90,6 @@ pub fn run() -> Result<IntervalHandle, JsValue> {
 fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
     // `set_panic_hook` function to get better error messages if we ever panic.
-    #[cfg(feature = "console_error_panic_hook")]
+    // #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 }
