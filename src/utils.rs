@@ -8,3 +8,16 @@ pub fn set_panic_hook() {
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 }
+
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+pub fn try_log<F: FnOnce() -> Result<(), wasm_bindgen::prelude::JsValue>>(f: F) {
+    match f() {
+        Ok(()) => (),
+        Err(err) => log!("{:?}", err),
+    }
+}
