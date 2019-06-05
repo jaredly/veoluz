@@ -10,20 +10,40 @@ use ncollide2d::shape::Ball;
 
 use std::f32::consts::PI;
 
-// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-// allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+#[macro_use]
+extern crate lazy_static;
 
-// extern crate rand;
+use std::sync::Mutex;
 
-use rand::random;
+// use rand::random;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData, ImageBitmap};
 
-fn rand() -> f32 {
-    rand::random::<f32>()
+struct State {
+    config: shared::Config,
+}
+
+// impl State {
+//     fn new() -> Self { State {config: shared::Config::new(vec![], width, height)}}
+// }
+
+lazy_static! {
+    static ref STATE: Mutex<Option<State>> = Mutex::new(None);
+}
+
+fn withOptState<F: FnOnce(&mut Option<State>)>(f: F) {
+    f(&mut STATE.lock().unwrap())
+}
+
+fn setState(state: State) {
+    withOptState(|wrapper| *wrapper = Some(state))
+}
+
+fn withState<F: FnOnce(&mut State)>(f: F) {
+    match STATE.lock().unwrap().as_mut() {
+        None => (),
+        Some(mut state) => f(&mut state)
+    }
 }
 
 macro_rules! log {
@@ -43,6 +63,7 @@ pub fn draw(
     _real: f64,
     _imaginary: f64,
 ) -> Result<(), JsValue> {
+
 
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
@@ -104,27 +125,27 @@ pub fn draw(
             Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
         )), 1.0 / index));
 
-        // walls.push(Wall::transparent(WallType::Circle(
-        //     Ball::new(r0 / 5.0),
-        //     Point2::new(
-        //         cx + (theta).cos() * r0 / 2.0,
-        //         cy + (theta).sin() * r0 / 2.0,
-        //     ),
-        //     // -PI,
-        //     // PI,
-        //     theta + PI / 2.0,
-        //     theta - PI / 2.0,
-        // ), 0.8));
-
-        walls.push(Wall::mirror(WallType::Circle(
+        walls.push(Wall::transparent(WallType::Circle(
             Ball::new(r0 / 5.0),
             Point2::new(
                 cx + (theta).cos() * r0 / 2.0,
                 cy + (theta).sin() * r0 / 2.0,
             ),
-            theta - PI / 2.0,
+            // -PI,
+            // PI,
             theta + PI / 2.0,
-        )));
+            theta - PI / 2.0,
+        ), 0.8));
+
+        // walls.push(Wall::mirror(WallType::Circle(
+        //     Ball::new(r0 / 5.0),
+        //     Point2::new(
+        //         cx + (theta).cos() * r0 / 2.0,
+        //         cy + (theta).sin() * r0 / 2.0,
+        //     ),
+        //     theta - PI / 2.0,
+        //     theta + PI / 2.0,
+        // )));
 
         // walls.push(Wall::mirror(WallType::Circle(
         //     Ball::new(radius),
@@ -142,6 +163,9 @@ pub fn draw(
     }
 
     let config = shared::Config::new(walls, width as usize, height as usize);
+    let cloned = config.clone();
+
+    setState(State { config: cloned });
 
     // let mut data = shared::zen_photon(&config);
     // let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
@@ -164,18 +188,30 @@ pub fn draw(
             let ctx = canvas.get_context("2d").expect("context").unwrap().dyn_into::<web_sys::CanvasRenderingContext2d>()?;
 
             // let array_buffer = js_sys::ArrayBuffer::from(evt.data());
-            let uarr = js_sys::Uint8ClampedArray::from(evt.data());
-            let mut dest = vec![0_u8;uarr.length() as usize];
-            uarr.copy_to(&mut dest);
-            let mut clamped = Clamped(dest);
+            let data = {
+                let _ = shared::Timer::new("convert the event.data into the imagedata");
 
-            let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(clamped.as_mut_slice()), width as u32, height as u32)?;
+                let uarr = js_sys::Uint8ClampedArray::from(evt.data());
+                let mut dest = vec![0_u8;uarr.length() as usize];
+                uarr.copy_to(&mut dest);
+                let mut clamped = Clamped(dest);
+
+                let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(clamped.as_mut_slice()), width as u32, height as u32)?;
+                data
+            };
+
             ctx.put_image_data(&data, 0.0, 0.0)?;
 
             // let data = ImageBitmap::from(evt.data());
             // ctx.draw_image_with_image_bitmap(&data, 0.0, 0.0).expect("Draw it in");
 
             ctx.set_stroke_style(&JsValue::from_str("green"));
+
+            withState(|state| {
+                for wall in state.config.walls.iter() {
+                    wall.kind.draw(&ctx)
+                }
+            });
 
             // for wall in config.walls.iter() {
             //     wall.kind.draw(&ctx);

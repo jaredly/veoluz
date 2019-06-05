@@ -4,11 +4,9 @@ onmessage = (evt) => {
   waiting = evt.data
 }
 
-
 import("../crate/pkg").then(module => {
   let handle = data => {
     let res = module.process(data)
-    // console.log('result', res)
     postMessage(res, [res.buffer])
   }
   if (waiting) {
