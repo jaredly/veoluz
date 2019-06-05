@@ -6,16 +6,8 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, ImageData, ImageBitmap};
 
-#[wasm_bindgen]
-extern "C" {
-    type DedicatedWorkerGlobalScope;
-    #[wasm_bindgen(js_namespace = global)]
-    pub fn createImageBitmap(data: &JsValue) -> js_sys::Promise;
-}
-
 fn global() -> web_sys::DedicatedWorkerGlobalScope {
     let glob: JsValue = js_sys::global().into();
-    // let scope: web_sys::DedicatedWorkerGlobalScope =
     glob.into()
 }
 
@@ -33,15 +25,15 @@ macro_rules! log {
 pub struct IntervalHandle {
     _closure: Closure<FnMut(web_sys::MessageEvent)>,
 }
+
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
 pub fn process(config: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
-            let config: shared::Config = config.into_serde().expect("Invalid data");
-            let mut data = shared::zen_photon(&config);
-            log!("Creating a bitmap {}x{}", config.width, config.height);
-
+    let config: shared::Config = config.into_serde().expect("Invalid data");
+    let mut data = shared::zen_photon(&config);
+    log!("Creating a bitmap {}x{}", config.width, config.height);
 
     Ok(Clamped(data))
 }
