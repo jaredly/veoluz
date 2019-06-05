@@ -376,17 +376,18 @@ fn find_collision(
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub walls: Vec<Wall>,
+    pub light_source: Point2<line::float>,
     pub width: usize,
     pub height: usize,
 }
 
 impl Config {
     pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
-        Config { walls, width, height }
+        Config { walls, width, height, light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0) }
     }
 }
 
-pub fn zen_photon(config: &Config) -> Vec<u8> {
+pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
     let _timer = Timer::new("Calculate");
     let width = config.width;
     let height = config.height;
@@ -394,18 +395,16 @@ pub fn zen_photon(config: &Config) -> Vec<u8> {
     let mut brightness_data = vec![0; width * height];
 
     // if we don't draw at all, we're still getting only 400k/sec
-    let point = Point2::new(width as line::float / 2.0, height as line::float / 2.0);
 
-    for r in 0..100_000 {
+    for _ in 0..rays {
         let direction = rand() * PI * 2.0;
         // let direction = (r as f32) / 180.0 * PI;
         let mut ray =
-            ncollide2d::query::Ray::new(point, Vector2::new(direction.cos(), direction.sin()));
+            ncollide2d::query::Ray::new(config.light_source, Vector2::new(direction.cos(), direction.sin()));
         let max_brightness = 100.0;
 
         for _ in 0..30 {
             match find_collision(&config.walls, &ray) {
-                // match None {
                 None => {
                     line::draw_line(
                         xy(&ray.origin),
@@ -436,32 +435,41 @@ pub fn zen_photon(config: &Config) -> Vec<u8> {
         }
     }
 
+    brightness_data
+}
+
+pub fn colorize(config: &Config, brightness_data: Vec<line::uint>) -> Vec<u8> {
     // something like 5% of the time is here
-    let _timer = Timer::new("Last bit");
+    let _timer = Timer::new("Colorize");
 
     let mut top = 0;
-    for x in 0..width {
-        for y in 0..height {
-            top = top.max(brightness_data[x + y * width]);
+    for x in 0..config.width {
+        for y in 0..config.height {
+            top = top.max(brightness_data[x + y * config.width]);
         }
     }
 
-    let mut data = vec![0; width * height * 4];
+    let mut data = vec![0; config.width * config.height * 4];
     let top = top as line::float;
     // let scale =
-    for x in 0..width {
-        for y in 0..height {
-            let index = (x + y * width) * 4;
-            let brightness = brightness_data[x + y * width];
+    for x in 0..config.width {
+        for y in 0..config.height {
+            let index = (x + y * config.width) * 4;
+            let brightness = brightness_data[x + y * config.width];
             data[index] = 255;
             data[index + 1] = 255;
             data[index + 2] = 255;
             data[index + 3] = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
-            // data[index + 3] = 255;
         }
     }
 
     data
+}
+
+pub fn zen_photon(config: &Config) -> Vec<u8> {
+    let brightness_data = calculate(&config, 100_000);
+
+    colorize(&config, brightness_data)
 }
 
 pub struct Timer<'a> {

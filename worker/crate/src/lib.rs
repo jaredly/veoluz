@@ -26,15 +26,25 @@ pub struct IntervalHandle {
     _closure: Closure<FnMut(web_sys::MessageEvent)>,
 }
 
+fn to_le(v: &mut [u32]) -> &[u8] {
+    for b in v.iter_mut() { *b = b.to_le() }
+    unsafe {
+        v.align_to().1
+    }
+}
+
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
 pub fn process(config: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
     let config: shared::Config = config.into_serde().expect("Invalid data");
+    // let mut data = shared::calculate(&config, 10_000);
     let mut data = shared::zen_photon(&config);
     log!("Creating a bitmap {}x{}", config.width, config.height);
 
+
+    // Ok(Clamped(to_le(&mut data).to_vec()))
     Ok(Clamped(data))
 }
 
