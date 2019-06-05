@@ -104,18 +104,27 @@ pub fn draw(
             Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
         )), 1.0 / index));
 
-        walls.push(Wall::transparent(WallType::Circle(
+        // walls.push(Wall::transparent(WallType::Circle(
+        //     Ball::new(r0 / 5.0),
+        //     Point2::new(
+        //         cx + (theta).cos() * r0 / 2.0,
+        //         cy + (theta).sin() * r0 / 2.0,
+        //     ),
+        //     // -PI,
+        //     // PI,
+        //     theta + PI / 2.0,
+        //     theta - PI / 2.0,
+        // ), 0.8));
+
+        walls.push(Wall::mirror(WallType::Circle(
             Ball::new(r0 / 5.0),
             Point2::new(
-                cx + (theta + td / 2.0).cos() * r0 / 2.0,
-                cy + (theta + td / 2.0).sin() * r0 / 2.0,
+                cx + (theta).cos() * r0 / 2.0,
+                cy + (theta).sin() * r0 / 2.0,
             ),
-            -PI,
-            // 0.0,
-            PI,
-            // theta - td / 2.0,
-            // theta + td * 1.5,
-        ), 1.1));
+            theta - PI / 2.0,
+            theta + PI / 2.0,
+        )));
 
         // walls.push(Wall::mirror(WallType::Circle(
         //     Ball::new(radius),
