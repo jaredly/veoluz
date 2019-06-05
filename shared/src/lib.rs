@@ -438,7 +438,7 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
     brightness_data
 }
 
-pub fn colorize(config: &Config, brightness_data: Vec<line::uint>) -> Vec<u8> {
+pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     // something like 5% of the time is here
     let _timer = Timer::new("Colorize");
 
@@ -469,7 +469,7 @@ pub fn colorize(config: &Config, brightness_data: Vec<line::uint>) -> Vec<u8> {
 pub fn zen_photon(config: &Config) -> Vec<u8> {
     let brightness_data = calculate(&config, 100_000);
 
-    colorize(&config, brightness_data)
+    colorize(&config, &brightness_data)
 }
 
 pub struct Timer<'a> {

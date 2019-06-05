@@ -4,13 +4,13 @@ use web_sys::CanvasRenderingContext2d;
 
 pub struct State {
     pub config: shared::Config,
-    pub buffer: Vec<u8>,
+    pub buffer: Vec<u32>,
 }
 
 impl From<shared::Config> for State {
     fn from(config: shared::Config) -> Self {
         State {
-            buffer: vec![0_u8; config.width * config.height * 4],
+            buffer: vec![0_u32; config.width * config.height],
             config,
         }
     }
