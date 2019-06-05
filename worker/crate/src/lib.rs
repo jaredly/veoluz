@@ -47,21 +47,36 @@ pub fn run() -> Result<IntervalHandle, JsValue> {
         let result = {
             let config: shared::Config = evt.data().into_serde().expect("Invalid data");
             let mut data = shared::zen_photon(&config);
-            let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), config.width as u32, config.height as u32).expect("failed to make data");
             log!("Creating a bitmap {}x{}", config.width, config.height);
-            let bitmap =  createImageBitmap(&data.into());
-            let closure = Closure::wrap(Box::new(move |value: JsValue| {
-                log!("Ok sending");
-                let bitmap: ImageBitmap = value.into();
-                let transfer_list = js_sys::Array::new();
-                // let _ = transfer_list.push(bitmap.as_ref());
-                global().post_message_with_transfer(
-                    bitmap.as_ref(),
-                    &transfer_list.into()
-                );
-            }) as Box<FnMut(JsValue)>);
-            bitmap.then(&closure);
-            closure.forget();
+
+            // let arr = Clamped(&mut data);
+            log!("> Making a view of the data that is {} long", data.len());
+            // let uarr: js_sys::Uint8ClampedArray = unsafe { std::mem::transmute(arr) };
+            let uarr = unsafe { js_sys::Uint8ClampedArray::view(&data) };
+            let to_transfer = uarr.buffer().slice_with_end(0, data.len() as u32);
+            log!("> Made the view, it is {} long, and the buffer is {} bytes long", uarr.length(), to_transfer.byte_length());
+            let transfer_list = js_sys::Array::new();
+            log!("> sending");
+            // let _ = transfer_list.push(to_transfer.as_ref());
+            global().post_message_with_transfer(
+                to_transfer.as_ref(),
+                &transfer_list.into()
+            ).expect("Worked");
+            log!("> K done");
+            // let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), config.width as u32, config.height as u32).expect("failed to make data");
+            // let bitmap =  createImageBitmap(&data.into());
+            // let closure = Closure::wrap(Box::new(move |value: JsValue| {
+            //     log!("Ok sending");
+            //     let bitmap: ImageBitmap = value.into();
+            //     let transfer_list = js_sys::Array::new();
+            //     // let _ = transfer_list.push(bitmap.as_ref());
+            //     global().post_message_with_transfer(
+            //         bitmap.as_ref(),
+            //         &transfer_list.into()
+            //     );
+            // }) as Box<FnMut(JsValue)>);
+            // bitmap.then(&closure);
+            // closure.forget();
         };
         // match result {
         //     Ok(()) => (),

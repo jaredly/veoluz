@@ -261,7 +261,7 @@ pub struct Properties {
     refraction: f32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Wall {
     pub kind: WallType,
     properties: Properties,
@@ -281,7 +281,7 @@ impl Wall {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum WallType {
     Line(Segment<line::float>),
     Circle(
@@ -373,7 +373,7 @@ fn find_collision(
 //     Finished(JsValue)
 // }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub walls: Vec<Wall>,
     pub width: usize,

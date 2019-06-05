@@ -36,19 +36,13 @@ use nalgebra as na;
 use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
 
 #[wasm_bindgen]
-pub struct ReturnValue {
-    closure: Closure<FnMut(web_sys::MessageEvent)>,
-    // f: &js_sys::Function,
-}
-
-#[wasm_bindgen]
 pub fn draw(
     ctx: &CanvasRenderingContext2d,
     width: u32,
     height: u32,
     _real: f64,
     _imaginary: f64,
-) -> Result<ReturnValue, JsValue> {
+) -> Result<(), JsValue> {
 
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
@@ -145,32 +139,59 @@ pub fn draw(
     // ctx.put_image_data(&data, 0.0, 0.0)?;
 
     use wasm_bindgen::JsCast;
+    let inner = config.clone();
 
     let worker = web_sys::Worker::new("../worker/dist/bundle.js")?;
     let f = Closure::wrap(Box::new(move |evt: web_sys::MessageEvent| {
-        log!("Got a message back");
 
-        let document = web_sys::window().expect("window").document().expect("document");
-        let canvas = document.get_element_by_id("drawing").expect("get canvas");
-        let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>().expect("canvas");
+        fn doit(evt: web_sys::MessageEvent, width: u32, height: u32) -> Result<(), JsValue> {
+            // let config = inner;
+            log!("Got a message back");
 
-        log!("Got back a message");
-        let data = ImageBitmap::from(evt.data());
-        let ctx = canvas.get_context("2d").expect("context").unwrap().dyn_into::<web_sys::CanvasRenderingContext2d>().expect("ctx");
-        // ctx.put_image_data(&data, 0.0, 0.0).expect("Put the data");
-        ctx.draw_image_with_image_bitmap(&data, width as f64 / 2.0, height as f64 / 2.0).expect("Draw it in");
+            let document = web_sys::window().expect("window").document().expect("Document");
+            let canvas = document.get_element_by_id("drawing").expect("get Canvas");
+            let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
 
-        ctx.set_stroke_style(&JsValue::from_str("green"));
-        // for wall in config.walls.iter() {
-        //     wall.kind.draw(&ctx);
-        // }
+            let ctx = canvas.get_context("2d").expect("context").unwrap().dyn_into::<web_sys::CanvasRenderingContext2d>()?;
+
+            log!("Got back a message");
+            let array_buffer = js_sys::ArrayBuffer::from(evt.data());
+            log!("Got a buffer, it is {} bytes long", array_buffer.byte_length());
+            let uarr = js_sys::Uint8ClampedArray::new(array_buffer.as_ref());
+            // let uarr = js_sys::Uint8ClampedArray::from(evt.data());
+            log!("Uarr");
+            let mut dest = vec![0_u8;uarr.length() as usize];
+            uarr.copy_to(&mut dest);
+            let mut clamped = Clamped(dest);
+            // let mut clamped: Clamped<&mut Vec<u8>> = unsafe { std::mem::transmute(uarr) };
+            log!("Clamped {}, {} -> into {} x {}", uarr.length(), clamped.len(), width as u32, height as u32);
+            let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(clamped.as_mut_slice()), width as u32, height as u32)?;
+            log!("Dataed");
+            ctx.put_image_data(&data, 0.0, 0.0);
+            log!("Drawed");
+
+            // let data = ImageBitmap::from(evt.data());
+            // ctx.draw_image_with_image_bitmap(&data, 0.0, 0.0).expect("Draw it in");
+
+            ctx.set_stroke_style(&JsValue::from_str("green"));
+            // for wall in config.walls.iter() {
+            //     wall.kind.draw(&ctx);
+            // }
+            Ok(())
+        }
+
+        match doit(evt, width, height) {
+            Ok(()) => (),
+            Err(err) => log!("{:?}", err)
+        }
 
     }) as Box<FnMut(web_sys::MessageEvent)>);
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
+    f.forget();
 
     log!("Sending a message to the working");
     worker.post_message(&JsValue::from_serde(&config).unwrap())?;
 
     // Ok(f.as_ref().unchecked_ref())
-    Ok(ReturnValue{closure: f})
+    Ok(())
 }
