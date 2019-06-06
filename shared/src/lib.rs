@@ -1,4 +1,5 @@
 pub mod line;
+pub mod messaging;
 use serde::{Serialize, Deserialize};
 
 use wasm_bindgen::prelude::*;

@@ -1,0 +1,14 @@
+
+use wasm_bindgen::prelude::*;
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+pub struct Message { pub id: usize, pub config: crate::Config}
+
+// enum MessageForWorker {
+//   Render { id: usize, config: crate::Config }
+// }
+
+// enum MessageForMain {
+//   Rendered { id: usize, data: js_sys::Uint32Array }
+// }

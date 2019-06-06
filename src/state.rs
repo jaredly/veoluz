@@ -3,10 +3,12 @@ use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
 pub struct State {
+    pub render_id: usize,
     pub ctx: CanvasRenderingContext2d,
     pub image_data: web_sys::ImageData,
     pub config: shared::Config,
     pub buffer: Vec<u32>,
+    pub workers: Vec<web_sys::Worker>,
 }
 
 // umm I dunno if this is cheating or something
@@ -18,11 +20,18 @@ unsafe impl Send for State {}
 impl From<shared::Config> for State {
     fn from(config: shared::Config) -> Self {
         State {
+            render_id: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
             image_data: web_sys::ImageData::new_with_sw(config.width as u32, config.height as u32).expect("Can't make an imagedata"),
             buffer: vec![0_u32; config.width * config.height],
+            workers: vec![],
             config,
         }
+    }
+}
+impl State {
+    pub fn reset_buffer(&mut self) {
+        self.buffer = vec![0_u32; self.config.width * self.config.height];
     }
 }
 

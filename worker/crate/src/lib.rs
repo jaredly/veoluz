@@ -35,11 +35,11 @@ fn to_le(v: &mut [u32]) -> &[u8] {
 
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
-pub fn process(config: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
+pub fn process(message: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
-    let config: shared::Config = config.into_serde().expect("Invalid data");
-    let mut data = shared::calculate(&config, 100_000);
+    let message: shared::messaging::Message = message.into_serde().expect("Invalid message");
+    let mut data = shared::calculate(&message.config, 100_000);
     // log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
     Ok(Clamped(to_le(&mut data).to_vec()))

@@ -12,11 +12,24 @@ mod scenes;
 mod state;
 mod ui;
 
-fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
-    let buff = js_sys::ArrayBuffer::from(evt.data());
+fn parse_worker_message(evt: web_sys::MessageEvent) -> Result<(usize, js_sys::Uint32Array), JsValue> {
+    let obj = evt.data();
+    let id = js_sys::Reflect::get(&obj, &"id".into())?.as_f64().expect("should be a number") as usize;
+    let buffer = js_sys::Reflect::get(&obj, &"buffer".into())?;
+    let buff = js_sys::ArrayBuffer::from(buffer);
     let uarr = js_sys::Uint32Array::new_with_byte_offset(&buff.dyn_into::<JsValue>()?, 0);
+    Ok((id, uarr))
+}
+
+fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
+    let (id, uarr) = parse_worker_message(evt)?;
 
     state::with(|state| -> Result<(), JsValue> {
+        if id != state.render_id {
+            // this is old data, disregard
+            return Ok(())
+        }
+
         let mut bright = vec![0_u32;state.config.width * state.config.height];
         uarr.copy_to(&mut bright);
         for i in 0..bright.len() {
@@ -58,23 +71,31 @@ fn make_worker() -> Result<web_sys::Worker, JsValue> {
     Ok(worker)
 }
 
+fn async_render(state: &mut state::State) -> Result<(), JsValue> {
+    state.reset_buffer();
+    state.render_id += 1;
+
+    for worker in state.workers.iter() {
+        worker.post_message(&JsValue::from_serde(&shared::messaging::Message {config: state.config.clone(), id: state.render_id}).unwrap())?;
+    }
+    state.ctx.set_stroke_style(&JsValue::from_str("green"));
+    for wall in state.config.walls.iter() {
+        wall.kind.draw(&state.ctx);
+    }
+    Ok(())
+}
+
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     let config = scenes::apple();
 
-    let worker = make_worker()?;
-
     state::setState(config.into());
 
     state::try_with(|state| {
-        log!("Sending a message to the worker");
-        // TODO here I need to clean out the state.buffer probably
-        worker.post_message(&JsValue::from_serde(&state.config).unwrap())?;
-        state.ctx.set_stroke_style(&JsValue::from_str("green"));
-        for wall in state.config.walls.iter() {
-            wall.kind.draw(&state.ctx);
-        }
+        state.workers.push(make_worker()?);
+        log!("Initial render!");
+        async_render(state)?;
         Ok(())
     });
 
