@@ -221,7 +221,11 @@ fn bounce_ray(
                     p
                 }
                 None => {
-                    let p = ray.point_at(toi + 20.1);
+                    let p = ray.point_at(toi - 0.1);
+                    let ray_dir = ray.dir.y.atan2(ray.dir.x);
+                    let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
+                    let ray_reflected = reflect(ray_dir, normal_dir);
+        ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
                     p
                 }
             }
@@ -248,14 +252,23 @@ fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, proper
     let opposite = angle_norm(n + PI);
     let diff = ray_dir - opposite;
     let mid = (properties.refraction * diff.sin()).asin();
-    let new_dir = mid + opposite;
-    let d = angle_norm(new_dir - normal_dir);
-    if d > PI / 2.0 || d < -PI / 2.0 {
+    if mid.is_nan() {
         None
     } else {
 
+    let new_dir = mid + opposite;
+    // let d = angle_norm(new_dir - n);
+    // log!("Refract: ray_dir {}, opposite {}, new_dir {}, d {}, diff {}, mid {}",
+    // deg(ray_dir),deg(opposite),deg(new_dir),deg(d),deg(diff),deg(mid)
+    // );
+    // if d > PI / 2.0 || d < -PI / 2.0 {
+    // // if d < PI / 2.0 && d > -PI / 2.0 {
+    //     None
+    // } else {
+
         // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
         Some(new_dir)
+    // }
     }
 }
 
