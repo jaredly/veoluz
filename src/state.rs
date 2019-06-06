@@ -29,9 +29,57 @@ impl From<shared::Config> for State {
         }
     }
 }
+
 impl State {
     pub fn reset_buffer(&mut self) {
         self.buffer = vec![0_u32; self.config.width * self.config.height];
+    }
+
+    pub fn handle_render(&mut self, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
+        if id != self.render_id {
+            // this is old data, disregard
+            return Ok(())
+        }
+
+        let mut bright = vec![0_u32;self.config.width * self.config.height];
+        array.copy_to(&mut bright);
+        for i in 0..bright.len() {
+            self.buffer[i] += bright[i];
+        }
+
+        let colored = shared::colorize(&self.config, &self.buffer);
+
+        let mut clamped = wasm_bindgen::Clamped(colored.clone());
+        // let mut clamped = Clamped(state.buffer.clone());
+        let data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+            wasm_bindgen::Clamped(clamped.as_mut_slice()),
+            self.config.width as u32,
+            self.config.height as u32,
+        )?;
+        self.image_data = data;
+
+        self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+        self.ctx.set_stroke_style(&JsValue::from_str("green"));
+
+        for wall in self.config.walls.iter() {
+            wall.kind.draw(&self.ctx)
+        }
+        Ok(())
+
+    }
+
+    pub fn async_render(&mut self) -> Result<(), JsValue> {
+        self.reset_buffer();
+        self.render_id += 1;
+
+        for worker in self.workers.iter() {
+            worker.post_message(&JsValue::from_serde(&shared::messaging::Message {config: self.config.clone(), id: self.render_id}).unwrap())?;
+        }
+        self.ctx.set_stroke_style(&JsValue::from_str("green"));
+        for wall in self.config.walls.iter() {
+            wall.kind.draw(&self.ctx);
+        }
+        Ok(())
     }
 }
 
