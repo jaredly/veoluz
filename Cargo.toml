@@ -41,6 +41,10 @@ version = "0.3.4"
 features = [
   'ImageData',
   'ImageBitmap',
+  'EventTarget',
+  'MouseEvent',
+  'Event',
+  'DomRect',
   'console',
   'CanvasRenderingContext2d',
   'HtmlCanvasElement',

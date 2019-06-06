@@ -2,9 +2,9 @@ use wasm_bindgen::prelude::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_bindgen::JsCast;
 use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData, ImageBitmap};
+use wasm_bindgen::JsCast;
+use web_sys::{CanvasRenderingContext2d, ImageBitmap, ImageData};
 
 fn global() -> web_sys::DedicatedWorkerGlobalScope {
     let glob: JsValue = js_sys::global().into();
@@ -27,10 +27,10 @@ pub struct IntervalHandle {
 }
 
 fn to_le(v: &mut [u32]) -> &[u8] {
-    for b in v.iter_mut() { *b = b.to_le() }
-    unsafe {
-        v.align_to().1
+    for b in v.iter_mut() {
+        *b = b.to_le()
     }
+    unsafe { v.align_to().1 }
 }
 
 // Called by our JS entry point to run the example.
@@ -39,7 +39,7 @@ pub fn process(message: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
     let message: shared::messaging::Message = message.into_serde().expect("Invalid message");
-    let mut data = shared::calculate(&message.config, 100_000);
+    let mut data = shared::calculate(&message.config, message.count);
     // log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
     Ok(Clamped(to_le(&mut data).to_vec()))

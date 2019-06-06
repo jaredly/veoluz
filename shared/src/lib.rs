@@ -325,6 +325,79 @@ impl WallType {
         }
     }
 
+    pub fn check_handle(&self, pos: &Point2<line::float>, size: line::float) -> Option<usize> {
+        let dist = size * size;
+        for (i, handle) in self.handles().iter().enumerate() {
+            if (handle - pos).norm_squared() < dist {
+                return Some(i)
+            }
+        }
+        None
+    }
+
+    pub fn move_handle(&mut self, id: usize, pos: &Point2<line::float>) {
+        match self {
+            WallType::Line(wall) => match id {
+                0 => *wall = Segment::new(*pos, wall.b().clone()),
+                1 => *wall = Segment::new(wall.a().clone(), *pos),
+                _ => ()
+            }
+            WallType::Circle(circle, center, t0, t1) => match id {
+                0 => *center = *pos,
+                1 => {
+                    let d = pos - *center;
+                    *t0 = d.y.atan2(d.x);
+                    *circle = Ball::new(d.norm_squared().sqrt());
+                }
+                2 => {
+                    let d = pos - *center;
+                    *t1 = d.y.atan2(d.x);
+                    *circle = Ball::new(d.norm_squared().sqrt());
+                }
+                _ => ()
+            }
+        }
+    }
+
+    pub fn handles(&self) -> Vec<Point2<line::float>> {
+        match self {
+            WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
+            WallType::Circle(circle, center, t0, t1) => vec![
+                center.clone(),
+                Point2::new(
+                    center.x + t0.cos() * circle.radius(),
+                    center.y + t0.sin() * circle.radius()
+                ),
+                Point2::new(
+                    center.x + t1.cos() * circle.radius(),
+                    center.y + t1.sin() * circle.radius()
+                ),
+            ]
+
+        }
+    }
+
+    pub fn draw_handles(&self, ctx: &CanvasRenderingContext2d, size: f64, selected: Option<usize>) -> Result<(), JsValue> {
+        for (i, handle) in self.handles().iter().enumerate() {
+            ctx.begin_path();
+            ctx.ellipse(
+                handle.x as f64,
+                handle.y as f64,
+                size,
+                size,
+                0.0,
+                0.0,
+                PI as f64 * 2.0
+            )?;
+            match selected {
+                Some(s) if s == i => ctx.fill(),
+                _ => ctx.stroke()
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         match self {
             WallType::Line(wall) => {

@@ -4,6 +4,7 @@ use web_sys::CanvasRenderingContext2d;
 
 pub struct State {
     pub render_id: usize,
+    pub last_rendered: usize,
     pub ctx: CanvasRenderingContext2d,
     pub image_data: web_sys::ImageData,
     pub config: shared::Config,
@@ -21,6 +22,7 @@ impl From<shared::Config> for State {
     fn from(config: shared::Config) -> Self {
         State {
             render_id: 0,
+            last_rendered: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
             image_data: web_sys::ImageData::new_with_sw(config.width as u32, config.height as u32)
                 .expect("Can't make an imagedata"),
@@ -37,9 +39,13 @@ impl State {
     }
 
     pub fn handle_render(&mut self, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
-        if id != self.render_id {
+        if id < self.last_rendered {
             // this is old data, disregard
             return Ok(());
+        }
+        if id > self.last_rendered {
+            self.reset_buffer();
+            self.last_rendered = id;
         }
 
         let mut bright = vec![0_u32; self.config.width * self.config.height];
@@ -60,16 +66,12 @@ impl State {
         self.image_data = data;
 
         self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
-        self.ctx.set_stroke_style(&JsValue::from_str("green"));
 
-        for wall in self.config.walls.iter() {
-            wall.kind.draw(&self.ctx)
-        }
         Ok(())
     }
 
-    pub fn async_render(&mut self) -> Result<(), JsValue> {
-        self.reset_buffer();
+    pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
+        // self.reset_buffer();
         self.render_id += 1;
 
         for worker in self.workers.iter() {
@@ -77,6 +79,7 @@ impl State {
                 &JsValue::from_serde(&shared::messaging::Message {
                     config: self.config.clone(),
                     id: self.render_id,
+                    count: if small { 10_000 } else { 100_000 },
                 })
                 .unwrap(),
             )?;
