@@ -48,7 +48,8 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
-    let config = scenes::apple();
+    let config = scenes::circles();
+    // let config = scenes::apple();
     // let config = scenes::refraction_test();
 
     state::setState(config.into());

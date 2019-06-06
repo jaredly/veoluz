@@ -117,6 +117,38 @@ pub fn apple() -> shared::Config {
 }
 
 
+pub fn circles() -> shared::Config {
+    let width = 1024;
+    let height = 576;
+    let cx = (width / 2) as line::float;
+    let cy = (height / 2) as line::float;
+    let mut walls = vec![ ];
+
+    let count = 10;
+
+    let radius = 100.0;
+    let by = line::PI * 2.0 / (count as line::float);
+
+    let r0 = 100.0;
+
+    for i in 0..count {
+        let theta = i as line::float * by;
+
+        walls.push(Wall::transparent(
+            WallType::Circle(
+                Ball::new(r0 / 5.0),
+                Point2::new(cx + (theta).cos() * r0, cy + (theta).sin() * r0),
+                -PI,
+                PI,
+            ),
+            if i % 2 == 0 { 0.8 } else { 1.0 / 0.8 },
+        ));
+
+    }
+    shared::Config::new(walls, width as usize, height as usize)
+}
+
+
 pub fn refraction_test() -> shared::Config {
     let width = 1024;
     let height = 576;
