@@ -32,13 +32,13 @@ fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
             state.config.width as u32,
             state.config.height as u32,
         )?;
+        state.image_data = data;
 
-        let ctx = ui::ctx()?;
-        ctx.put_image_data(&data, 0.0, 0.0)?;
-        ctx.set_stroke_style(&JsValue::from_str("green"));
+        state.ctx.put_image_data(&state.image_data, 0.0, 0.0)?;
+        state.ctx.set_stroke_style(&JsValue::from_str("green"));
 
         for wall in state.config.walls.iter() {
-            wall.kind.draw(&ctx)
+            wall.kind.draw(&state.ctx)
         }
         Ok(())
     })?;
@@ -63,9 +63,6 @@ pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     let config = scenes::apple();
 
-    ui::init(&config)?;
-    let ctx = ui::ctx()?;
-
     let worker = make_worker()?;
 
     state::setState(config.into());
@@ -74,9 +71,9 @@ pub fn run() -> Result<(), JsValue> {
         log!("Sending a message to the worker");
         // TODO here I need to clean out the state.buffer probably
         worker.post_message(&JsValue::from_serde(&state.config).unwrap())?;
-        ctx.set_stroke_style(&JsValue::from_str("green"));
+        state.ctx.set_stroke_style(&JsValue::from_str("green"));
         for wall in state.config.walls.iter() {
-            wall.kind.draw(&ctx);
+            wall.kind.draw(&state.ctx);
         }
         Ok(())
     });
