@@ -9,7 +9,7 @@ pub struct State {
     pub image_data: web_sys::ImageData,
     pub config: shared::Config,
     pub buffer: Vec<u32>,
-    pub workers: Vec<web_sys::Worker>,
+    pub workers: Vec<(web_sys::Worker, bool, Option<shared::messaging::Message>)>,
 }
 
 // umm I dunno if this is cheating or something
@@ -38,7 +38,15 @@ impl State {
         self.buffer = vec![0_u32; self.config.width * self.config.height];
     }
 
-    pub fn handle_render(&mut self, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
+    pub fn add_worker(&mut self, worker: web_sys::Worker) {
+        self.workers.push((
+            worker,
+            false,
+            None
+        ))
+    }
+
+    pub fn handle_render(&mut self, worker: usize, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
         if id < self.last_rendered {
             // this is old data, disregard
             return Ok(());
@@ -67,26 +75,37 @@ impl State {
 
         self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
 
+        let (worker, busy, queued) = &mut self.workers[worker];
+        match queued {
+            None => *busy = false,
+            Some(message) => {
+                worker.post_message(&JsValue::from_serde(message).unwrap())?;
+                *queued = None
+            }
+        }
+
         Ok(())
     }
 
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
-        // self.reset_buffer();
         self.render_id += 1;
 
-        for worker in self.workers.iter() {
-            worker.post_message(
-                &JsValue::from_serde(&shared::messaging::Message {
-                    config: self.config.clone(),
-                    id: self.render_id,
-                    count: if small { 10_000 } else { 100_000 },
-                })
-                .unwrap(),
-            )?;
-        }
-        self.ctx.set_stroke_style(&JsValue::from_str("green"));
-        for wall in self.config.walls.iter() {
-            wall.kind.draw(&self.ctx);
+        let message = shared::messaging::Message {
+            config: self.config.clone(),
+            id: self.render_id,
+            count: if small { 10_000 } else { 100_000 },
+        };
+
+        for (worker, busy, queued) in self.workers.iter_mut() {
+            if *busy {
+                *queued = Some(message.clone())
+            } else {
+                *busy = true;
+                worker.post_message(
+                    &JsValue::from_serde(&message)
+                    .unwrap(),
+                )?;
+            }
         }
         Ok(())
     }

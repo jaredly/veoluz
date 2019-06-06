@@ -25,18 +25,18 @@ fn parse_worker_message(
     Ok((id, uarr))
 }
 
-fn on_message(evt: web_sys::MessageEvent) -> Result<(), JsValue> {
+fn on_message(wid: usize, evt: web_sys::MessageEvent) -> Result<(), JsValue> {
     let (id, uarr) = parse_worker_message(evt)?;
 
-    state::with(|state| state.handle_render(id, uarr))?;
+    state::with(|state| state.handle_render(wid, id, uarr))?;
 
     Ok(())
 }
 
-fn make_worker() -> Result<web_sys::Worker, JsValue> {
+fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
     let worker = web_sys::Worker::new("../worker/dist/bundle.js")?;
     let f = Closure::wrap(
-        Box::new(|evt: web_sys::MessageEvent| utils::try_log(|| on_message(evt)))
+        Box::new(move |evt: web_sys::MessageEvent| utils::try_log(|| on_message(wid, evt)))
             as Box<FnMut(web_sys::MessageEvent)>,
     );
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
@@ -53,7 +53,7 @@ pub fn run() -> Result<(), JsValue> {
     state::setState(config.into());
 
     state::try_with(|state| {
-        state.workers.push(make_worker()?);
+        state.add_worker(make_worker(0)?);
         log!("Initial render!");
         state.async_render(false);
         Ok(())
