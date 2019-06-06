@@ -19,7 +19,48 @@ fn draw_image(state: &State) -> Result<(), JsValue> {
     state.ctx.put_image_data(&state.image_data, 0.0, 0.0)
 }
 
-fn draw_walls(state: &State, ui: &Option<(usize, usize)>) {
+fn draw_laser(state: &State) -> Result<(), JsValue> {
+    let mut ray =
+        ncollide2d::query::Ray::new(state.config.light_source, nalgebra::Vector2::new(0.0, 1.0));
+    for i in 0..10 {
+        match shared::find_collision(&state.config.walls, &ray) {
+            None => {
+                state.ctx.set_stroke_style(&"red".into());
+                state.ctx.begin_path();
+                state.ctx.move_to(ray.origin.x as f64, ray.origin.y as f64);
+                let p = ray.point_at(600.0);
+                state.ctx.line_to(p.x as f64, p.y as f64);
+                state.ctx.stroke();
+                break;
+            }
+            Some((toi, properties, left_side, normal)) => {
+                let (new_origin, stop) = shared::bounce_ray(&mut ray, toi, properties, left_side, normal);
+
+                state.ctx.set_stroke_style(&"red".into());
+                state.ctx.begin_path();
+                state.ctx.move_to(ray.origin.x as f64, ray.origin.y as f64);
+                state.ctx.line_to(new_origin.x as f64, new_origin.y as f64);
+                state.ctx.stroke();
+
+                let n = nalgebra::normalize(&normal);
+                state.ctx.set_stroke_style(&"orange".into());
+                state.ctx.begin_path();
+                state.ctx.move_to(new_origin.x as f64, new_origin.y as f64);
+                state.ctx.line_to((new_origin.x + n.x * 20.0) as f64, (new_origin.y + n.y * 20.0) as f64);
+                state.ctx.stroke();
+
+                ray.origin = new_origin;
+                if stop {
+                    break;
+                }
+            }
+        }
+
+    }
+    Ok(())
+}
+
+fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue> {
     state.ctx.set_stroke_style(&JsValue::from_str("green"));
     state.ctx.set_fill_style(&JsValue::from_str("#7fa"));
 
@@ -32,8 +73,10 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) {
                 Some((wid, id)) if *wid == i => Some(*id),
                 _ => None,
             },
-        );
+        )?;
     }
+    draw_laser(&state)?;
+    Ok(())
 }
 
 macro_rules! listen {

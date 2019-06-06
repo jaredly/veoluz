@@ -125,7 +125,7 @@ fn ray_arc_collision(
             if is_between(place, arc.2, arc.3) {
                 Some(RayIntersection::new(
                     closer,
-                    normal,
+                    -normal,
                     ncollide2d::shape::FeatureId::Face(0),
                 ))
             } else {
@@ -187,7 +187,7 @@ fn check(v: f32) -> bool {
     }
 }
 
-fn bounce_ray(
+pub fn bounce_ray(
     ray: &mut Ray<line::float>,
     toi: line::float,
     properties: Properties,
@@ -454,7 +454,7 @@ impl WallType {
     }
 }
 
-fn find_collision(
+pub fn find_collision(
     walls: &[Wall],
     ray: &Ray<line::float>,
 ) -> Option<(line::float, Properties, bool, Vector2<line::float>)> {
