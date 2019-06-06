@@ -209,21 +209,32 @@ fn bounce_ray(
         ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
         (new_origin, false)
     } else {
-        let new_origin = ray.point_at(toi + 0.1);
 
         // sin(t) / sin(t1) = index
         // t = asin(index * sing(t1))
-        if properties.refraction != 1.0 {
+        let new_origin = if properties.refraction != 1.0 {
             let new_dir = refract(&ray.dir, &normal, &properties, left_side);
-            ray.dir = Vector2::new(new_dir.cos(), new_dir.sin());
-        }
+            match new_dir {
+                Some(new_dir) => {
+                    let p = ray.point_at(toi + 0.1);
+                    ray.dir = Vector2::new(new_dir.cos(), new_dir.sin());
+                    p
+                }
+                None => {
+                    let p = ray.point_at(toi + 20.1);
+                    p
+                }
+            }
+        } else {
+            ray.point_at(toi + 0.1)
+        };
         // TODO refraction
         (new_origin, false)
     }
 }
 
 #[inline]
-fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, properties: &Properties, left_side: bool) -> line::float {
+fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, properties: &Properties, left_side: bool) -> Option<line::float> {
     let ray_dir = ray_dir.y.atan2(ray_dir.x);
     let n = normal.y.atan2(normal.x);
     let normal_dir = n + PI / 2.0;
@@ -236,9 +247,16 @@ fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, proper
     let index = if left_side { properties.refraction } else { 1.0 / properties.refraction};
     let opposite = angle_norm(n + PI);
     let diff = ray_dir - opposite;
-    let new_dir = (properties.refraction * diff.sin()).asin() + opposite;
-    // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
-    new_dir
+    let mid = (properties.refraction * diff.sin()).asin();
+    let new_dir = mid + opposite;
+    let d = angle_norm(new_dir - normal_dir);
+    if d > PI / 2.0 || d < -PI / 2.0 {
+        None
+    } else {
+
+        // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
+        Some(new_dir)
+    }
 }
 
 use ncollide2d::shape::Segment;
