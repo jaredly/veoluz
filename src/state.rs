@@ -22,7 +22,8 @@ impl From<shared::Config> for State {
         State {
             render_id: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
-            image_data: web_sys::ImageData::new_with_sw(config.width as u32, config.height as u32).expect("Can't make an imagedata"),
+            image_data: web_sys::ImageData::new_with_sw(config.width as u32, config.height as u32)
+                .expect("Can't make an imagedata"),
             buffer: vec![0_u32; config.width * config.height],
             workers: vec![],
             config,
@@ -38,10 +39,10 @@ impl State {
     pub fn handle_render(&mut self, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
         if id != self.render_id {
             // this is old data, disregard
-            return Ok(())
+            return Ok(());
         }
 
-        let mut bright = vec![0_u32;self.config.width * self.config.height];
+        let mut bright = vec![0_u32; self.config.width * self.config.height];
         array.copy_to(&mut bright);
         for i in 0..bright.len() {
             self.buffer[i] += bright[i];
@@ -65,7 +66,6 @@ impl State {
             wall.kind.draw(&self.ctx)
         }
         Ok(())
-
     }
 
     pub fn async_render(&mut self) -> Result<(), JsValue> {
@@ -73,7 +73,13 @@ impl State {
         self.render_id += 1;
 
         for worker in self.workers.iter() {
-            worker.post_message(&JsValue::from_serde(&shared::messaging::Message {config: self.config.clone(), id: self.render_id}).unwrap())?;
+            worker.post_message(
+                &JsValue::from_serde(&shared::messaging::Message {
+                    config: self.config.clone(),
+                    id: self.render_id,
+                })
+                .unwrap(),
+            )?;
         }
         self.ctx.set_stroke_style(&JsValue::from_str("green"));
         for wall in self.config.walls.iter() {

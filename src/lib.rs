@@ -12,9 +12,13 @@ mod scenes;
 mod state;
 mod ui;
 
-fn parse_worker_message(evt: web_sys::MessageEvent) -> Result<(usize, js_sys::Uint32Array), JsValue> {
+fn parse_worker_message(
+    evt: web_sys::MessageEvent,
+) -> Result<(usize, js_sys::Uint32Array), JsValue> {
     let obj = evt.data();
-    let id = js_sys::Reflect::get(&obj, &"id".into())?.as_f64().expect("should be a number") as usize;
+    let id = js_sys::Reflect::get(&obj, &"id".into())?
+        .as_f64()
+        .expect("should be a number") as usize;
     let buffer = js_sys::Reflect::get(&obj, &"buffer".into())?;
     let buff = js_sys::ArrayBuffer::from(buffer);
     let uarr = js_sys::Uint32Array::new_with_byte_offset(&buff.dyn_into::<JsValue>()?, 0);
