@@ -163,6 +163,24 @@ pub fn playground() -> shared::Config {
             WallType::Line(Segment::new(Point2::new(710.0, 100.0), Point2::new(710.0, 400.0))),
             2.4
         ),
+        Wall::transparent(
+            WallType::Circle(
+                Ball::new(100.0),
+                Point2::new(720.0, 300.0),
+                -PI,
+                PI,
+            ),
+            1.0 / 2.4
+        ),
+        Wall::transparent(
+            WallType::Circle(
+                Ball::new(100.0),
+                Point2::new(820.0, 300.0),
+                -PI,
+                PI,
+            ),
+            2.4
+        ),
 
     ];
 
