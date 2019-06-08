@@ -35,10 +35,9 @@ fn on_message(wid: usize, evt: web_sys::MessageEvent) -> Result<(), JsValue> {
 
 fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
     let worker = web_sys::Worker::new("../worker/dist/bundle.js")?;
-    let f = Closure::wrap(
-        Box::new(move |evt: web_sys::MessageEvent| utils::try_log(|| on_message(wid, evt)))
-            as Box<FnMut(web_sys::MessageEvent)>,
-    );
+    let f = Closure::wrap(Box::new(move |evt: web_sys::MessageEvent| {
+        utils::try_log(|| on_message(wid, evt))
+    }) as Box<FnMut(web_sys::MessageEvent)>);
     worker.set_onmessage(Some(f.as_ref().unchecked_ref()));
     f.forget();
 

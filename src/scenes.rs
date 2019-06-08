@@ -121,7 +121,7 @@ pub fn circle_row() -> shared::Config {
     let height = 576;
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
-    let mut walls = vec![ ];
+    let mut walls = vec![];
 
     let count = 10;
 
@@ -136,7 +136,7 @@ pub fn circle_row() -> shared::Config {
         walls.push(Wall::transparent(
             WallType::Circle(
                 Ball::new(r0 / 5.0),
-                Point2::new(cx - r0 * count as f32/ 4.0 + r0 * i as f32 / 2.0, cy),
+                Point2::new(cx - r0 * count as f32 / 4.0 + r0 * i as f32 / 2.0, cy),
                 -PI,
                 PI,
             ),
@@ -163,7 +163,6 @@ pub fn circle_row() -> shared::Config {
     }
 
     shared::Config::new(walls, width as usize, height as usize)
-
 }
 
 pub fn circles() -> shared::Config {
@@ -171,7 +170,7 @@ pub fn circles() -> shared::Config {
     let height = 576;
     let cx = (width / 2) as line::float;
     let cy = (height / 2) as line::float;
-    let mut walls = vec![ ];
+    let mut walls = vec![];
 
     let count = 10;
 
@@ -192,11 +191,9 @@ pub fn circles() -> shared::Config {
             ),
             if i % 2 == 0 { 0.8 } else { 1.0 / 0.8 },
         ));
-
     }
     shared::Config::new(walls, width as usize, height as usize)
 }
-
 
 pub fn refraction_test() -> shared::Config {
     let width = 1024;
@@ -256,7 +253,7 @@ pub fn refraction_test() -> shared::Config {
                 Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
                 Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
             )),
-            if (i % 2 == 0 ) { index } else { 1.0 / index},
+            if (i % 2 == 0) { index } else { 1.0 / index },
         ));
 
         // walls.push(Wall::transparent(

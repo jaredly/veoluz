@@ -39,14 +39,15 @@ impl State {
     }
 
     pub fn add_worker(&mut self, worker: web_sys::Worker) {
-        self.workers.push((
-            worker,
-            false,
-            None
-        ))
+        self.workers.push((worker, false, None))
     }
 
-    pub fn handle_render(&mut self, worker: usize, id: usize, array: js_sys::Uint32Array) -> Result<(), JsValue> {
+    pub fn handle_render(
+        &mut self,
+        worker: usize,
+        id: usize,
+        array: js_sys::Uint32Array,
+    ) -> Result<(), JsValue> {
         if id < self.last_rendered {
             // this is old data, disregard
             return Ok(());
@@ -101,10 +102,7 @@ impl State {
                 *queued = Some(message.clone())
             } else {
                 *busy = true;
-                worker.post_message(
-                    &JsValue::from_serde(&message)
-                    .unwrap(),
-                )?;
+                worker.post_message(&JsValue::from_serde(&message).unwrap())?;
             }
         }
         Ok(())

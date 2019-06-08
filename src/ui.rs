@@ -34,7 +34,8 @@ fn draw_laser(state: &State) -> Result<(), JsValue> {
                 break;
             }
             Some((toi, properties, left_side, normal)) => {
-                let (new_origin, stop) = shared::bounce_ray(&mut ray, toi, properties, left_side, normal);
+                let (new_origin, stop) =
+                    shared::bounce_ray(&mut ray, toi, properties, left_side, normal);
 
                 state.ctx.set_stroke_style(&"red".into());
                 state.ctx.begin_path();
@@ -43,16 +44,18 @@ fn draw_laser(state: &State) -> Result<(), JsValue> {
                 state.ctx.stroke();
 
                 let n = nalgebra::normalize(&normal);
-                state.ctx.set_stroke_style(
-                    &(if left_side {
-                        "blue"
-                    } else {
-                        "orange"
-                    }).into()
-                    );
+                state
+                    .ctx
+                    .set_stroke_style(&(if left_side { "blue" } else { "orange" }).into());
                 state.ctx.begin_path();
-                state.ctx.move_to((new_origin.x - n.x * 5.0) as f64, (new_origin.y- n.y * 5.0)  as f64);
-                state.ctx.line_to((new_origin.x + n.x * 15.0) as f64, (new_origin.y + n.y * 15.0) as f64);
+                state.ctx.move_to(
+                    (new_origin.x - n.x * 5.0) as f64,
+                    (new_origin.y - n.y * 5.0) as f64,
+                );
+                state.ctx.line_to(
+                    (new_origin.x + n.x * 15.0) as f64,
+                    (new_origin.y + n.y * 15.0) as f64,
+                );
                 state.ctx.stroke();
 
                 ray.origin = new_origin;
@@ -61,7 +64,6 @@ fn draw_laser(state: &State) -> Result<(), JsValue> {
                 }
             }
         }
-
     }
     Ok(())
 }

@@ -1,9 +1,12 @@
-
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct Message { pub id: usize, pub config: crate::Config, pub count: usize}
+pub struct Message {
+    pub id: usize,
+    pub config: crate::Config,
+    pub count: usize,
+}
 
 // enum MessageForWorker {
 //   Render { id: usize, config: crate::Config }

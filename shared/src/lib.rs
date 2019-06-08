@@ -1,6 +1,6 @@
 pub mod line;
 pub mod messaging;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use wasm_bindgen::prelude::*;
 
@@ -164,7 +164,6 @@ fn ray_arc_collision(
     }
 }
 
-
 use nalgebra::{Point2, Vector2};
 
 fn xy(point: &Point2<line::float>) -> (line::float, line::float) {
@@ -194,7 +193,7 @@ fn reflect(one: line::float, by: line::float) -> line::float {
 
 #[inline]
 fn check(v: f32) -> bool {
-    if v == 0.0 { 
+    if v == 0.0 {
         false
     } else if v == 1.0 {
         true
@@ -225,7 +224,6 @@ pub fn bounce_ray(
         ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
         (new_origin, false)
     } else {
-
         // sin(t) / sin(t1) = index
         // t = asin(index * sing(t1))
         let new_origin = if properties.refraction != 1.0 {
@@ -241,7 +239,7 @@ pub fn bounce_ray(
                     let ray_dir = ray.dir.y.atan2(ray.dir.x);
                     let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
                     let ray_reflected = reflect(ray_dir, normal_dir);
-        ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
+                    ray.dir = Vector2::new(ray_reflected.cos(), ray_reflected.sin());
                     p
                 }
             }
@@ -254,7 +252,12 @@ pub fn bounce_ray(
 }
 
 #[inline]
-fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, properties: &Properties, left_side: bool) -> Option<line::float> {
+fn refract(
+    ray_dir: &Vector2<line::float>,
+    normal: &Vector2<line::float>,
+    properties: &Properties,
+    left_side: bool,
+) -> Option<line::float> {
     let ray_dir = ray_dir.y.atan2(ray_dir.x);
     let n = normal.y.atan2(normal.x);
     let normal_dir = n + PI / 2.0;
@@ -264,27 +267,30 @@ fn refract(ray_dir: &Vector2<line::float>, normal: &Vector2<line::float>, proper
         r * 180.0 / PI
     }
 
-    let index = if left_side { properties.refraction } else { 1.0 / properties.refraction};
+    let index = if left_side {
+        properties.refraction
+    } else {
+        1.0 / properties.refraction
+    };
     let opposite = angle_norm(n + PI);
     let diff = ray_dir - opposite;
     let mid = (properties.refraction * diff.sin()).asin();
     if mid.is_nan() {
         None
     } else {
-
-    let new_dir = mid + opposite;
-    // let d = angle_norm(new_dir - n);
-    // log!("Refract: ray_dir {}, opposite {}, new_dir {}, d {}, diff {}, mid {}",
-    // deg(ray_dir),deg(opposite),deg(new_dir),deg(d),deg(diff),deg(mid)
-    // );
-    // if d > PI / 2.0 || d < -PI / 2.0 {
-    // // if d < PI / 2.0 && d > -PI / 2.0 {
-    //     None
-    // } else {
+        let new_dir = mid + opposite;
+        // let d = angle_norm(new_dir - n);
+        // log!("Refract: ray_dir {}, opposite {}, new_dir {}, d {}, diff {}, mid {}",
+        // deg(ray_dir),deg(opposite),deg(new_dir),deg(d),deg(diff),deg(mid)
+        // );
+        // if d > PI / 2.0 || d < -PI / 2.0 {
+        // // if d < PI / 2.0 && d > -PI / 2.0 {
+        //     None
+        // } else {
 
         // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
         Some(new_dir)
-    // }
+        // }
     }
 }
 
@@ -317,15 +323,39 @@ pub struct Wall {
 
 impl Wall {
     pub fn new(kind: WallType) -> Wall {
-        Wall { kind, properties: Properties { reflect: 0.0, absorb: 1.0, roughness: 0.0, refraction: 1.0 }}
+        Wall {
+            kind,
+            properties: Properties {
+                reflect: 0.0,
+                absorb: 1.0,
+                roughness: 0.0,
+                refraction: 1.0,
+            },
+        }
     }
 
     pub fn mirror(kind: WallType) -> Wall {
-        Wall { kind, properties: Properties { reflect: 1.0, absorb: 0.0, roughness: 0.0, refraction: 1.0 }}
+        Wall {
+            kind,
+            properties: Properties {
+                reflect: 1.0,
+                absorb: 0.0,
+                roughness: 0.0,
+                refraction: 1.0,
+            },
+        }
     }
 
     pub fn transparent(kind: WallType, refraction: f32) -> Wall {
-        Wall { kind, properties: Properties { reflect: 0.0, absorb: 0.0, roughness: 0.0, refraction }}
+        Wall {
+            kind,
+            properties: Properties {
+                reflect: 0.0,
+                absorb: 0.0,
+                roughness: 0.0,
+                refraction,
+            },
+        }
     }
 }
 
@@ -346,7 +376,7 @@ pub enum WallType {
         line::float,
         line::float,
     ),
-    Parabola(Parabola)
+    Parabola(Parabola),
 }
 
 use std::f32::consts::PI;
@@ -359,7 +389,11 @@ impl WallType {
         use ncollide2d::query::ray_internal::ray::RayCast;
         match self {
             WallType::Line(wall) => {
-                match wall.toi_and_normal_with_ray(&nalgebra::geometry::Isometry::identity(), ray, true) {
+                match wall.toi_and_normal_with_ray(
+                    &nalgebra::geometry::Isometry::identity(),
+                    ray,
+                    true,
+                ) {
                     None => None,
                     Some(mut intersection) => {
                         let delta = wall.b() - wall.a();
@@ -370,7 +404,8 @@ impl WallType {
                         } else {
                             normal_theta < wall_theta || normal_theta > wall_theta + PI
                         };
-                        intersection.feature = ncollide2d::shape::FeatureId::Face(if left_side { 0 } else { 1 });
+                        intersection.feature =
+                            ncollide2d::shape::FeatureId::Face(if left_side { 0 } else { 1 });
                         Some(intersection)
                     }
                 }
@@ -389,7 +424,7 @@ impl WallType {
         let dist = size * size;
         for (i, handle) in self.handles().iter().enumerate() {
             if (handle - pos).norm_squared() < dist {
-                return Some(i)
+                return Some(i);
             }
         }
         None
@@ -400,8 +435,8 @@ impl WallType {
             WallType::Line(wall) => match id {
                 0 => *wall = Segment::new(*pos, wall.b().clone()),
                 1 => *wall = Segment::new(wall.a().clone(), *pos),
-                _ => ()
-            }
+                _ => (),
+            },
             WallType::Parabola(_) => panic!("n)"),
             WallType::Circle(circle, center, t0, t1) => match id {
                 0 => *center = *pos,
@@ -415,8 +450,8 @@ impl WallType {
                     *t1 = d.y.atan2(d.x);
                     *circle = Ball::new(d.norm_squared().sqrt());
                 }
-                _ => ()
-            }
+                _ => (),
+            },
         }
     }
 
@@ -428,18 +463,22 @@ impl WallType {
                 center.clone(),
                 Point2::new(
                     center.x + t0.cos() * circle.radius(),
-                    center.y + t0.sin() * circle.radius()
+                    center.y + t0.sin() * circle.radius(),
                 ),
                 Point2::new(
                     center.x + t1.cos() * circle.radius(),
-                    center.y + t1.sin() * circle.radius()
+                    center.y + t1.sin() * circle.radius(),
                 ),
-            ]
-
+            ],
         }
     }
 
-    pub fn draw_handles(&self, ctx: &CanvasRenderingContext2d, size: f64, selected: Option<usize>) -> Result<(), JsValue> {
+    pub fn draw_handles(
+        &self,
+        ctx: &CanvasRenderingContext2d,
+        size: f64,
+        selected: Option<usize>,
+    ) -> Result<(), JsValue> {
         for (i, handle) in self.handles().iter().enumerate() {
             ctx.begin_path();
             ctx.ellipse(
@@ -449,11 +488,11 @@ impl WallType {
                 size,
                 0.0,
                 0.0,
-                PI as f64 * 2.0
+                PI as f64 * 2.0,
             )?;
             match selected {
                 Some(s) if s == i => ctx.fill(),
-                _ => ctx.stroke()
+                _ => ctx.stroke(),
             }
         }
 
@@ -497,7 +536,17 @@ pub fn find_collision(
             None => (),
             Some(intersection) => match closest {
                 Some((dist, _, _, _)) if intersection.toi > dist => (),
-                None | Some(_) => closest = Some((intersection.toi, wall.properties, match intersection.feature { ncollide2d::shape::FeatureId::Face(0) => true, _ => false }, intersection.normal)),
+                None | Some(_) => {
+                    closest = Some((
+                        intersection.toi,
+                        wall.properties,
+                        match intersection.feature {
+                            ncollide2d::shape::FeatureId::Face(0) => true,
+                            _ => false,
+                        },
+                        intersection.normal,
+                    ))
+                }
             },
         }
     }
@@ -520,7 +569,12 @@ pub struct Config {
 
 impl Config {
     pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
-        Config { walls, width, height, light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0) }
+        Config {
+            walls,
+            width,
+            height,
+            light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0),
+        }
     }
 }
 
@@ -536,8 +590,10 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
     for _ in 0..rays {
         let direction = rand() * PI * 2.0;
         // let direction = (r as f32) / 180.0 * PI;
-        let mut ray =
-            ncollide2d::query::Ray::new(config.light_source, Vector2::new(direction.cos(), direction.sin()));
+        let mut ray = ncollide2d::query::Ray::new(
+            config.light_source,
+            Vector2::new(direction.cos(), direction.sin()),
+        );
         let max_brightness = 100.0;
 
         for _ in 0..30 {
@@ -554,7 +610,8 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
                     break;
                 }
                 Some((toi, properties, left_side, normal)) => {
-                    let (new_origin, stop) = bounce_ray(&mut ray, toi, properties, left_side, normal);
+                    let (new_origin, stop) =
+                        bounce_ray(&mut ray, toi, properties, left_side, normal);
                     line::draw_line(
                         xy(&ray.origin),
                         xy(&new_origin),
@@ -625,4 +682,3 @@ impl<'a> Drop for Timer<'a> {
         web_sys::console::time_end_with_label(self.name);
     }
 }
-
