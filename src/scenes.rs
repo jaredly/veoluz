@@ -116,6 +116,55 @@ pub fn apple() -> shared::Config {
     shared::Config::new(walls, width as usize, height as usize)
 }
 
+pub fn circle_row() -> shared::Config {
+    let width = 1024;
+    let height = 576;
+    let cx = (width / 2) as line::float;
+    let cy = (height / 2) as line::float;
+    let mut walls = vec![ ];
+
+    let count = 10;
+
+    let radius = 100.0;
+    let by = line::PI * 2.0 / (count as line::float);
+
+    let r0 = 100.0;
+
+    for i in 0..count {
+        let theta = i as line::float * by;
+
+        walls.push(Wall::transparent(
+            WallType::Circle(
+                Ball::new(r0 / 5.0),
+                Point2::new(cx - r0 * count as f32/ 4.0 + r0 * i as f32 / 2.0, cy),
+                -PI,
+                PI,
+            ),
+            if i % 2 == 0 { 0.8 } else { 1.0 / 0.8 },
+        ));
+    }
+
+    let count = 3;
+    for i in -count..=count {
+        if i == 0 {
+            continue;
+        }
+        let theta = i as line::float * by;
+
+        walls.push(Wall::transparent(
+            WallType::Circle(
+                Ball::new(r0 / 5.0),
+                Point2::new(cx, cy + r0 * i as f32 / 2.0),
+                -PI,
+                PI,
+            ),
+            if i % 2 == 0 { 0.8 } else { 1.0 / 0.8 },
+        ));
+    }
+
+    shared::Config::new(walls, width as usize, height as usize)
+
+}
 
 pub fn circles() -> shared::Config {
     let width = 1024;

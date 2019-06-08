@@ -90,6 +90,22 @@ fn is_between(needle: line::float, start: line::float, end: line::float) -> bool
     }
 }
 
+// fn ray_parabola_collision(ray: &Ray<line::float>, parabola: &Parabola) {
+//     let transformed_ray = ray.transform_by(&parabola.transform);
+//     // parabola
+//     // y = a(x - h)^2 + k
+//     // y = mx + b
+//     // I need the ray to u
+//     // x, y, dx, dy
+//     // a = x / dx
+//     // b = y - (a * dy)
+//     let y = ray.origin.y;
+//     let m = ray.dir.y / ray.dir.x;
+//     y = mx + b
+//     b = y - mx
+//     let b = ray.origin.y - (ray.origin.x / ray.dir.x) * ray.origin.y;
+// }
+
 #[inline]
 fn ray_arc_collision(
     ray: &Ray<line::float>,
@@ -314,6 +330,14 @@ impl Wall {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct Parabola {
+    a: line::float,
+    h: line::float,
+    k: line::float,
+    transform: nalgebra::geometry::Isometry2<line::float>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub enum WallType {
     Line(Segment<line::float>),
     Circle(
@@ -322,6 +346,7 @@ pub enum WallType {
         line::float,
         line::float,
     ),
+    Parabola(Parabola)
 }
 
 use std::f32::consts::PI;
@@ -353,6 +378,10 @@ impl WallType {
             WallType::Circle(circle, center, t0, t1) => {
                 ray_arc_collision(&ray, (circle, center, *t0, *t1))
             }
+            WallType::Parabola(parabola) => {
+                panic!("Nope")
+                // ray_parabola_collision(&ray, &parabola)
+            }
         }
     }
 
@@ -373,6 +402,7 @@ impl WallType {
                 1 => *wall = Segment::new(wall.a().clone(), *pos),
                 _ => ()
             }
+            WallType::Parabola(_) => panic!("n)"),
             WallType::Circle(circle, center, t0, t1) => match id {
                 0 => *center = *pos,
                 1 => {
@@ -393,6 +423,7 @@ impl WallType {
     pub fn handles(&self) -> Vec<Point2<line::float>> {
         match self {
             WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
+            WallType::Parabola(_) => panic!("n)"),
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
                 Point2::new(
@@ -431,6 +462,7 @@ impl WallType {
 
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         match self {
+            WallType::Parabola(_) => panic!("n)"),
             WallType::Line(wall) => {
                 ctx.begin_path();
                 ctx.move_to(wall.a().x as f64, wall.a().y as f64);

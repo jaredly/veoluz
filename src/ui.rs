@@ -43,10 +43,16 @@ fn draw_laser(state: &State) -> Result<(), JsValue> {
                 state.ctx.stroke();
 
                 let n = nalgebra::normalize(&normal);
-                state.ctx.set_stroke_style(&"orange".into());
+                state.ctx.set_stroke_style(
+                    &(if left_side {
+                        "blue"
+                    } else {
+                        "orange"
+                    }).into()
+                    );
                 state.ctx.begin_path();
-                state.ctx.move_to(new_origin.x as f64, new_origin.y as f64);
-                state.ctx.line_to((new_origin.x + n.x * 20.0) as f64, (new_origin.y + n.y * 20.0) as f64);
+                state.ctx.move_to((new_origin.x - n.x * 5.0) as f64, (new_origin.y- n.y * 5.0)  as f64);
+                state.ctx.line_to((new_origin.x + n.x * 15.0) as f64, (new_origin.y + n.y * 15.0) as f64);
                 state.ctx.stroke();
 
                 ray.origin = new_origin;
