@@ -274,7 +274,7 @@ fn refract(
     };
     let opposite = angle_norm(n + PI);
     let diff = ray_dir - opposite;
-    let mid = (properties.refraction * diff.sin()).asin();
+    let mid = (index * diff.sin()).asin();
     if mid.is_nan() {
         None
     } else {
@@ -318,11 +318,35 @@ pub struct Properties {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Wall {
     pub kind: WallType,
-    properties: Properties,
+    pub properties: Properties,
 }
 
 impl Wall {
     pub fn new(kind: WallType) -> Wall {
+        Wall {
+            kind,
+            properties: Properties {
+                reflect: 0.0,
+                absorb: 1.0,
+                roughness: 0.0,
+                refraction: 1.0,
+            },
+        }
+    }
+
+    pub fn rough(kind: WallType) -> Wall {
+        Wall {
+            kind,
+            properties: Properties {
+                reflect: 1.0,
+                absorb: 0.0,
+                roughness: 1.0,
+                refraction: 1.0,
+            },
+        }
+    }
+
+    pub fn block(kind: WallType) -> Wall {
         Wall {
             kind,
             properties: Properties {

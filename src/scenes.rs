@@ -116,6 +116,59 @@ pub fn apple() -> shared::Config {
     shared::Config::new(walls, width as usize, height as usize)
 }
 
+use ncollide2d::shape::Segment;
+
+pub fn playground() -> shared::Config {
+    let width = 1024;
+    let height = 576;
+    let cx = (width / 2) as line::float;
+    let cy = (height / 2) as line::float;
+    let mut walls = vec![
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(50.0, 100.0), Point2::new(50.0, 400.0))),
+            1.1
+        ),
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(70.0, 100.0), Point2::new(70.0, 400.0))),
+            1.3
+        ),
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(90.0, 100.0), Point2::new(90.0, 400.0))),
+            1.5
+        ),
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(110.0, 100.0), Point2::new(110.0, 400.0))),
+            1.7
+        ),
+        Wall::mirror(
+            WallType::Line(Segment::new(Point2::new(130.0, 100.0), Point2::new(130.0, 400.0))),
+        ),
+        Wall::mirror(
+            WallType::Line(Segment::new(Point2::new(150.0, 100.0), Point2::new(150.0, 400.0))),
+        ),
+        Wall::mirror(
+            WallType::Line(Segment::new(Point2::new(170.0, 100.0), Point2::new(170.0, 400.0))),
+        ),
+        Wall::rough(
+            WallType::Line(Segment::new(Point2::new(170.0, 100.0), Point2::new(170.0, 400.0))),
+        ),
+        Wall::block(
+            WallType::Line(Segment::new(Point2::new(190.0, 100.0), Point2::new(190.0, 400.0))),
+        ),
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(610.0, 100.0), Point2::new(610.0, 400.0))),
+            2.4
+        ),
+        Wall::transparent(
+            WallType::Line(Segment::new(Point2::new(710.0, 100.0), Point2::new(710.0, 400.0))),
+            2.4
+        ),
+
+    ];
+
+    shared::Config::new(walls, width as usize, height as usize)
+}
+
 pub fn circle_row() -> shared::Config {
     let width = 1024;
     let height = 576;
