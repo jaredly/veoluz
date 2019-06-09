@@ -19,9 +19,11 @@ fn draw_image(state: &State) -> Result<(), JsValue> {
     state.ctx.put_image_data(&state.image_data, 0.0, 0.0)
 }
 
-fn draw_laser(state: &State, vector: nalgebra::Vector2<shared::line::float>) -> Result<(), JsValue> {
-    let mut ray =
-        ncollide2d::query::Ray::new(state.config.light_source, vector);
+fn draw_laser(
+    state: &State,
+    vector: nalgebra::Vector2<shared::line::float>,
+) -> Result<(), JsValue> {
+    let mut ray = ncollide2d::query::Ray::new(state.config.light_source, vector);
     for i in 0..10 {
         // log!("Ray: {:?}", ray);
         match shared::find_collision(&state.config.walls, &ray) {
@@ -69,7 +71,7 @@ fn draw_laser(state: &State, vector: nalgebra::Vector2<shared::line::float>) -> 
     Ok(())
 }
 
-use nalgebra::{Vector2, Point2};
+use nalgebra::{Point2, Vector2};
 
 fn vector_dir(dir: f32) -> Vector2<f32> {
     Vector2::new(dir.cos(), dir.sin())
@@ -99,7 +101,7 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
     Ok(())
 }
 
-use std::f32::consts::PI ;
+use std::f32::consts::PI;
 
 macro_rules! listen {
     ($base:expr, $name:expr, $evt: ty, $body:expr) => {

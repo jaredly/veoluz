@@ -16,42 +16,53 @@ pub fn parabola_test() -> shared::Config {
             a: -0.03,
             left: -50.0,
             right: 50.0,
-            transform: nalgebra::Isometry2::from_parts(nalgebra::Translation2::from_vector(
-                nalgebra::Vector2::new(width as f32 / 2.0, height as f32 / 2.0 + 50.0)
-            ), 
-            nalgebra::UnitComplex::from_angle(0.0)
-            )
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                    width as f32 / 2.0,
+                    height as f32 / 2.0 + 50.0,
+                )),
+                nalgebra::UnitComplex::from_angle(0.0),
+            ),
         })),
         Wall::mirror(WallType::Parabola(shared::Parabola {
             a: -0.01,
             left: -50.0,
             right: 50.0,
-            transform: nalgebra::Isometry2::from_parts(nalgebra::Translation2::from_vector(
-                nalgebra::Vector2::new(width as f32 / 2.0, height as f32 / 2.0 + 80.0)
-            ), 
-            nalgebra::UnitComplex::from_angle(0.0)
-            )
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                    width as f32 / 2.0,
+                    height as f32 / 2.0 + 80.0,
+                )),
+                nalgebra::UnitComplex::from_angle(0.0),
+            ),
         })),
         Wall::mirror(WallType::Parabola(shared::Parabola {
             a: -0.003,
             left: -50.0,
             right: 50.0,
-            transform: nalgebra::Isometry2::from_parts(nalgebra::Translation2::from_vector(
-                nalgebra::Vector2::new(width as f32 / 2.0, height as f32 / 2.0 + 100.0)
-            ), 
-            nalgebra::UnitComplex::from_angle(0.0)
-            )
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                    width as f32 / 2.0,
+                    height as f32 / 2.0 + 100.0,
+                )),
+                nalgebra::UnitComplex::from_angle(0.0),
+            ),
         })),
-        Wall::transparent(WallType::Parabola(shared::Parabola {
-            a: -0.003,
-            left: -50.0,
-            right: 50.0,
-            transform: nalgebra::Isometry2::from_parts(nalgebra::Translation2::from_vector(
-                nalgebra::Vector2::new(width as f32 / 2.0, height as f32 / 2.0 + 140.0)
-            ), 
-            nalgebra::UnitComplex::from_angle(0.0)
-            )
-        }), 1.5),
+        Wall::transparent(
+            WallType::Parabola(shared::Parabola {
+                a: -0.003,
+                left: -50.0,
+                right: 50.0,
+                transform: nalgebra::Isometry2::from_parts(
+                    nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                        width as f32 / 2.0,
+                        height as f32 / 2.0 + 140.0,
+                    )),
+                    nalgebra::UnitComplex::from_angle(0.0),
+                ),
+            }),
+            1.5,
+        ),
     ];
 
     shared::Config::new(walls, width as usize, height as usize)

@@ -133,7 +133,8 @@ fn ray_parabola_collision(
     #[inline]
     fn normal(x: f32, parabola: &Parabola) -> Vector2<f32> {
         let slope = parabola.a * 2.0 * x;
-        let angle = slope.atan2(1.0) - std::f32::consts::PI / 2.0 + parabola.transform.rotation.angle();
+        let angle =
+            slope.atan2(1.0) - std::f32::consts::PI / 2.0 + parabola.transform.rotation.angle();
         Vector2::new(angle.cos(), angle.sin())
     }
 
@@ -622,15 +623,10 @@ impl WallType {
                 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 1 => {
                     let dist = transform.translation.vector - pos.coords;
-                    *a = 1.0 / (4.0 * dist.norm_squared().sqrt());
-                    // TODO fix this
-                    // transform.rotation = nalgebra::UnitComplex::from_angle(
-                    //     dist.y.atan2(dist.x) + std::f32::consts::PI / 2.0
-                    // );
-
-                    // transform.rotation.transform_vector(
-                    //     &Vector2::new(0.0, 1.0 / (*a * 4.0))
-                    // )
+                    *a = -1.0 / (4.0 * dist.norm_squared().sqrt());
+                    transform.rotation = nalgebra::UnitComplex::from_angle(
+                        dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
+                    );
                 }
                 _ => (),
             },
@@ -662,9 +658,9 @@ impl WallType {
             }) => vec![
                 transform.translation.vector.into(),
                 Point2::from(transform.translation.vector)
-                + transform.rotation.transform_vector(
-                    &Vector2::new(0.0, 1.0 / (*a * 4.0))
-                )
+                    + transform
+                        .rotation
+                        .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
             ], // TODO
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
