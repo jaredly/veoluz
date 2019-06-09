@@ -19,10 +19,11 @@ fn draw_image(state: &State) -> Result<(), JsValue> {
     state.ctx.put_image_data(&state.image_data, 0.0, 0.0)
 }
 
-fn draw_laser(state: &State) -> Result<(), JsValue> {
+fn draw_laser(state: &State, vector: nalgebra::Vector2<shared::line::float>) -> Result<(), JsValue> {
     let mut ray =
-        ncollide2d::query::Ray::new(state.config.light_source, nalgebra::Vector2::new(0.0, 1.0));
+        ncollide2d::query::Ray::new(state.config.light_source, vector);
     for i in 0..10 {
+        // log!("Ray: {:?}", ray);
         match shared::find_collision(&state.config.walls, &ray) {
             None => {
                 state.ctx.set_stroke_style(&"red".into());
@@ -68,6 +69,12 @@ fn draw_laser(state: &State) -> Result<(), JsValue> {
     Ok(())
 }
 
+use nalgebra::{Vector2, Point2};
+
+fn vector_dir(dir: f32) -> Vector2<f32> {
+    Vector2::new(dir.cos(), dir.sin())
+}
+
 fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue> {
     state.ctx.set_stroke_style(&JsValue::from_str("green"));
     state.ctx.set_fill_style(&JsValue::from_str("#7fa"));
@@ -83,9 +90,16 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
             },
         )?;
     }
-    draw_laser(&state)?;
+    for i in 0..30 {
+        draw_laser(&state, vector_dir(std::f32::consts::PI / 15.0 * i as f32))?;
+    }
+    // draw_laser(&state, vector_dir(0.1));
+    // draw_laser(&state, vector_dir(0.2));
+    // draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
     Ok(())
 }
+
+use std::f32::consts::PI ;
 
 macro_rules! listen {
     ($base:expr, $name:expr, $evt: ty, $body:expr) => {
@@ -94,8 +108,6 @@ macro_rules! listen {
         c.forget();
     };
 }
-
-use nalgebra::Point2;
 
 fn mouse_pos(evt: &web_sys::MouseEvent) -> Point2<f32> {
     let ui: &web_sys::Event = evt.as_ref();

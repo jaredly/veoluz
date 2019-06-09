@@ -8,6 +8,25 @@ use wasm_bindgen::prelude::*;
 
 use std::f32::consts::PI;
 
+pub fn parabola_test() -> shared::Config {
+    let width = 1024;
+    let height = 576;
+    let mut walls = vec![
+        Wall::mirror(WallType::Parabola(shared::Parabola {
+            a: -0.03,
+            left: -50.0,
+            right: 50.0,
+            transform: nalgebra::Isometry2::from_parts(nalgebra::Translation2::from_vector(
+                nalgebra::Vector2::new(width as f32 / 2.0, height as f32 / 2.0 + 50.0)
+            ), 
+            nalgebra::UnitComplex::from_angle(0.0)
+            )
+        }))
+    ];
+
+    shared::Config::new(walls, width as usize, height as usize)
+}
+
 pub fn apple() -> shared::Config {
     let width = 1024;
     let height = 576;
