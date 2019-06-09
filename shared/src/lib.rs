@@ -117,6 +117,7 @@ macro_rules! log {
     };
 }
 
+#[inline]
 fn ray_parabola_collision(
     ray: &Ray<line::float>,
     parabola: &Parabola,
@@ -131,10 +132,11 @@ fn ray_parabola_collision(
     let y = ray.origin.y;
 
     #[inline]
-    fn normal(x: f32, parabola: &Parabola) -> Vector2<f32> {
+    fn normal(x: f32, parabola: &Parabola, outside: bool) -> Vector2<f32> {
         let slope = parabola.a * 2.0 * x;
         let angle =
             slope.atan2(1.0) - std::f32::consts::PI / 2.0 + parabola.transform.rotation.angle();
+        let angle = if outside { angle + std::f32::consts::PI } else { angle };
         Vector2::new(angle.cos(), angle.sin())
     }
 
@@ -144,7 +146,7 @@ fn ray_parabola_collision(
             let py = parabola.a * ray.origin.x * ray.origin.x;
             Some(RayIntersection::new(
                 (py - ray.origin.y) / ray.dir.y,
-                normal(ray.origin.x, &parabola),
+                normal(ray.origin.x, &parabola, ray.origin.y < py),
                 // inside to outside
                 FeatureId::Face(1),
             ))
@@ -205,14 +207,14 @@ fn ray_parabola_collision(
             } else if x0_valid {
                 Some(RayIntersection::new(
                     (x0 - ray.origin.x) / ray.dir.x,
-                    normal(x0, parabola),
+                    normal(x0, parabola, true),
                     // outside to inside
                     FeatureId::Face(0),
                 ))
             } else if x1_valid {
                 Some(RayIntersection::new(
                     (x1 - ray.origin.x) / ray.dir.x,
-                    normal(x1, parabola),
+                    normal(x1, parabola, false),
                     // inside to outside
                     FeatureId::Face(1),
                 ))
@@ -226,7 +228,7 @@ fn ray_parabola_collision(
                 if x0_valid {
                     Some(RayIntersection::new(
                         (x0 - ray.origin.x) / ray.dir.x,
-                        normal(x0, parabola),
+                        normal(x0, parabola, false),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
@@ -243,7 +245,7 @@ fn ray_parabola_collision(
                 if x1_valid {
                     Some(RayIntersection::new(
                         (x1 - ray.origin.x) / ray.dir.x,
-                        normal(x1, parabola),
+                        normal(x1, parabola, false),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
@@ -260,14 +262,14 @@ fn ray_parabola_collision(
             } else if x1_valid {
                 Some(RayIntersection::new(
                     (x1 - ray.origin.x) / ray.dir.x,
-                    normal(x1, parabola),
+                    normal(x1, parabola, true),
                     // outside to inside
                     FeatureId::Face(0),
                 ))
             } else if x0_valid {
                 Some(RayIntersection::new(
                     (x0 - ray.origin.x) / ray.dir.x,
-                    normal(x0, parabola),
+                    normal(x0, parabola, false),
                     // inside to outside
                     FeatureId::Face(1),
                 ))
