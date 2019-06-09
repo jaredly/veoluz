@@ -48,9 +48,9 @@ pub fn draw_line(
 
     let mut gradient = (end.1 - start.1) / (end.0 - start.0);
 
-    if gradient == 0.0 {
-        gradient = 1.0;
-    }
+    // if gradient == 0.0 {
+    //     gradient = 1.0;
+    // }
 
     // -- the algorithm
 

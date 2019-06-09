@@ -132,6 +132,26 @@ fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(
     return None;
 }
 
+pub fn setup_button() -> Result<(), JsValue> {
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
+    let button = document
+        .get_element_by_id("render")
+        .expect("get button")
+        .dyn_into::<web_sys::HtmlButtonElement>()?;
+
+    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            state.async_render(true);
+            Ok(())
+        })
+    });
+
+    Ok(())
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -143,6 +163,8 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     canvas.set_width(config.width as u32);
     canvas.set_height(config.height as u32);
+
+    setup_button()?;
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {

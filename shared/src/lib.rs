@@ -110,19 +110,19 @@ fn is_between(needle: line::float, start: line::float, end: line::float) -> bool
     }
 }
 
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        // web_sys::console::log_1(&format!( $( $t )* ).into());
-        ();
-    };
-}
+// macro_rules! log {
+//     ( $( $t:tt )* ) => {
+//         // web_sys::console::log_1(&format!( $( $t )* ).into());
+//         ();
+//     };
+// }
 
 #[inline]
 fn ray_parabola_collision(
     ray: &Ray<line::float>,
     parabola: &Parabola,
 ) -> Option<RayIntersection<line::float>> {
-    log!("Ray parabola collision");
+    // log!("Ray parabola collision");
     let ray = ray.inverse_transform_by(&parabola.transform);
     // I need the ray to u
     // x, y, dx, dy
@@ -178,7 +178,7 @@ fn ray_parabola_collision(
     let determinant = b * b - 4.0 * a * c;
 
     if determinant <= 0.0 {
-        log!("Outside the realm");
+        // log!("Outside the realm");
         None
     } else {
         let rest = determinant.sqrt();
@@ -188,21 +188,21 @@ fn ray_parabola_collision(
 
         let x0_valid = x0 > parabola.left && x0 < parabola.right;
         let x1_valid = x1 > parabola.left && x1 < parabola.right;
-        log!(
-            "a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}",
-            a,
-            b,
-            c,
-            determinant,
-            x0,
-            x1
-        );
-        log!("Transformed ray: {:?}", ray);
+        // log!(
+        //     "a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}",
+        //     a,
+        //     b,
+        //     c,
+        //     determinant,
+        //     x0,
+        //     x1
+        // );
+        // log!("Transformed ray: {:?}", ray);
 
         if ray.origin.x < x0 {
             // left
             if ray.dir.x < 0.0 {
-                log!("Left side going left");
+                // log!("Left side going left");
                 None
             } else if x0_valid {
                 Some(RayIntersection::new(
@@ -219,7 +219,7 @@ fn ray_parabola_collision(
                     FeatureId::Face(1),
                 ))
             } else {
-                log!("Both intersections outside");
+                // log!("Both intersections outside");
                 None
             }
         } else if ray.origin.x < x1 {
@@ -233,12 +233,12 @@ fn ray_parabola_collision(
                         FeatureId::Face(1),
                     ))
                 } else {
-                    log!(
-                        "Inside going left, outside bounds: x0: {}, rest: {}, deter: {}",
-                        x0,
-                        rest,
-                        determinant
-                    );
+                    // log!(
+                    //     "Inside going left, outside bounds: x0: {}, rest: {}, deter: {}",
+                    //     x0,
+                    //     rest,
+                    //     determinant
+                    // );
                     None
                 }
             } else {
@@ -250,14 +250,14 @@ fn ray_parabola_collision(
                         FeatureId::Face(1),
                     ))
                 } else {
-                    log!("Inside going right, outside bounds");
+                    // log!("Inside going right, outside bounds");
                     None
                 }
             }
         } else {
             // right
             if ray.dir.x > 0.0 {
-                log!("Right going right");
+                // log!("Right going right");
                 None
             } else if x1_valid {
                 Some(RayIntersection::new(
@@ -274,7 +274,7 @@ fn ray_parabola_collision(
                     FeatureId::Face(1),
                 ))
             } else {
-                log!("Right both outside bounds");
+                // log!("Right both outside bounds");
                 None
             }
         }
@@ -816,9 +816,9 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
 
     // if we don't draw at all, we're still getting only 400k/sec
 
-    for _ in 0..rays {
-        let direction = rand() * PI * 2.0;
-        // let direction = (r as f32) / 180.0 * PI;
+    for r in 80..100 {
+        // let direction = rand() * PI * 2.0;
+        let direction = (r as f32) / 180.0 * PI;
         let mut ray = ncollide2d::query::Ray::new(
             config.light_source,
             Vector2::new(direction.cos(), direction.sin()),
