@@ -63,6 +63,21 @@ pub fn parabola_test() -> shared::Config {
             }),
             1.5,
         ),
+        Wall::transparent(
+            WallType::Parabola(shared::Parabola {
+                a: -0.003,
+                left: -50.0,
+                right: 50.0,
+                transform: nalgebra::Isometry2::from_parts(
+                    nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                        width as f32 / 2.0,
+                        height as f32 / 2.0 + 240.0,
+                    )),
+                    nalgebra::UnitComplex::from_angle(0.0),
+                ),
+            }),
+            2.4,
+        ),
     ];
 
     shared::Config::new(walls, width as usize, height as usize)

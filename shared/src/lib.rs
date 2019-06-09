@@ -661,7 +661,7 @@ impl WallType {
                     + transform
                         .rotation
                         .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
-            ], // TODO
+            ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
                 Point2::new(
@@ -710,12 +710,24 @@ impl WallType {
                 right,
                 transform,
             }) => {
-                let p0 = transform.transform_point(&Point2::new(*left, 0.0));
-                let p1 = transform.transform_point(&Point2::new(*right, 0.0));
+                let count = 16;
                 ctx.begin_path();
+                let y0 = a * left * left;
+                let p0 = transform.transform_point(&Point2::new(*left, y0));
                 ctx.move_to(p0.x as f64, p0.y as f64);
-                ctx.line_to(p1.x as f64, p1.y as f64);
+                for i in 1..=count {
+                    let x = (right - left) / count as f32 * i as f32 + left;
+                    let y = a * x * x;
+                    let p1 = transform.transform_point(&Point2::new(x, y));
+                    ctx.line_to(p1.x as f64, p1.y as f64);
+                }
                 ctx.stroke();
+                // let p0 = transform.transform_point(&Point2::new(*left, 0.0));
+                // let p1 = transform.transform_point(&Point2::new(*right, 0.0));
+                // ctx.begin_path();
+                // ctx.move_to(p0.x as f64, p0.y as f64);
+                // ctx.line_to(p1.x as f64, p1.y as f64);
+                // ctx.stroke();
             }
             WallType::Line(wall) => {
                 ctx.begin_path();
