@@ -125,63 +125,75 @@ pub fn playground() -> shared::Config {
     let cy = (height / 2) as line::float;
     let mut walls = vec![
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(50.0, 100.0), Point2::new(50.0, 400.0))),
-            1.1
+            WallType::Line(Segment::new(
+                Point2::new(50.0, 100.0),
+                Point2::new(50.0, 400.0),
+            )),
+            1.1,
         ),
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(70.0, 100.0), Point2::new(70.0, 400.0))),
-            1.3
+            WallType::Line(Segment::new(
+                Point2::new(70.0, 100.0),
+                Point2::new(70.0, 400.0),
+            )),
+            1.3,
         ),
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(90.0, 100.0), Point2::new(90.0, 400.0))),
-            1.5
+            WallType::Line(Segment::new(
+                Point2::new(90.0, 100.0),
+                Point2::new(90.0, 400.0),
+            )),
+            1.5,
         ),
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(110.0, 100.0), Point2::new(110.0, 400.0))),
-            1.7
+            WallType::Line(Segment::new(
+                Point2::new(110.0, 100.0),
+                Point2::new(110.0, 400.0),
+            )),
+            1.7,
         ),
-        Wall::mirror(
-            WallType::Line(Segment::new(Point2::new(130.0, 100.0), Point2::new(130.0, 400.0))),
-        ),
-        Wall::mirror(
-            WallType::Line(Segment::new(Point2::new(150.0, 100.0), Point2::new(150.0, 400.0))),
-        ),
-        Wall::mirror(
-            WallType::Line(Segment::new(Point2::new(170.0, 100.0), Point2::new(170.0, 400.0))),
-        ),
-        Wall::rough(
-            WallType::Line(Segment::new(Point2::new(170.0, 100.0), Point2::new(170.0, 400.0))),
-        ),
-        Wall::block(
-            WallType::Line(Segment::new(Point2::new(190.0, 100.0), Point2::new(190.0, 400.0))),
+        Wall::mirror(WallType::Line(Segment::new(
+            Point2::new(130.0, 100.0),
+            Point2::new(130.0, 400.0),
+        ))),
+        Wall::mirror(WallType::Line(Segment::new(
+            Point2::new(150.0, 100.0),
+            Point2::new(150.0, 400.0),
+        ))),
+        Wall::mirror(WallType::Line(Segment::new(
+            Point2::new(170.0, 100.0),
+            Point2::new(170.0, 400.0),
+        ))),
+        Wall::rough(WallType::Line(Segment::new(
+            Point2::new(170.0, 100.0),
+            Point2::new(170.0, 400.0),
+        ))),
+        Wall::block(WallType::Line(Segment::new(
+            Point2::new(190.0, 100.0),
+            Point2::new(190.0, 400.0),
+        ))),
+        Wall::transparent(
+            WallType::Line(Segment::new(
+                Point2::new(610.0, 100.0),
+                Point2::new(610.0, 400.0),
+            )),
+            2.4,
         ),
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(610.0, 100.0), Point2::new(610.0, 400.0))),
-            2.4
+            WallType::Line(Segment::new(
+                Point2::new(710.0, 100.0),
+                Point2::new(710.0, 400.0),
+            )),
+            2.4,
         ),
         Wall::transparent(
-            WallType::Line(Segment::new(Point2::new(710.0, 100.0), Point2::new(710.0, 400.0))),
-            2.4
+            WallType::Circle(Ball::new(100.0), Point2::new(720.0, 300.0), -PI, PI),
+            1.0 / 2.4,
         ),
         Wall::transparent(
-            WallType::Circle(
-                Ball::new(100.0),
-                Point2::new(720.0, 300.0),
-                -PI,
-                PI,
-            ),
-            1.0 / 2.4
+            WallType::Circle(Ball::new(100.0), Point2::new(820.0, 300.0), -PI, PI),
+            2.4,
         ),
-        Wall::transparent(
-            WallType::Circle(
-                Ball::new(100.0),
-                Point2::new(820.0, 300.0),
-                -PI,
-                PI,
-            ),
-            2.4
-        ),
-
     ];
 
     shared::Config::new(walls, width as usize, height as usize)

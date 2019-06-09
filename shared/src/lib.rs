@@ -27,6 +27,26 @@ macro_rules! log {
 use nalgebra as na;
 use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Parabola {
+    a: line::float,
+    left: line::float,
+    right: line::float,
+    transform: nalgebra::geometry::Isometry2<line::float>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum WallType {
+    Line(Segment<line::float>),
+    Circle(
+        ncollide2d::shape::Ball<line::float>,
+        Point2<line::float>,
+        line::float,
+        line::float,
+    ),
+    Parabola(Parabola),
+}
+
 enum BallResult {
     Inside(line::float),
     Outside(line::float, line::float),
@@ -90,21 +110,136 @@ fn is_between(needle: line::float, start: line::float, end: line::float) -> bool
     }
 }
 
-// fn ray_parabola_collision(ray: &Ray<line::float>, parabola: &Parabola) {
-//     let transformed_ray = ray.transform_by(&parabola.transform);
-//     // parabola
-//     // y = a(x - h)^2 + k
-//     // y = mx + b
-//     // I need the ray to u
-//     // x, y, dx, dy
-//     // a = x / dx
-//     // b = y - (a * dy)
-//     let y = ray.origin.y;
-//     let m = ray.dir.y / ray.dir.x;
-//     y = mx + b
-//     b = y - mx
-//     let b = ray.origin.y - (ray.origin.x / ray.dir.x) * ray.origin.y;
-// }
+fn ray_parabola_collision(
+    ray: &Ray<line::float>,
+    parabola: &Parabola,
+) -> Option<RayIntersection<line::float>> {
+    let transformed_ray = ray.transform_by(&parabola.transform);
+    // I need the ray to u
+    // x, y, dx, dy
+    // a = x / dx
+    // b = y - (a * dy)
+    let y = ray.origin.y;
+    let m = ray.dir.y / ray.dir.x;
+    // y = mx + b
+    // b = y - mx
+    let b = ray.origin.y - m * ray.origin.x;
+    // let b = ray.origin.y - (ray.origin.x / ray.dir.x) * ray.origin.y;
+
+    // parabola
+    // y = ax^2 + k
+    // y = mx + b
+
+    // mx + b = ax^2 + k
+    // mx + b = ax^2 + k
+    // b - k = ax^2 - mx
+
+    // 0 = ax^2 - mx + k - b
+
+    let a = parabola.a;
+    let c = -b;
+    let b = m;
+
+    let determinant = b * b - 4.0 * a * c;
+
+    if determinant <= 0.0 {
+        None
+    } else {
+        let rest = determinant.sqrt();
+
+        let x0 = (-b - rest) / (a * 2.0);
+        let x1 = (-b + rest) / (a * 2.0);
+
+        let x0_valid = x0 > parabola.left && x0 < parabola.right;
+        let x1_valid = x1 > parabola.left && x1 < parabola.right;
+
+        if ray.origin.x < x0 {
+            // left
+            if ray.dir.x < 0.0 {
+                None
+            } else if x0_valid {
+                Some(RayIntersection::new(
+                    (x0 - ray.origin.x) / ray.dir.x,
+                    // TODO derivitive
+                    Vector2::new(1.0, 0.0),
+                    // outside to inside
+                    FeatureId::Face(0),
+                ))
+            } else if x1_valid {
+                Some(RayIntersection::new(
+                    (x1 - ray.origin.x) / ray.dir.x,
+                    Vector2::new(0.0, 0.0),
+                    // inside to outside
+                    FeatureId::Face(1),
+                ))
+            } else {
+                None
+            }
+        } else if ray.origin.x < x1 {
+            // middle
+            if ray.dir.x < 0.0 {
+                if x0_valid {
+                    Some(RayIntersection::new(
+                        (x0 - ray.origin.x) / ray.dir.x,
+                        // TODO derivitive
+                        Vector2::new(1.0, 0.0),
+                        // inside to outside
+                        FeatureId::Face(1),
+                    ))
+                } else {
+                    None
+                }
+            } else {
+                if x1_valid {
+                    Some(RayIntersection::new(
+                        (x1 - ray.origin.x) / ray.dir.x,
+                        Vector2::new(0.0, 0.0),
+                        // inside to outside
+                        FeatureId::Face(1),
+                    ))
+                } else {
+                    None
+                }
+            }
+        } else {
+            // right
+            if ray.dir.x > 0.0 {
+                None
+            } else if x1_valid {
+                Some(RayIntersection::new(
+                    (x1 - ray.origin.x) / ray.dir.x,
+                    Vector2::new(1.0, 0.0),
+                    // outside to inside
+                    FeatureId::Face(0),
+                ))
+            } else if x0_valid {
+                Some(RayIntersection::new(
+                    (x0 - ray.origin.x) / ray.dir.x,
+                    // TODO derivitive
+                    Vector2::new(1.0, 0.0),
+                    // inside to outside
+                    FeatureId::Face(1),
+                ))
+            } else {
+                None
+            }
+        }
+    }
+
+    // ray going left or right
+
+    // ray is on the left side
+    // ray in the middle
+    // ray on the right side
+
+    // x = -b +/- sqrt(b^2 - 4ac)
+
+    // x = (ax^2 - b) / m
+    // x = ax^2 / m - b / m
+    // b/m = ax^2 / m - x
+}
+
+use ncollide2d::shape::FeatureId;
 
 #[inline]
 fn ray_arc_collision(
@@ -115,7 +250,7 @@ fn ray_arc_collision(
         line::float,
         line::float,
     ),
-) -> Option<ncollide2d::query::RayIntersection<line::float>> {
+) -> Option<RayIntersection<line::float>> {
     match ball_toi_with_ray(&arc.1, arc.0.radius(), &ray) {
         None => None,
         Some(BallResult::Inside(dist)) => {
@@ -279,18 +414,7 @@ fn refract(
         None
     } else {
         let new_dir = mid + opposite;
-        // let d = angle_norm(new_dir - n);
-        // log!("Refract: ray_dir {}, opposite {}, new_dir {}, d {}, diff {}, mid {}",
-        // deg(ray_dir),deg(opposite),deg(new_dir),deg(d),deg(diff),deg(mid)
-        // );
-        // if d > PI / 2.0 || d < -PI / 2.0 {
-        // // if d < PI / 2.0 && d > -PI / 2.0 {
-        //     None
-        // } else {
-
-        // log!("Refracting index: {}, ray_dir: {}, n: {}, normal_dir: {}, oppoosite: {}, diff: {}, new_dir: {}", index, deg(ray_dir), deg(n), deg(normal_dir), deg(opposite), deg(diff), deg(new_dir));
         Some(new_dir)
-        // }
     }
 }
 
@@ -381,26 +505,6 @@ impl Wall {
             },
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Parabola {
-    a: line::float,
-    h: line::float,
-    k: line::float,
-    transform: nalgebra::geometry::Isometry2<line::float>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum WallType {
-    Line(Segment<line::float>),
-    Circle(
-        ncollide2d::shape::Ball<line::float>,
-        Point2<line::float>,
-        line::float,
-        line::float,
-    ),
-    Parabola(Parabola),
 }
 
 use std::f32::consts::PI;
