@@ -131,9 +131,9 @@ fn ray_parabola_collision(
     let y = ray.origin.y;
 
     #[inline]
-    fn normal(x: f32, a: f32) -> Vector2<f32> {
-        let slope = a * 2.0 * x;
-        let angle = slope.atan2(1.0) - std::f32::consts::PI / 2.0;
+    fn normal(x: f32, parabola: &Parabola) -> Vector2<f32> {
+        let slope = parabola.a * 2.0 * x;
+        let angle = slope.atan2(1.0) - std::f32::consts::PI / 2.0 + parabola.transform.rotation.angle();
         Vector2::new(angle.cos(), angle.sin())
     }
 
@@ -143,7 +143,7 @@ fn ray_parabola_collision(
             let py = parabola.a * ray.origin.x * ray.origin.x;
             Some(RayIntersection::new(
                 (py - ray.origin.y) / ray.dir.y,
-                normal(ray.origin.x, parabola.a),
+                normal(ray.origin.x, &parabola),
                 // inside to outside
                 FeatureId::Face(1),
             ))
@@ -204,14 +204,14 @@ fn ray_parabola_collision(
             } else if x0_valid {
                 Some(RayIntersection::new(
                     (x0 - ray.origin.x) / ray.dir.x,
-                    normal(x0, parabola.a),
+                    normal(x0, parabola),
                     // outside to inside
                     FeatureId::Face(0),
                 ))
             } else if x1_valid {
                 Some(RayIntersection::new(
                     (x1 - ray.origin.x) / ray.dir.x,
-                    normal(x1, parabola.a),
+                    normal(x1, parabola),
                     // inside to outside
                     FeatureId::Face(1),
                 ))
@@ -225,7 +225,7 @@ fn ray_parabola_collision(
                 if x0_valid {
                     Some(RayIntersection::new(
                         (x0 - ray.origin.x) / ray.dir.x,
-                        normal(x0, parabola.a),
+                        normal(x0, parabola),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
@@ -242,7 +242,7 @@ fn ray_parabola_collision(
                 if x1_valid {
                     Some(RayIntersection::new(
                         (x1 - ray.origin.x) / ray.dir.x,
-                        normal(x1, parabola.a),
+                        normal(x1, parabola),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
@@ -259,14 +259,14 @@ fn ray_parabola_collision(
             } else if x1_valid {
                 Some(RayIntersection::new(
                     (x1 - ray.origin.x) / ray.dir.x,
-                    normal(x1, parabola.a),
+                    normal(x1, parabola),
                     // outside to inside
                     FeatureId::Face(0),
                 ))
             } else if x0_valid {
                 Some(RayIntersection::new(
                     (x0 - ray.origin.x) / ray.dir.x,
-                    normal(x0, parabola.a),
+                    normal(x0, parabola),
                     // inside to outside
                     FeatureId::Face(1),
                 ))
@@ -620,6 +620,18 @@ impl WallType {
                 transform,
             }) => match id {
                 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
+                1 => {
+                    let dist = transform.translation.vector - pos.coords;
+                    *a = 1.0 / (4.0 * dist.norm_squared().sqrt());
+                    // TODO fix this
+                    // transform.rotation = nalgebra::UnitComplex::from_angle(
+                    //     dist.y.atan2(dist.x) + std::f32::consts::PI / 2.0
+                    // );
+
+                    // transform.rotation.transform_vector(
+                    //     &Vector2::new(0.0, 1.0 / (*a * 4.0))
+                    // )
+                }
                 _ => (),
             },
             WallType::Circle(circle, center, t0, t1) => match id {
@@ -647,7 +659,13 @@ impl WallType {
                 left,
                 right,
                 transform,
-            }) => vec![transform.translation.vector.into()], // TODO
+            }) => vec![
+                transform.translation.vector.into(),
+                Point2::from(transform.translation.vector)
+                + transform.rotation.transform_vector(
+                    &Vector2::new(0.0, 1.0 / (*a * 4.0))
+                )
+            ], // TODO
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
                 Point2::new(
