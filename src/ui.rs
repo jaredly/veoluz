@@ -90,12 +90,12 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
             },
         )?;
     }
-    for i in 0..30 {
-        draw_laser(&state, vector_dir(std::f32::consts::PI / 15.0 * i as f32))?;
-    }
+    // for i in 0..30 {
+    //     draw_laser(&state, vector_dir(std::f32::consts::PI / 15.0 * i as f32))?;
+    // }
     // draw_laser(&state, vector_dir(0.1));
     // draw_laser(&state, vector_dir(0.2));
-    // draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
+    draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
     Ok(())
 }
 

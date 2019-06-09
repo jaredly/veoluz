@@ -180,8 +180,8 @@ fn ray_parabola_collision(
     } else {
         let rest = determinant.sqrt();
 
-        let x0 = (-b - rest) / (a * 2.0);
-        let x1 = (-b + rest) / (a * 2.0);
+        let x0 = (-b + rest) / (a * 2.0);
+        let x1 = (-b - rest) / (a * 2.0);
 
         let x0_valid = x0 > parabola.left && x0 < parabola.right;
         let x1_valid = x1 > parabola.left && x1 < parabola.right;
