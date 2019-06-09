@@ -8,10 +8,20 @@ pub type uint = u32;
 pub const PI: float = std::f32::consts::PI;
 
 #[inline]
-fn draw(data: &mut [uint], width: usize, full: float, x: int, y: int, amount: float) {
-    let index = (y as usize) * width + x as usize;
-    let brightness = (amount * full) as uint;
-    data[index] += brightness;
+fn draw(
+    data: &mut [uint],
+    width: usize,
+    height: usize,
+    full: float,
+    x: int,
+    y: int,
+    amount: float,
+) {
+    if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+        let index = (y as usize) * width + x as usize;
+        let brightness = (amount * full) as uint;
+        data[index] += brightness;
+    }
 }
 
 pub fn draw_line(
@@ -80,16 +90,11 @@ pub fn draw_line(
             let point = (yy, x);
 
             // TODO get rid of these if blocks by ensuring we're in scope to start with
-            if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
-                draw(data, width, full, point.0, point.1, 1.0 - fpart)
-            }
+            draw(data, width, height, full, point.0, point.1, 1.0 - fpart);
 
             if fpart > 0.0 {
                 let point = (yy + 1, x);
-                if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int
-                {
-                    draw(data, width, full, point.0, point.1, fpart)
-                }
+                draw(data, width, height, full, point.0, point.1, fpart)
             }
             y += gradient;
         }
@@ -102,16 +107,11 @@ pub fn draw_line(
             let point = (x, yy);
 
             // TODO get rid of these if blocks by ensuring we're in scope to start with
-            if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int {
-                draw(data, width, full, point.0, point.1, 1.0 - fpart)
-            }
+            draw(data, width, height, full, point.0, point.1, 1.0 - fpart);
 
             if fpart > 0.0 {
                 let point = (x, yy + 1);
-                if point.0 >= 0 && point.1 >= 0 && point.0 < width as int && point.1 < height as int
-                {
-                    draw(data, width, full, point.0, point.1, fpart)
-                }
+                draw(data, width, height, full, point.0, point.1, fpart);
             }
             y += gradient;
         }

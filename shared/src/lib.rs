@@ -114,7 +114,7 @@ macro_rules! log {
     ( $( $t:tt )* ) => {
         // web_sys::console::log_1(&format!( $( $t )* ).into());
         ();
-    }
+    };
 }
 
 fn ray_parabola_collision(
@@ -149,7 +149,7 @@ fn ray_parabola_collision(
             ))
         } else {
             None
-        }
+        };
     }
 
     let m = ray.dir.y / ray.dir.x;
@@ -185,7 +185,15 @@ fn ray_parabola_collision(
 
         let x0_valid = x0 > parabola.left && x0 < parabola.right;
         let x1_valid = x1 > parabola.left && x1 < parabola.right;
-        log!("a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}", a, b, c, determinant, x0, x1);
+        log!(
+            "a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}",
+            a,
+            b,
+            c,
+            determinant,
+            x0,
+            x1
+        );
         log!("Transformed ray: {:?}", ray);
 
         if ray.origin.x < x0 {
@@ -217,19 +225,24 @@ fn ray_parabola_collision(
                 if x0_valid {
                     Some(RayIntersection::new(
                         (x0 - ray.origin.x) / ray.dir.x,
-                    normal(x0, parabola.a),
+                        normal(x0, parabola.a),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
                 } else {
-                    log!("Inside going left, outside bounds: x0: {}, rest: {}, deter: {}", x0, rest, determinant);
+                    log!(
+                        "Inside going left, outside bounds: x0: {}, rest: {}, deter: {}",
+                        x0,
+                        rest,
+                        determinant
+                    );
                     None
                 }
             } else {
                 if x1_valid {
                     Some(RayIntersection::new(
                         (x1 - ray.origin.x) / ray.dir.x,
-                    normal(x1, parabola.a),
+                        normal(x1, parabola.a),
                         // inside to outside
                         FeatureId::Face(1),
                     ))
@@ -241,7 +254,7 @@ fn ray_parabola_collision(
         } else {
             // right
             if ray.dir.x > 0.0 {
-                    log!("Right going right");
+                log!("Right going right");
                 None
             } else if x1_valid {
                 Some(RayIntersection::new(
@@ -258,7 +271,7 @@ fn ray_parabola_collision(
                     FeatureId::Face(1),
                 ))
             } else {
-                    log!("Right both outside bounds");
+                log!("Right both outside bounds");
                 None
             }
         }
@@ -579,9 +592,7 @@ impl WallType {
             WallType::Circle(circle, center, t0, t1) => {
                 ray_arc_collision(&ray, (circle, center, *t0, *t1))
             }
-            WallType::Parabola(parabola) => {
-                ray_parabola_collision(&ray, &parabola)
-            }
+            WallType::Parabola(parabola) => ray_parabola_collision(&ray, &parabola),
         }
     }
 
@@ -602,12 +613,15 @@ impl WallType {
                 1 => *wall = Segment::new(wall.a().clone(), *pos),
                 _ => (),
             },
-            WallType::Parabola(Parabola {a, left, right, transform}) => match id {
-                0 => transform.translation = nalgebra::Translation2::from(
-                    pos.coords
-                ),
+            WallType::Parabola(Parabola {
+                a,
+                left,
+                right,
+                transform,
+            }) => match id {
+                0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 _ => (),
-            }
+            },
             WallType::Circle(circle, center, t0, t1) => match id {
                 0 => *center = *pos,
                 1 => {
@@ -628,9 +642,12 @@ impl WallType {
     pub fn handles(&self) -> Vec<Point2<line::float>> {
         match self {
             WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
-            WallType::Parabola(Parabola {a, left, right, transform}) => vec![
-                transform.translation.vector.into()
-            ], // TODO
+            WallType::Parabola(Parabola {
+                a,
+                left,
+                right,
+                transform,
+            }) => vec![transform.translation.vector.into()], // TODO
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
                 Point2::new(
@@ -673,13 +690,14 @@ impl WallType {
 
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         match self {
-            WallType::Parabola(Parabola {a, left, right, transform}) => {
-                let p0 = transform.transform_point(&Point2::new(
-                    *left, 0.0
-                ));
-                let p1 = transform.transform_point(&Point2::new(
-                    *right, 0.0
-                ));
+            WallType::Parabola(Parabola {
+                a,
+                left,
+                right,
+                transform,
+            }) => {
+                let p0 = transform.transform_point(&Point2::new(*left, 0.0));
+                let p1 = transform.transform_point(&Point2::new(*right, 0.0));
                 ctx.begin_path();
                 ctx.move_to(p0.x as f64, p0.y as f64);
                 ctx.line_to(p1.x as f64, p1.y as f64);
