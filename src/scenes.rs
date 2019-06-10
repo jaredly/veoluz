@@ -17,7 +17,7 @@ pub fn parabola_test() -> shared::Config {
             left: -50.0,
             right: 50.0,
             transform: nalgebra::Isometry2::from_parts(
-                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                nalgebra::Translation2::from(nalgebra::Vector2::new(
                     width as f32 / 2.0,
                     height as f32 / 2.0 + 50.0,
                 )),
@@ -29,7 +29,7 @@ pub fn parabola_test() -> shared::Config {
             left: -50.0,
             right: 50.0,
             transform: nalgebra::Isometry2::from_parts(
-                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                nalgebra::Translation2::from(nalgebra::Vector2::new(
                     width as f32 / 2.0,
                     height as f32 / 2.0 + 80.0,
                 )),
@@ -41,7 +41,7 @@ pub fn parabola_test() -> shared::Config {
             left: -50.0,
             right: 50.0,
             transform: nalgebra::Isometry2::from_parts(
-                nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                nalgebra::Translation2::from(nalgebra::Vector2::new(
                     width as f32 / 2.0,
                     height as f32 / 2.0 + 100.0,
                 )),
@@ -54,7 +54,7 @@ pub fn parabola_test() -> shared::Config {
                 left: -50.0,
                 right: 50.0,
                 transform: nalgebra::Isometry2::from_parts(
-                    nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                    nalgebra::Translation2::from(nalgebra::Vector2::new(
                         width as f32 / 2.0,
                         height as f32 / 2.0 + 140.0,
                     )),
@@ -69,7 +69,7 @@ pub fn parabola_test() -> shared::Config {
                 left: -50.0,
                 right: 50.0,
                 transform: nalgebra::Isometry2::from_parts(
-                    nalgebra::Translation2::from_vector(nalgebra::Vector2::new(
+                    nalgebra::Translation2::from(nalgebra::Vector2::new(
                         width as f32 / 2.0,
                         height as f32 / 2.0 + 240.0,
                     )),

@@ -3,10 +3,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
-module.exports = {
+const mainJs = {
     entry: './index.js',
     output: {
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'docs'),
         filename: 'index.js',
     },
     plugins: [
@@ -25,3 +25,7 @@ module.exports = {
     ],
     mode: 'production'
 };
+
+const worker = require('./worker/webpack.config')
+worker.output.path = path.resolve(__dirname, 'docs')
+module.exports = [mainJs, worker]

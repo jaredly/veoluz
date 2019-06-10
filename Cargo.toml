@@ -32,7 +32,9 @@ serde_json = "1.0"
 rand = { version = "*", features = ["stdweb"] }
 # log = "0.4"
 # web_logger = "0.1"
-# yew = "*"
+# yew = "0.5.0"
+# sauron = "*"
+# stdweb = "0.4.9"
 
 [dependencies.js-sys]
 version = "*"

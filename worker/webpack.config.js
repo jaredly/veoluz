@@ -6,13 +6,13 @@ const dist = path.resolve(__dirname, "dist");
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = {
-  entry: "./js/index.js",
+  entry: __dirname + "/js/index.js",
   target: 'webworker',
   mode: 'production',
   // mode: 'development',
   output: {
     path: dist,
-    filename: "bundle.js"
+    filename: "worker.js"
   },
   devServer: {
     contentBase: dist,
