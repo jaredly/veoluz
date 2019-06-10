@@ -1,5 +1,5 @@
 extern crate num_traits;
-use num_traits::{Float, NumAssignOps, NumCast, Signed};
+use num_traits::{Float, Signed};
 use std::mem::swap;
 
 pub type float = f32;
@@ -53,8 +53,8 @@ pub fn draw_line(
     // let _ = crate::Timer::new("draw line");
     // -- The Setup part
 
-    let dx = (end.0 - start.0);
-    let dy = (end.1 - start.1);
+    let dx = end.0 - start.0;
+    let dy = end.1 - start.1;
 
     let steep = dy.abs() > dx.abs();
 
@@ -68,7 +68,7 @@ pub fn draw_line(
     }
     // log!("Line xs = {} - {}", start.0, end.0);
 
-    let mut gradient = (end.1 - start.1) / (end.0 - start.0);
+    let gradient = (end.1 - start.1) / (end.0 - start.0);
 
     // if gradient == 0.0 {
     //     gradient = 1.0;

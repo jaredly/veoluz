@@ -12,7 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 // use rand::random;
 // use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d, ImageData};
+use web_sys::{CanvasRenderingContext2d};
 
 fn rand() -> f32 {
     rand::random::<f32>()
@@ -25,7 +25,7 @@ macro_rules! log {
 }
 
 use nalgebra as na;
-use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
+
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Parabola {
@@ -130,7 +130,7 @@ fn ray_parabola_collision(
     // a = x / dx
     // parabola.transform.rotation.deref().angle;
     // b = y - (a * dy)
-    let y = ray.origin.y;
+    let _y = ray.origin.y;
 
     #[inline]
     fn normal(x: f32, parabola: &Parabola, outside: bool) -> Vector2<f32> {
@@ -457,7 +457,7 @@ fn refract(
 ) -> Option<line::float> {
     let ray_dir = ray_dir.y.atan2(ray_dir.x);
     let n = normal.y.atan2(normal.x);
-    let normal_dir = n + PI / 2.0;
+    let _normal_dir = n + PI / 2.0;
 
     #[inline]
     fn deg(r: f32) -> f32 {
@@ -626,8 +626,8 @@ impl WallType {
             },
             WallType::Parabola(Parabola {
                 a,
-                left,
-                right,
+                left: _,
+                right: _,
                 transform,
             }) => match id {
                 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
@@ -662,8 +662,8 @@ impl WallType {
             WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
             WallType::Parabola(Parabola {
                 a,
-                left,
-                right,
+                left: _,
+                right: _,
                 transform,
             }) => vec![
                 transform.translation.vector.into(),
@@ -768,7 +768,7 @@ pub fn find_collision(
 ) -> Option<(line::float, Properties, bool, Vector2<line::float>)> {
     let mut closest = None;
 
-    for (i, wall) in walls.iter().enumerate() {
+    for (_i, wall) in walls.iter().enumerate() {
         match wall.kind.toi_and_normal_with_ray(&ray) {
             None => (),
             Some(intersection) => match closest {
@@ -833,7 +833,7 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
         );
         let max_brightness = 100.0;
 
-        for _ in 0..4 {
+        for _ in 0..30 {
             match find_collision(&config.walls, &ray) {
                 None => {
                     line::draw_line(
