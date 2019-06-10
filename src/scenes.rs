@@ -1,17 +1,17 @@
-use nalgebra::{Point2, Vector2};
-use ncollide2d::query::Ray;
+use nalgebra::{Point2};
+
 use ncollide2d::shape::Ball;
 use shared;
 use shared::line;
 use shared::{Wall, WallType};
-use wasm_bindgen::prelude::*;
+
 
 use std::f32::consts::PI;
 
 pub fn parabola_test() -> shared::Config {
     let width = 1024;
     let height = 576;
-    let mut walls = vec![
+    let walls = vec![
         Wall::mirror(WallType::Parabola(shared::Parabola {
             a: -1.0 / (4.0 * 50.0),
             left: -50.0,
@@ -119,7 +119,7 @@ pub fn apple() -> shared::Config {
 
     let count = 5;
 
-    let radius = 100.0;
+    let _radius = 100.0;
     let by = line::PI * 2.0 / (count as line::float);
 
     for i in 0..count {
@@ -196,9 +196,9 @@ use ncollide2d::shape::Segment;
 pub fn playground() -> shared::Config {
     let width = 1024;
     let height = 576;
-    let cx = (width / 2) as line::float;
-    let cy = (height / 2) as line::float;
-    let mut walls = vec![
+    let _cx = (width / 2) as line::float;
+    let _cy = (height / 2) as line::float;
+    let walls = vec![
         Wall::transparent(
             WallType::Line(Segment::new(
                 Point2::new(50.0, 100.0),
@@ -283,13 +283,13 @@ pub fn circle_row() -> shared::Config {
 
     let count = 10;
 
-    let radius = 100.0;
+    let _radius = 100.0;
     let by = line::PI * 2.0 / (count as line::float);
 
     let r0 = 100.0;
 
     for i in 0..count {
-        let theta = i as line::float * by;
+        let _theta = i as line::float * by;
 
         walls.push(Wall::transparent(
             WallType::Circle(
@@ -307,7 +307,7 @@ pub fn circle_row() -> shared::Config {
         if i == 0 {
             continue;
         }
-        let theta = i as line::float * by;
+        let _theta = i as line::float * by;
 
         walls.push(Wall::transparent(
             WallType::Circle(
@@ -332,7 +332,7 @@ pub fn circles() -> shared::Config {
 
     let count = 10;
 
-    let radius = 100.0;
+    let _radius = 100.0;
     let by = line::PI * 2.0 / (count as line::float);
 
     let r0 = 100.0;
@@ -389,7 +389,7 @@ pub fn refraction_test() -> shared::Config {
 
     let count = 5;
 
-    let radius = 100.0;
+    let _radius = 100.0;
     let by = line::PI * 2.0 / (count as line::float);
 
     for i in 0..count {
@@ -411,7 +411,7 @@ pub fn refraction_test() -> shared::Config {
                 Point2::new(cx + theta.cos() * r0, cy + theta.sin() * r0),
                 Point2::new(cx + (theta + td).cos() * r1, cy + (theta + td).sin() * r1),
             )),
-            if (i % 2 == 0) { index } else { 1.0 / index },
+            if i % 2 == 0 { index } else { 1.0 / index },
         ));
 
         // walls.push(Wall::transparent(

@@ -24,7 +24,7 @@ fn draw_laser(
     vector: nalgebra::Vector2<shared::line::float>,
 ) -> Result<(), JsValue> {
     let mut ray = ncollide2d::query::Ray::new(state.config.light_source, vector);
-    for i in 0..10 {
+    for _i in 0..10 {
         // log!("Ray: {:?}", ray);
         match shared::find_collision(&state.config.walls, &ray) {
             None => {
@@ -101,7 +101,7 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
     Ok(())
 }
 
-use std::f32::consts::PI;
+
 
 macro_rules! listen {
     ($base:expr, $name:expr, $evt: ty, $body:expr) => {
@@ -117,8 +117,8 @@ fn mouse_pos(evt: &web_sys::MouseEvent) -> Point2<f32> {
     let target: &web_sys::Element = m.dyn_ref::<web_sys::Element>().unwrap();
     let rect = target.get_bounding_client_rect();
     Point2::new(
-        (evt.x() as f32 - rect.x() as f32),
-        (evt.y() as f32 - rect.y() as f32),
+        evt.x() as f32 - rect.x() as f32,
+        evt.y() as f32 - rect.y() as f32,
     )
 }
 
@@ -132,7 +132,7 @@ fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(
     return None;
 }
 
-use wasm_bindgen::prelude::*;
+
 
 #[wasm_bindgen]
 extern "C" {

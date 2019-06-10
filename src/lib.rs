@@ -4,9 +4,9 @@ extern crate lazy_static;
 // extern crate yew;
 
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
+
 use wasm_bindgen::JsCast;
-use web_sys::ImageData;
+
 
 #[macro_use]
 mod utils;
