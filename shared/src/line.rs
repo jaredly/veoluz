@@ -24,6 +24,21 @@ fn draw(
     }
 }
 
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = performance)]
+    fn now() -> f64;
+}
+
 pub fn draw_line(
     mut start: Point<float>,
     mut end: Point<float>,
@@ -32,9 +47,16 @@ pub fn draw_line(
     height: usize,
     full: float,
 ) {
+    // let p = web_sys::window().unwrap().performance().unwrap();
+    let s = now();
+    // let s = std::time::SystemTime::now();
+    // let _ = crate::Timer::new("draw line");
     // -- The Setup part
 
-    let steep = (end.1 - start.1).abs() > (end.0 - start.0).abs();
+    let dx = (end.0 - start.0);
+    let dy = (end.1 - start.1);
+
+    let steep = dy.abs() > dx.abs();
 
     if steep {
         start = (start.1, start.0);
@@ -116,6 +138,12 @@ pub fn draw_line(
             y += gradient;
         }
     }
+    let t = now();
+    if t - s > 10.0 {
+    // let t = std::time::SystemTime::now();
+    // if t.duration_since(s).unwrap() > std::time::Duration::from_micros(100) {
+        log!("Too long {} - steep {}, dx {}, dy {}", t - s, steep, dx, dy);
+    }
 }
 
 /// An implementation of [Xiaolin Wu's line algorithm].
@@ -153,13 +181,6 @@ pub fn draw_line(
 // }
 
 pub type Point<T> = (T, T);
-
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
 
 // impl XiaolinWu<float, int> {
 //     #[inline]

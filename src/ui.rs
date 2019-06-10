@@ -132,6 +132,20 @@ fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(
     return None;
 }
 
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    type Location;
+    static location: Location;
+
+    #[wasm_bindgen(method, getter, structural)]
+    fn hash(this: &Location) -> String;
+
+    #[wasm_bindgen(method, setter, structural)]
+    fn set_hash(this: &Location, val: &str);
+}
+
 pub fn setup_button() -> Result<(), JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -144,10 +158,30 @@ pub fn setup_button() -> Result<(), JsValue> {
 
     listen!(button, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-            state.async_render(true);
+            state.async_render(true)?;
             Ok(())
         })
     });
+
+    let button = document
+        .get_element_by_id("share")
+        .expect("get share button")
+        .dyn_into::<web_sys::HtmlButtonElement>()?;
+
+    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            // let res = serde_json::to_string(&state.config).unwrap();
+            // location.set_hash(&res);
+            let encoded = bincode::serialize(&state.config).unwrap();
+            let b64 = base64::encode(&encoded);
+            location.set_hash(&b64);
+            // state.async_render(true);
+            Ok(())
+        })
+    });
+
+
+
 
     Ok(())
 }

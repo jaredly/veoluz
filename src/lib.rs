@@ -58,7 +58,7 @@ pub fn run() -> Result<(), JsValue> {
     state::try_with(|state| {
         state.add_worker(make_worker(0)?);
         log!("Initial render!");
-        // state.async_render(false)?;
+        state.async_render(false)?;
         Ok(())
     });
 

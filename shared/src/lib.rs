@@ -110,19 +110,20 @@ fn is_between(needle: line::float, start: line::float, end: line::float) -> bool
     }
 }
 
-// macro_rules! log {
-//     ( $( $t:tt )* ) => {
-//         // web_sys::console::log_1(&format!( $( $t )* ).into());
-//         ();
-//     };
-// }
-
 #[inline]
 fn ray_parabola_collision(
     ray: &Ray<line::float>,
     parabola: &Parabola,
 ) -> Option<RayIntersection<line::float>> {
-    // log!("Ray parabola collision");
+
+    macro_rules! log {
+        ( $( $t:tt )* ) => {
+            // web_sys::console::log_1(&format!( $( $t )* ).into());
+            ();
+        };
+    }
+
+    log!("Ray parabola collision");
     let ray = ray.inverse_transform_by(&parabola.transform);
     // I need the ray to u
     // x, y, dx, dy
@@ -140,16 +141,23 @@ fn ray_parabola_collision(
         Vector2::new(angle.cos(), angle.sin())
     }
 
-    if ray.dir.x == 0.0 {
+    if (ray.dir.x).abs() < 0.0001 {
         log!("No dx");
         return if ray.origin.x > parabola.left && ray.origin.x < parabola.right {
             let py = parabola.a * ray.origin.x * ray.origin.x;
+            if (py > ray.origin.y && ray.dir.y > 0.0) || (
+                py < ray.origin.y && ray.dir.y < 0.0
+            ) {
+
             Some(RayIntersection::new(
                 (py - ray.origin.y) / ray.dir.y,
                 normal(ray.origin.x, &parabola, ray.origin.y < py),
                 // inside to outside
                 FeatureId::Face(1),
             ))
+            } else {
+                None
+            }
         } else {
             None
         };
@@ -178,7 +186,7 @@ fn ray_parabola_collision(
     let determinant = b * b - 4.0 * a * c;
 
     if determinant <= 0.0 {
-        // log!("Outside the realm");
+        log!("Outside the realm");
         None
     } else {
         let rest = determinant.sqrt();
@@ -188,21 +196,21 @@ fn ray_parabola_collision(
 
         let x0_valid = x0 > parabola.left && x0 < parabola.right;
         let x1_valid = x1 > parabola.left && x1 < parabola.right;
-        // log!(
-        //     "a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}",
-        //     a,
-        //     b,
-        //     c,
-        //     determinant,
-        //     x0,
-        //     x1
-        // );
-        // log!("Transformed ray: {:?}", ray);
+        log!(
+            "a: {}, b: {}, c: {}, det: {}, x0: {}, x1; {}",
+            a,
+            b,
+            c,
+            determinant,
+            x0,
+            x1
+        );
+        log!("Transformed ray: {:?}", ray);
 
         if ray.origin.x < x0 {
             // left
             if ray.dir.x < 0.0 {
-                // log!("Left side going left");
+                log!("Left side going left");
                 None
             } else if x0_valid {
                 Some(RayIntersection::new(
@@ -219,7 +227,7 @@ fn ray_parabola_collision(
                     FeatureId::Face(1),
                 ))
             } else {
-                // log!("Both intersections outside");
+                log!("Both intersections outside");
                 None
             }
         } else if ray.origin.x < x1 {
@@ -233,12 +241,12 @@ fn ray_parabola_collision(
                         FeatureId::Face(1),
                     ))
                 } else {
-                    // log!(
-                    //     "Inside going left, outside bounds: x0: {}, rest: {}, deter: {}",
-                    //     x0,
-                    //     rest,
-                    //     determinant
-                    // );
+                    log!(
+                        "Inside going left, outside bounds: x0: {}, rest: {}, deter: {}",
+                        x0,
+                        rest,
+                        determinant
+                    );
                     None
                 }
             } else {
@@ -250,14 +258,14 @@ fn ray_parabola_collision(
                         FeatureId::Face(1),
                     ))
                 } else {
-                    // log!("Inside going right, outside bounds");
+                    log!("Inside going right, outside bounds");
                     None
                 }
             }
         } else {
             // right
             if ray.dir.x > 0.0 {
-                // log!("Right going right");
+                log!("Right going right");
                 None
             } else if x1_valid {
                 Some(RayIntersection::new(
@@ -274,7 +282,7 @@ fn ray_parabola_collision(
                     FeatureId::Face(1),
                 ))
             } else {
-                // log!("Right both outside bounds");
+                log!("Right both outside bounds");
                 None
             }
         }
@@ -816,16 +824,16 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
 
     // if we don't draw at all, we're still getting only 400k/sec
 
-    for r in 80..100 {
-        // let direction = rand() * PI * 2.0;
-        let direction = (r as f32) / 180.0 * PI;
+    for _ in 0..rays {
+        let direction = rand() * PI * 2.0;
+        // let direction = (r as f32) / 180.0 * PI;
         let mut ray = ncollide2d::query::Ray::new(
             config.light_source,
             Vector2::new(direction.cos(), direction.sin()),
         );
         let max_brightness = 100.0;
 
-        for _ in 0..30 {
+        for _ in 0..4 {
             match find_collision(&config.walls, &ray) {
                 None => {
                     line::draw_line(
@@ -841,6 +849,9 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
                 Some((toi, properties, left_side, normal)) => {
                     let (new_origin, stop) =
                         bounce_ray(&mut ray, toi, properties, left_side, normal);
+                    // if (new_origin.x > 10_000.0 || new_origin.y < -10_000.0) {
+                    //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal) 
+                    // }
                     line::draw_line(
                         xy(&ray.origin),
                         xy(&new_origin),
