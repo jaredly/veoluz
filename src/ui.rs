@@ -78,10 +78,19 @@ fn vector_dir(dir: f32) -> Vector2<f32> {
 }
 
 fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue> {
-    state.ctx.set_stroke_style(&JsValue::from_str("green"));
-    state.ctx.set_fill_style(&JsValue::from_str("#7fa"));
+    // state.ctx.set_stroke_style(&JsValue::from_str("green"));
+    state.ctx.set_fill_style(&JsValue::from_str("#eee"));
 
     for (i, wall) in state.config.walls.iter().enumerate() {
+        if wall.properties.reflect == 1.0 {
+            state.ctx.set_stroke_style(&JsValue::from_str("yellow"));
+        } else if wall.properties.absorb == 1.0 {
+            state.ctx.set_stroke_style(&JsValue::from_str("red"));
+        } else if wall.properties.reflect == 0.0 && wall.properties.absorb == 0.0 {
+            state.ctx.set_stroke_style(&JsValue::from_str("green"));
+        } else {
+            state.ctx.set_stroke_style(&JsValue::from_str("blue"));
+        }
         wall.kind.draw(&state.ctx);
         wall.kind.draw_handles(
             &state.ctx,
@@ -92,12 +101,14 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
             },
         )?;
     }
+
     // for i in 0..30 {
     //     draw_laser(&state, vector_dir(std::f32::consts::PI / 15.0 * i as f32))?;
     // }
     // draw_laser(&state, vector_dir(0.1));
     // draw_laser(&state, vector_dir(0.2));
-    draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
+    // draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
+
     Ok(())
 }
 

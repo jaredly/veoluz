@@ -485,11 +485,11 @@ use ncollide2d::shape::Segment;
 pub struct Properties {
     // percentage of incoming light that's just absorbed
     // TODO(color): this should be a triple, for each rgb component... or something?
-    absorb: f32,
+    pub absorb: f32,
     // of the light that's not absorbed, how much is reflected (vs transmitted)?
-    reflect: f32,
+    pub reflect: f32,
     // when reflecting, how much is scattered (vs a pure reflection)
-    roughness: f32,
+    pub roughness: f32,
     // when transmitting, what's the index of refraction?
 
     // this is the index of refraction from *left* to *right*
@@ -497,7 +497,7 @@ pub struct Properties {
     // - line, "left" when at the first point facing the second point.
     // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
     // Face(1) is hitting the right side
-    refraction: f32,
+    pub refraction: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
