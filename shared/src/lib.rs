@@ -27,7 +27,7 @@ macro_rules! log {
 use nalgebra as na;
 use nalgebra::geometry::{Isometry2, Rotation2, Translation2};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Parabola {
     pub a: line::float,
     pub left: line::float,
@@ -35,7 +35,7 @@ pub struct Parabola {
     pub transform: nalgebra::geometry::Isometry2<line::float>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum WallType {
     Line(Segment<line::float>),
     Circle(
@@ -482,7 +482,7 @@ fn refract(
 
 use ncollide2d::shape::Segment;
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Properties {
     // percentage of incoming light that's just absorbed
     // TODO(color): this should be a triple, for each rgb component... or something?
@@ -501,7 +501,7 @@ pub struct Properties {
     refraction: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Wall {
     pub kind: WallType,
     pub properties: Properties,
@@ -796,7 +796,7 @@ pub fn find_collision(
 //     Finished(JsValue)
 // }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     pub walls: Vec<Wall>,
     pub light_source: Point2<line::float>,

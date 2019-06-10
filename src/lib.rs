@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
+// #[macro_use]
+// extern crate yew;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
@@ -49,12 +51,15 @@ pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     // let config = scenes::circle_row();
     // let config = scenes::playground();
-    let config = match ui::get_url_config() {
-        None => scenes::parabola_test(),
-        Some(config) => config
-    };
+    let config = scenes::parabola_test();
     // let config = scenes::apple();
     // let config = scenes::refraction_test();
+
+    let config = match ui::get_url_config() {
+        None => config,
+        Some(config) => config
+    };
+
 
     state::setState(config.into());
 
