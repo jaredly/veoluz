@@ -12,7 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 // use rand::random;
 // use wasm_bindgen::Clamped;
-use web_sys::{CanvasRenderingContext2d};
+use web_sys::CanvasRenderingContext2d;
 
 fn rand() -> f32 {
     rand::random::<f32>()
@@ -25,7 +25,6 @@ macro_rules! log {
 }
 
 use nalgebra as na;
-
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Parabola {
@@ -115,7 +114,6 @@ fn ray_parabola_collision(
     ray: &Ray<line::float>,
     parabola: &Parabola,
 ) -> Option<RayIntersection<line::float>> {
-
     macro_rules! log {
         ( $( $t:tt )* ) => {
             // web_sys::console::log_1(&format!( $( $t )* ).into());
@@ -137,7 +135,11 @@ fn ray_parabola_collision(
         let slope = parabola.a * 2.0 * x;
         let angle =
             slope.atan2(1.0) - std::f32::consts::PI / 2.0 + parabola.transform.rotation.angle();
-        let angle = if outside { angle + std::f32::consts::PI } else { angle };
+        let angle = if outside {
+            angle + std::f32::consts::PI
+        } else {
+            angle
+        };
         Vector2::new(angle.cos(), angle.sin())
     }
 
@@ -145,16 +147,13 @@ fn ray_parabola_collision(
         log!("No dx");
         return if ray.origin.x > parabola.left && ray.origin.x < parabola.right {
             let py = parabola.a * ray.origin.x * ray.origin.x;
-            if (py > ray.origin.y && ray.dir.y > 0.0) || (
-                py < ray.origin.y && ray.dir.y < 0.0
-            ) {
-
-            Some(RayIntersection::new(
-                (py - ray.origin.y) / ray.dir.y,
-                normal(ray.origin.x, &parabola, ray.origin.y < py),
-                // inside to outside
-                FeatureId::Face(1),
-            ))
+            if (py > ray.origin.y && ray.dir.y > 0.0) || (py < ray.origin.y && ray.dir.y < 0.0) {
+                Some(RayIntersection::new(
+                    (py - ray.origin.y) / ray.dir.y,
+                    normal(ray.origin.x, &parabola, ray.origin.y < py),
+                    // inside to outside
+                    FeatureId::Face(1),
+                ))
             } else {
                 None
             }
@@ -572,6 +571,55 @@ impl Wall {
 use std::f32::consts::PI;
 
 impl WallType {
+    pub fn rand_circle(width: usize, height: usize) -> WallType {
+        WallType::Circle(
+            Ball::new(rand::random::<f32>() * 50.0 + 50.0),
+            Point2::new(
+                rand::random::<f32>() * width as f32,
+                rand::random::<f32>() * height as f32,
+            ),
+            -PI,
+            PI,
+        )
+    }
+
+    pub fn rand_line(width: usize, height: usize) -> WallType {
+        let c = Point2::new(
+            rand::random::<f32>() * (width as f32 - 200.0) + 100.0,
+            rand::random::<f32>() * (height as f32 - 200.0) + 100.0,
+        );
+        let r = rand::random::<f32>() * std::f32::consts::PI;
+        let len = rand::random::<f32>() * 70.0 + 30.0;
+        let off = Vector2::new(r.cos() * len, r.sin() * len);
+        WallType::Line(Segment::new(c + off, c - off))
+    }
+
+    pub fn rand_parabola(width: usize, height: usize) -> WallType {
+        let c = Vector2::new(
+            rand::random::<f32>() * (width as f32 - 200.0) + 100.0,
+            rand::random::<f32>() * (height as f32 - 200.0) + 100.0,
+        );
+        let r = rand::random::<f32>() * std::f32::consts::PI;
+        let a = rand::random::<f32>() * 100.0 + 5.0;
+        WallType::Parabola(Parabola {
+            a: 1.0 / (4.0 * a),
+            left: -(rand::random::<f32>() * 50.0 + 10.0),
+            right: (rand::random::<f32>() * 50.0 + 10.0),
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from(c),
+                nalgebra::UnitComplex::from_angle(r)
+            )
+        })
+    }
+
+    pub fn rand_all(width: usize, height: usize) -> Vec<WallType> {
+        vec![
+            WallType::rand_circle(width, height),
+            WallType::rand_line(width, height),
+            WallType::rand_parabola(width, height),
+        ]
+    }
+
     fn toi_and_normal_with_ray(
         &self,
         ray: &Ray<line::float>,
@@ -850,7 +898,7 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
                     let (new_origin, stop) =
                         bounce_ray(&mut ray, toi, properties, left_side, normal);
                     // if (new_origin.x > 10_000.0 || new_origin.y < -10_000.0) {
-                    //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal) 
+                    //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal)
                     // }
                     line::draw_line(
                         xy(&ray.origin),

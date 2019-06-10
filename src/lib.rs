@@ -50,8 +50,8 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     // let config = scenes::circle_row();
-    // let config = scenes::playground();
-    let config = scenes::parabola_test();
+    let config = scenes::playground();
+    // let config = scenes::parabola_test();
     // let config = scenes::apple();
     // let config = scenes::refraction_test();
 
