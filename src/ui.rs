@@ -146,6 +146,15 @@ extern "C" {
     fn set_hash(this: &Location, val: &str);
 }
 
+pub fn get_url_config() -> Option<shared::Config> {
+    let hash = location.hash();
+    if hash.len() == 0 {
+        return None
+    }
+    let hash: String = hash[1..].into();
+    base64::decode(&hash).ok().and_then(|encoded| bincode::deserialize(&encoded).ok())
+}
+
 pub fn setup_button() -> Result<(), JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -175,7 +184,6 @@ pub fn setup_button() -> Result<(), JsValue> {
             let encoded = bincode::serialize(&state.config).unwrap();
             let b64 = base64::encode(&encoded);
             location.set_hash(&b64);
-            // state.async_render(true);
             Ok(())
         })
     });
