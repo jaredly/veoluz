@@ -674,8 +674,8 @@ impl WallType {
             },
             WallType::Parabola(Parabola {
                 a,
-                left: _,
-                right: _,
+                left,
+                right,
                 transform,
             }) => match id {
                 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
@@ -685,6 +685,20 @@ impl WallType {
                     transform.rotation = nalgebra::UnitComplex::from_angle(
                         dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
                     );
+                }
+                2 => {
+                    let pos = transform.inverse_transform_point(pos);
+                    *left = pos.x;
+                    if *right < *left {
+                        *right = *left + 10.0;
+                    }
+                }
+                3 => {
+                    let pos = transform.inverse_transform_point(pos);
+                    *right = pos.x;
+                    if *left > *right {
+                        *left = *right - 10.0;
+                    }
                 }
                 _ => (),
             },
@@ -710,8 +724,8 @@ impl WallType {
             WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
             WallType::Parabola(Parabola {
                 a,
-                left: _,
-                right: _,
+                left,
+                right,
                 transform,
             }) => vec![
                 transform.translation.vector.into(),
@@ -719,6 +733,12 @@ impl WallType {
                     + transform
                         .rotation
                         .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
+                transform.transform_point(
+                    &Point2::new(*left, 0.0)
+                ),
+                transform.transform_point(
+                    &Point2::new(*right, 0.0)
+                )
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
@@ -780,12 +800,20 @@ impl WallType {
                     ctx.line_to(p1.x as f64, p1.y as f64);
                 }
                 ctx.stroke();
-                // let p0 = transform.transform_point(&Point2::new(*left, 0.0));
-                // let p1 = transform.transform_point(&Point2::new(*right, 0.0));
-                // ctx.begin_path();
-                // ctx.move_to(p0.x as f64, p0.y as f64);
-                // ctx.line_to(p1.x as f64, p1.y as f64);
-                // ctx.stroke();
+
+                let p0 = transform.transform_point(&Point2::new(*left, 0.0));
+                let p1 = transform.transform_point(&Point2::new(*right, 0.0));
+                ctx.begin_path();
+                ctx.move_to(p0.x as f64, p0.y as f64);
+                ctx.line_to(p1.x as f64, p1.y as f64);
+                ctx.stroke();
+
+                let p0 = transform.transform_point(&Point2::new(0.0, 0.0));
+                let p1 = transform.transform_point(&Point2::new(0.0, 1.0 / (4.0 * a)));
+                ctx.begin_path();
+                ctx.move_to(p0.x as f64, p0.y as f64);
+                ctx.line_to(p1.x as f64, p1.y as f64);
+                ctx.stroke();
             }
             WallType::Line(wall) => {
                 ctx.begin_path();

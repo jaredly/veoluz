@@ -196,8 +196,6 @@ use ncollide2d::shape::Segment;
 pub fn playground() -> shared::Config {
     let width = 1024;
     let height = 576;
-    let _cx = (width / 2) as line::float;
-    let _cy = (height / 2) as line::float;
     let mut walls = vec![];
 
     for wt in WallType::rand_all(width, height) {
