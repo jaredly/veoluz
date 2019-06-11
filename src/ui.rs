@@ -229,12 +229,34 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
+    listen!(get_input("reflect")?, "input", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("reflect")?;
+                state.config.walls[ui.selected_wall].properties.reflect = input.value_as_number() as f32;
+                state.async_render(true)?;
+                Ok(())
+            })
+        })
+    });
+
     listen!(get_input("reflect")?, "change", web_sys::InputEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
                 let input = get_input("reflect")?;
                 state.config.walls[ui.selected_wall].properties.reflect = input.value_as_number() as f32;
                 state.async_render(false)?;
+                Ok(())
+            })
+        })
+    });
+
+    listen!(get_input("absorb")?, "input", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("absorb")?;
+                state.config.walls[ui.selected_wall].properties.absorb = input.value_as_number() as f32;
+                state.async_render(true)?;
                 Ok(())
             })
         })
@@ -251,12 +273,34 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
+    listen!(get_input("roughness")?, "input", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("roughness")?;
+                state.config.walls[ui.selected_wall].properties.roughness = input.value_as_number() as f32;
+                state.async_render(true)?;
+                Ok(())
+            })
+        })
+    });
+
     listen!(get_input("roughness")?, "change", web_sys::InputEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
                 let input = get_input("roughness")?;
                 state.config.walls[ui.selected_wall].properties.roughness = input.value_as_number() as f32;
                 state.async_render(false)?;
+                Ok(())
+            })
+        })
+    });
+
+    listen!(get_input("refraction")?, "input", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("refraction")?;
+                state.config.walls[ui.selected_wall].properties.refraction = input.value_as_number() as f32;
+                state.async_render(true)?;
                 Ok(())
             })
         })
