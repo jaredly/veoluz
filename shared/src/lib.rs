@@ -36,7 +36,8 @@ fn rand() -> f32 {
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
+        // web_sys::console::log_1(&format!( $( $t )* ).into());
+        ()
     }
 }
 
@@ -425,6 +426,35 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     data
 }
 
+pub fn black_colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
+    // something like 5% of the time is here
+    let _timer = Timer::new("Colorize");
+
+    let mut top = 0;
+    for x in 0..config.width {
+        for y in 0..config.height {
+            top = top.max(brightness_data[x + y * config.width]);
+        }
+    }
+
+    let mut data = vec![0; config.width * config.height * 4];
+    let top = top as line::float;
+    // let scale =
+    for x in 0..config.width {
+        for y in 0..config.height {
+            let index = (x + y * config.width) * 4;
+            let brightness = brightness_data[x + y * config.width];
+            let bright = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
+            data[index] = bright;
+            data[index + 1] = bright;
+            data[index + 2] = bright;
+            data[index + 3] = 255;
+        }
+    }
+
+    data
+}
+
 pub fn zen_photon(config: &Config) -> Vec<u8> {
     let brightness_data = calculate(&config, 100_000);
 
@@ -437,13 +467,13 @@ pub struct Timer<'a> {
 
 impl<'a> Timer<'a> {
     pub fn new(name: &'a str) -> Timer<'a> {
-        web_sys::console::time_with_label(name);
+        // web_sys::console::time_with_label(name);
         Timer { name }
     }
 }
 
 impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
-        web_sys::console::time_end_with_label(self.name);
+        // web_sys::console::time_end_with_label(self.name);
     }
 }

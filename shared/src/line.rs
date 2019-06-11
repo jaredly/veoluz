@@ -25,20 +25,21 @@ fn draw(
     }
 }
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+// // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
     ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
+        // web_sys::console::log_1(&format!( $( $t )* ).into());
+        ()
     }
 }
 
-use wasm_bindgen::prelude::*;
+// use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = performance)]
-    fn now() -> f64;
-}
+// #[wasm_bindgen]
+// extern "C" {
+//     #[wasm_bindgen(js_namespace = performance)]
+//     fn now() -> f64;
+// }
 
 pub fn draw_line(
     mut start: Point<float>,
@@ -49,7 +50,7 @@ pub fn draw_line(
     full: float,
 ) {
     // let p = web_sys::window().unwrap().performance().unwrap();
-    let s = now();
+    // let s = now();
     // let s = std::time::SystemTime::now();
     // let _ = crate::Timer::new("draw line");
     // -- The Setup part
@@ -175,12 +176,12 @@ pub fn draw_line(
         }
 
     }
-    let t = now();
-    if t - s > 10.0 {
-    // let t = std::time::SystemTime::now();
-    // if t.duration_since(s).unwrap() > std::time::Duration::from_micros(100) {
-        log!("Too long {} - steep {}, dx {}, dy {}", t - s, steep, dx, dy);
-    }
+    // let t = now();
+    // if t - s > 10.0 {
+    // // let t = std::time::SystemTime::now();
+    // // if t.duration_since(s).unwrap() > std::time::Duration::from_micros(100) {
+    //     log!("Too long {} - steep {}, dx {}, dy {}", t - s, steep, dx, dy);
+    // }
 }
 
 pub type Point<T> = (T, T);

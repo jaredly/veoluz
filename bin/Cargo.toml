@@ -1,0 +1,20 @@
+[package]
+name = "bin"
+version = "0.1.0"
+authors = ["Jared Forsyth <jared@jaredforsyth.com>"]
+edition = "2018"
+
+[dependencies]
+
+num-traits = "0"
+nalgebra = "*"
+ncollide2d = "*"
+png = "*"
+
+shared = { path="../shared" }
+
+base64 = "*"
+bincode = "*"
+serde_json = "1.0"
+miniz_oxide = "*"
+rand = { version = "*" }

@@ -126,9 +126,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         } else {
             state.ctx.set_stroke_style(&JsValue::from_str("blue"));
         }
-        wall.kind.draw(&state.ctx);
+        crate::draw::draw(&wall.kind, &state.ctx);
         state.ctx.set_line_width(1.0);
-        wall.kind.draw_handles(
+        crate::draw::draw_handles(&wall.kind, 
             &state.ctx,
             5.0,
             match hover {
@@ -326,6 +326,19 @@ pub fn setup_button() -> Result<(), JsValue> {
 
                 let b64 = base64::encode(&zipped);
                 location.set_hash(&b64);
+                Ok(())
+            })
+        }
+    );
+
+    listen!(
+        get_button("json")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            crate::state::try_with(|state| {
+                let res = serde_json::to_string_pretty(&state.config).unwrap();
+                get_element("textarea")?.dyn_into::<web_sys::HtmlTextAreaElement>()?.set_value(&res);
                 Ok(())
             })
         }
