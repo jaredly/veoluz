@@ -99,6 +99,31 @@ pub enum WallType {
     Parabola(Parabola),
 }
 
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
+pub struct Properties {
+    // percentage of incoming light that's just absorbed
+    // TODO(color): this should be a triple, for each rgb component... or something?
+    pub absorb: f32,
+    // of the light that's not absorbed, how much is reflected (vs transmitted)?
+    pub reflect: f32,
+    // when reflecting, how much is scattered (vs a pure reflection)
+    pub roughness: f32,
+    // when transmitting, what's the index of refraction?
+
+    // this is the index of refraction from *left* to *right*
+    // - circle "left" is outside, "right" inside
+    // - line, "left" when at the first point facing the second point.
+    // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
+    // Face(1) is hitting the right side
+    pub refraction: f32,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Wall {
+    pub kind: WallType,
+    pub properties: Properties,
+}
+
 enum BallResult {
     Inside(line::float),
     Outside(line::float, line::float),
@@ -533,31 +558,6 @@ fn refract(
 }
 
 use ncollide2d::shape::Segment;
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
-pub struct Properties {
-    // percentage of incoming light that's just absorbed
-    // TODO(color): this should be a triple, for each rgb component... or something?
-    pub absorb: f32,
-    // of the light that's not absorbed, how much is reflected (vs transmitted)?
-    pub reflect: f32,
-    // when reflecting, how much is scattered (vs a pure reflection)
-    pub roughness: f32,
-    // when transmitting, what's the index of refraction?
-
-    // this is the index of refraction from *left* to *right*
-    // - circle "left" is outside, "right" inside
-    // - line, "left" when at the first point facing the second point.
-    // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
-    // Face(1) is hitting the right side
-    pub refraction: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct Wall {
-    pub kind: WallType,
-    pub properties: Properties,
-}
 
 impl Wall {
     pub fn new(kind: WallType) -> Wall {

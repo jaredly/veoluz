@@ -130,6 +130,16 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, usize)>) -> Res
         )?;
     }
 
+    if ui.show_lasers {
+        let count = 30;
+        for i in 0..count {
+            draw_laser(
+                &state,
+                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
+            )?;
+        }
+    }
+
     Ok(())
 }
 
@@ -197,6 +207,18 @@ fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
     Ok(button)
 }
 
+fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
+    let input = document
+        .get_element_by_id(id)
+        .expect("get input")
+        .dyn_into::<web_sys::HtmlInputElement>()?;
+    Ok(input)
+}
+
 pub fn setup_button() -> Result<(), JsValue> {
     let button = get_button("render")?;
 
@@ -204,6 +226,50 @@ pub fn setup_button() -> Result<(), JsValue> {
         crate::state::try_with(|state| {
             state.async_render(true)?;
             Ok(())
+        })
+    });
+
+    listen!(get_input("reflect")?, "change", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("reflect")?;
+                state.config.walls[ui.selected_wall].properties.reflect = input.value_as_number() as f32;
+                state.async_render(false)?;
+                Ok(())
+            })
+        })
+    });
+
+    listen!(get_input("absorb")?, "change", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("absorb")?;
+                state.config.walls[ui.selected_wall].properties.absorb = input.value_as_number() as f32;
+                state.async_render(false)?;
+                Ok(())
+            })
+        })
+    });
+
+    listen!(get_input("roughness")?, "change", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("roughness")?;
+                state.config.walls[ui.selected_wall].properties.roughness = input.value_as_number() as f32;
+                state.async_render(false)?;
+                Ok(())
+            })
+        })
+    });
+
+    listen!(get_input("refraction")?, "change", web_sys::InputEvent, move |evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                let input = get_input("refraction")?;
+                state.config.walls[ui.selected_wall].properties.refraction = input.value_as_number() as f32;
+                state.async_render(false)?;
+                Ok(())
+            })
         })
     });
 
@@ -228,7 +294,8 @@ pub fn setup_button() -> Result<(), JsValue> {
                 ui.show_lasers = !ui.show_lasers;
                 let button = get_button("lasers")?;
                 button.set_inner_html(if ui.show_lasers {"hide lasers"} else {"show lasers"});
-                draw(ui, state);
+                ui.mouse_over = ui.show_lasers;
+                draw(ui, state)?;
                 Ok(())
             })
         })
@@ -241,16 +308,6 @@ pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
     draw_image(state)?;
     if ui.mouse_over {
         draw_walls(state, ui, ui.hovered)?;
-    }
-
-    if ui.show_lasers {
-        let count = 36;
-        for i in 0..count {
-            draw_laser(
-                &state,
-                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
-            )?;
-        }
     }
     Ok(())
 }
@@ -294,6 +351,10 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     None => (),
                     Some((wid, id)) => {
                         ui.selected_wall = wid;
+                        get_input("reflect")?.set_value_as_number(state.config.walls[wid].properties.reflect as f64);
+                        get_input("absorb")?.set_value_as_number(state.config.walls[wid].properties.absorb as f64);
+                        get_input("roughness")?.set_value_as_number(state.config.walls[wid].properties.roughness as f64);
+                        get_input("refraction")?.set_value_as_number(state.config.walls[wid].properties.refraction as f64);
                         ui.current_handle = Some(id);
                         ui.hovered = None;
                     }
