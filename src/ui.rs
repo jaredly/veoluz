@@ -235,6 +235,7 @@ pub fn get_url_config() -> Option<shared::Config> {
     let hash: String = hash[1..].into();
     base64::decode(&hash)
         .ok()
+        .and_then(|zipped| miniz_oxide::inflate::decompress_to_vec(&zipped).ok())
         .and_then(|encoded| bincode::deserialize(&encoded).ok())
 }
 
@@ -392,22 +393,21 @@ pub fn setup_button() -> Result<(), JsValue> {
         }
     );
 
-    let button = get_button("share")?;
-
-    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+    listen!(get_button("share")?, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             // let res = serde_json::to_string(&state.config).unwrap();
             // location.set_hash(&res);
             let encoded = bincode::serialize(&state.config).unwrap();
-            let b64 = base64::encode(&encoded);
+            let zipped = miniz_oxide::deflate::compress_to_vec(&encoded, 10);
+            log!("Sharing {} vs {}", encoded.len(), zipped.len());
+
+            let b64 = base64::encode(&zipped);
             location.set_hash(&b64);
             Ok(())
         })
     });
 
-    let button = get_button("lasers")?;
-
-    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+    listen!(get_button("lasers")?, "click", web_sys::MouseEvent, move |_evt| {
         try_state_ui(|state, ui| {
             ui.show_lasers = !ui.show_lasers;
             let button = get_button("lasers")?;
