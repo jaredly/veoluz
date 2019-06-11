@@ -300,6 +300,47 @@ pub fn circles() -> shared::Config {
     shared::Config::new(walls, width as usize, height as usize)
 }
 
+pub fn refract2() -> shared::Config {
+    let width = 1024;
+    let height = 576;
+    let index = 0.5;
+    let cx = (width / 2) as line::float;
+    let cy = (height / 2) as line::float;
+    let walls = vec![
+        Wall::transparent(
+            WallType::Line(Segment::new(
+                Point2::new(cx - 50.0, cy - 50.0),
+                Point2::new(cx + 50.0, cy - 70.0),
+            )), index),
+        Wall::transparent(
+            WallType::Circle(
+                Ball::new(50.0),
+                Point2::new(cx, cy + 200.0),
+                -PI,
+                PI,
+            ), index),
+        Wall::transparent(
+            WallType::Parabola(
+                shared::Parabola::new(
+                    -70.0,
+                    -50.0,
+                    50.0,
+                    Point2::new(cx - 100.0, cy),
+                    PI / 2.0
+                )
+            ), index),
+        Wall::transparent(
+            WallType::Circle(
+                Ball::new(50.0),
+                Point2::new(cx + 100.0, cy + 200.0),
+                0.0,
+                PI,
+            ), index),
+    ];
+
+    shared::Config::new(walls, width as usize, height as usize)
+}
+
 pub fn refraction_test() -> shared::Config {
     let width = 1024;
     let height = 576;

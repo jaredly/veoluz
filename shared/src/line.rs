@@ -17,6 +17,7 @@ fn draw(
     y: int,
     amount: float,
 ) {
+    // TODO get rid of these if blocks by ensuring we're in scope to start with
     if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
         let index = (y as usize) * width + x as usize;
         let brightness = (amount * full) as uint;
@@ -104,39 +105,75 @@ pub fn draw_line(
     */
 
     if steep {
-        for x in start.0.round() as int..end.0.round() as int {
+
+        let x0part = start.0.fract();
+        if x0part != 0.0 {
+            let total = 1.0 - x0part;
+            let ypart = y.fract();
+            draw(data, width, height, full, y as int, start.0 as int, total * (1.0 - ypart));
+            if ypart > 0.0 {
+                draw(data, width, height, full, y as int + 1, start.0 as int, total * ypart);
+            }
+        }
+
+        for x in start.0.ceil() as int..end.0.floor() as int {
             let fpart = y.fract();
-            let yy = y as int;
+            let yi = y as int;
 
-            // Get the point
-            let point = (yy, x);
-
-            // TODO get rid of these if blocks by ensuring we're in scope to start with
-            draw(data, width, height, full, point.0, point.1, 1.0 - fpart);
+            draw(data, width, height, full, yi, x, 1.0 - fpart);
 
             if fpart > 0.0 {
-                let point = (yy + 1, x);
-                draw(data, width, height, full, point.0, point.1, fpart)
+                draw(data, width, height, full, yi + 1, x, fpart)
             }
             y += gradient;
+        }
+
+        let x0part = end.0.fract();
+        if x0part != 0.0 {
+            let total = x0part;
+            let ypart = y.fract();
+            let last = end.0.floor() as int;
+            draw(data, width, height, full, y as int, last, total * (1.0 - ypart));
+            if ypart > 0.0 {
+                draw(data, width, height, full, y as int + 1, last, total * ypart);
+            }
         }
     } else {
-        for x in start.0.round() as int..end.0.round() as int {
+
+        let x0part = start.0.fract();
+        if x0part != 0.0 {
+            let total = 1.0 - x0part;
+            let ypart = y.fract();
+            draw(data, width, height, full, start.0 as int, y as int, total * (1.0 - ypart));
+            if ypart > 0.0 {
+                draw(data, width, height, full, start.0 as int, y as int + 1, total * ypart);
+            }
+        }
+
+        for x in start.0.ceil() as int..end.0.floor() as int {
             let fpart = y.fract();
-            let yy = y as int;
+            let yi = y as int;
 
-            // Get the point
-            let point = (x, yy);
-
-            // TODO get rid of these if blocks by ensuring we're in scope to start with
-            draw(data, width, height, full, point.0, point.1, 1.0 - fpart);
+            draw(data, width, height, full, x, yi, 1.0 - fpart);
 
             if fpart > 0.0 {
-                let point = (x, yy + 1);
-                draw(data, width, height, full, point.0, point.1, fpart);
+                // let point = (x, yi + 1);
+                draw(data, width, height, full, x, yi + 1, fpart);
             }
             y += gradient;
         }
+
+        let x0part = end.0.fract();
+        if x0part != 0.0 {
+            let total = x0part;
+            let ypart = y.fract();
+            let last = end.0.floor() as int;
+            draw(data, width, height, full, last, y as int, total * (1.0 - ypart));
+            if ypart > 0.0 {
+                draw(data, width, height, full, last, y as int + 1, total * ypart);
+            }
+        }
+
     }
     let t = now();
     if t - s > 10.0 {

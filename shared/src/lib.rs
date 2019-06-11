@@ -26,12 +26,65 @@ macro_rules! log {
 
 use nalgebra as na;
 
+pub struct LightSource {
+    kind: LightKind,
+    // something between 0 and 1 I think?
+    brightness: line::float,
+}
+
+pub enum LightKind {
+    Point {
+        origin: Point2<line::float>,
+        t0: line::float,
+        t1: line::float,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Config {
+    pub walls: Vec<Wall>,
+    pub light_source: Point2<line::float>,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Config {
+    pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
+        Config {
+            walls,
+            width,
+            height,
+            light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Parabola {
     pub a: line::float,
     pub left: line::float,
     pub right: line::float,
     pub transform: nalgebra::geometry::Isometry2<line::float>,
+}
+
+impl Parabola {
+    pub fn new(
+        dist: line::float,
+        left: line::float,
+        right: line::float,
+        center: Point2<line::float>,
+        rotation: line::float,
+    ) -> Self {
+        Parabola {
+            a: 1.0 / (4.0 * dist),
+            left,
+            right,
+            transform: nalgebra::geometry::Isometry2::from_parts(
+                nalgebra::Translation2::from_vector(center.coords),
+                nalgebra::UnitComplex::from_angle(rotation),
+            ),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
@@ -408,7 +461,7 @@ pub fn bounce_ray(
     if check(properties.absorb) {
         (ray.point_at(toi), true)
     } else if check(properties.reflect) {
-        let new_origin = ray.point_at(toi - 0.1);
+        let new_origin = ray.point_at(toi);
         let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
         let ray_reflected = if check(properties.roughness) {
             normal_dir - rand() * PI
@@ -426,12 +479,12 @@ pub fn bounce_ray(
             let new_dir = refract(&ray.dir, &normal, &properties, left_side);
             match new_dir {
                 Some(new_dir) => {
-                    let p = ray.point_at(toi + 0.1);
+                    let p = ray.point_at(toi);
                     ray.dir = Vector2::new(new_dir.cos(), new_dir.sin());
                     p
                 }
                 None => {
-                    let p = ray.point_at(toi - 0.1);
+                    let p = ray.point_at(toi);
                     let ray_dir = ray.dir.y.atan2(ray.dir.x);
                     let normal_dir = normal.y.atan2(normal.x) + PI / 2.0;
                     let ray_reflected = reflect(ray_dir, normal_dir);
@@ -440,7 +493,7 @@ pub fn bounce_ray(
                 }
             }
         } else {
-            ray.point_at(toi + 0.1)
+            ray.point_at(toi)
         };
         // TODO refraction
         (new_origin, false)
@@ -607,8 +660,8 @@ impl WallType {
             right: (rand::random::<f32>() * 50.0 + 10.0),
             transform: nalgebra::Isometry2::from_parts(
                 nalgebra::Translation2::from(c),
-                nalgebra::UnitComplex::from_angle(r)
-            )
+                nalgebra::UnitComplex::from_angle(r),
+            ),
         })
     }
 
@@ -733,12 +786,8 @@ impl WallType {
                     + transform
                         .rotation
                         .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
-                transform.transform_point(
-                    &Point2::new(*left, 0.0)
-                ),
-                transform.transform_point(
-                    &Point2::new(*right, 0.0)
-                )
+                transform.transform_point(&Point2::new(*left, 0.0)),
+                transform.transform_point(&Point2::new(*right, 0.0)),
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
                 center.clone(),
@@ -847,20 +896,24 @@ pub fn find_collision(
     for (_i, wall) in walls.iter().enumerate() {
         match wall.kind.toi_and_normal_with_ray(&ray) {
             None => (),
-            Some(intersection) => match closest {
-                Some((dist, _, _, _)) if intersection.toi > dist => (),
-                None | Some(_) => {
-                    closest = Some((
-                        intersection.toi,
-                        wall.properties,
-                        match intersection.feature {
-                            ncollide2d::shape::FeatureId::Face(0) => true,
-                            _ => false,
-                        },
-                        intersection.normal,
-                    ))
+            Some(intersection) => {
+                if intersection.toi.abs() > 0.01 {
+                    match closest {
+                        Some((dist, _, _, _)) if intersection.toi > dist => (),
+                        None | Some(_) => {
+                            closest = Some((
+                                intersection.toi,
+                                wall.properties,
+                                match intersection.feature {
+                                    ncollide2d::shape::FeatureId::Face(0) => true,
+                                    _ => false,
+                                },
+                                intersection.normal,
+                            ))
+                        }
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -872,23 +925,71 @@ pub fn find_collision(
 //     Finished(JsValue)
 // }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct Config {
-    pub walls: Vec<Wall>,
-    pub light_source: Point2<line::float>,
-    pub width: usize,
-    pub height: usize,
+#[inline]
+pub fn run_ray(
+    ray: &mut Ray<line::float>,
+    config: &Config,
+    brightness_data: &mut [line::uint],
+) -> bool {
+    let max_brightness = 100.0;
+    match find_collision(&config.walls, &ray) {
+        None => {
+            line::draw_line(
+                xy(&ray.origin),
+                xy(&ray.point_at(600.0)),
+                brightness_data,
+                config.width,
+                config.height,
+                max_brightness,
+            );
+            return true;
+        }
+        Some((toi, properties, left_side, normal)) => {
+            let (new_origin, stop) = bounce_ray(ray, toi, properties, left_side, normal);
+            // if (new_origin.x > 10_000.0 || new_origin.y < -10_000.0) {
+            //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal)
+            // }
+            line::draw_line(
+                xy(&ray.origin),
+                xy(&new_origin),
+                brightness_data,
+                config.width,
+                config.height,
+                max_brightness,
+            );
+            ray.origin = new_origin;
+            if stop {
+                return true;
+            }
+        }
+    };
+    false
 }
 
-impl Config {
-    pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
-        Config {
-            walls,
-            width,
-            height,
-            light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0),
+pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
+    let _timer = Timer::new("Calculate");
+    let width = config.width;
+    let height = config.height;
+
+    let mut brightness_data = vec![0; width * height];
+
+    // if we don't draw at all, we're still getting only 400k/sec
+
+    for r in 0..360 {
+        let direction = (r as f32) / 180.0 * PI;
+        let mut ray = ncollide2d::query::Ray::new(
+            config.light_source,
+            Vector2::new(direction.cos(), direction.sin()),
+        );
+
+        for _ in 0..30 {
+            if run_ray(&mut ray, &config, &mut brightness_data) {
+                break;
+            }
         }
     }
+
+    brightness_data
 }
 
 pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
@@ -907,40 +1008,10 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
             config.light_source,
             Vector2::new(direction.cos(), direction.sin()),
         );
-        let max_brightness = 100.0;
 
         for _ in 0..30 {
-            match find_collision(&config.walls, &ray) {
-                None => {
-                    line::draw_line(
-                        xy(&ray.origin),
-                        xy(&ray.point_at(600.0)),
-                        &mut brightness_data,
-                        width,
-                        height,
-                        max_brightness,
-                    );
-                    break;
-                }
-                Some((toi, properties, left_side, normal)) => {
-                    let (new_origin, stop) =
-                        bounce_ray(&mut ray, toi, properties, left_side, normal);
-                    // if (new_origin.x > 10_000.0 || new_origin.y < -10_000.0) {
-                    //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal)
-                    // }
-                    line::draw_line(
-                        xy(&ray.origin),
-                        xy(&new_origin),
-                        &mut brightness_data,
-                        width,
-                        height,
-                        max_brightness,
-                    );
-                    ray.origin = new_origin;
-                    if stop {
-                        break;
-                    }
-                }
+            if run_ray(&mut ray, &config, &mut brightness_data) {
+                break;
             }
         }
     }

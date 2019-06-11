@@ -50,7 +50,8 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     // let config = scenes::circle_row();
-    let config = scenes::playground();
+    let config = scenes::refract2();
+    // let config = scenes::playground();
     // let config = scenes::parabola_test();
     // let config = scenes::apple();
     // let config = scenes::refraction_test();
@@ -60,13 +61,14 @@ pub fn run() -> Result<(), JsValue> {
         Some(config) => config
     };
 
-
     state::setState(config.into());
 
     state::try_with(|state| {
         state.add_worker(make_worker(0)?);
-        log!("Initial render!");
         state.async_render(false)?;
+
+        // state.debug_render()?;
+
         Ok(())
     });
 

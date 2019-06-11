@@ -5,13 +5,22 @@ use wasm_bindgen::JsCast;
 use crate::state::State;
 use shared::{Config, Wall, WallType};
 
-type UiState = (usize, usize);
-
-lazy_static! {
-    static ref STATE: std::sync::Mutex<Option<UiState>> = std::sync::Mutex::new(None);
+#[derive(Clone)]
+pub struct UiState {
+    selected_wall: usize,
+    current_handle: Option<usize>,
+    show_lasers: bool,
 }
 
-pub fn use_ui<R, F: FnOnce(&mut Option<UiState>) -> R>(f: F) -> R {
+lazy_static! {
+    static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
+        selected_wall: 0,
+        current_handle: None,
+        show_lasers: true,
+    });
+}
+
+pub fn use_ui<R, F: FnOnce(&mut UiState) -> R>(f: F) -> R {
     f(&mut STATE.lock().unwrap())
 }
 
@@ -46,7 +55,7 @@ fn draw_laser(
                 state.ctx.line_to(new_origin.x as f64, new_origin.y as f64);
                 state.ctx.stroke();
 
-                let n = nalgebra::normalize(&normal);
+                let n = normal.normalize();
                 state
                     .ctx
                     .set_stroke_style(&(if left_side { "blue" } else { "orange" }).into());
@@ -77,11 +86,13 @@ fn vector_dir(dir: f32) -> Vector2<f32> {
     Vector2::new(dir.cos(), dir.sin())
 }
 
-fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue> {
-    // state.ctx.set_stroke_style(&JsValue::from_str("green"));
-    state.ctx.set_fill_style(&JsValue::from_str("#eee"));
+fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, usize)>) -> Result<(), JsValue> {
+    state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     for (i, wall) in state.config.walls.iter().enumerate() {
+        state
+            .ctx
+            .set_line_width(if ui.selected_wall == i { 3.0 } else { 1.0 });
         if wall.properties.reflect == 1.0 {
             state.ctx.set_stroke_style(&JsValue::from_str("yellow"));
         } else if wall.properties.absorb == 1.0 {
@@ -92,27 +103,41 @@ fn draw_walls(state: &State, ui: &Option<(usize, usize)>) -> Result<(), JsValue>
             state.ctx.set_stroke_style(&JsValue::from_str("blue"));
         }
         wall.kind.draw(&state.ctx);
+        state.ctx.set_line_width(1.0);
         wall.kind.draw_handles(
             &state.ctx,
             5.0,
-            match ui {
-                Some((wid, id)) if *wid == i => Some(*id),
-                _ => None,
+            match hover {
+                None => {
+                    if ui.selected_wall == i {
+                        ui.current_handle
+                    } else {
+                        None
+                    }
+                }
+                Some((wid, id)) => {
+                    if wid == i {
+                        Some(id)
+                    } else {
+                        None
+                    }
+                }
             },
         )?;
     }
 
-    // for i in 0..30 {
-    //     draw_laser(&state, vector_dir(std::f32::consts::PI / 15.0 * i as f32))?;
-    // }
-    // draw_laser(&state, vector_dir(0.1));
-    // draw_laser(&state, vector_dir(0.2));
-    // draw_laser(&state, vector_dir(std::f32::consts::PI / 2.0))?;
+    if ui.show_lasers {
+        let count = 30;
+        for i in 0..count {
+            draw_laser(
+                &state,
+                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
+            )?;
+        }
+    }
 
     Ok(())
 }
-
-
 
 macro_rules! listen {
     ($base:expr, $name:expr, $evt: ty, $body:expr) => {
@@ -143,8 +168,6 @@ fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(
     return None;
 }
 
-
-
 #[wasm_bindgen]
 extern "C" {
     type Location;
@@ -160,10 +183,12 @@ extern "C" {
 pub fn get_url_config() -> Option<shared::Config> {
     let hash = location.hash();
     if hash.len() == 0 {
-        return None
+        return None;
     }
     let hash: String = hash[1..].into();
-    base64::decode(&hash).ok().and_then(|encoded| bincode::deserialize(&encoded).ok())
+    base64::decode(&hash)
+        .ok()
+        .and_then(|encoded| bincode::deserialize(&encoded).ok())
 }
 
 pub fn setup_button() -> Result<(), JsValue> {
@@ -199,9 +224,6 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
-
-
-
     Ok(())
 }
 
@@ -222,7 +244,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             draw_image(state)?;
-            draw_walls(state, &None);
+            use_ui(|ui| draw_walls(state, ui, None))?;
             Ok(())
         })
     });
@@ -237,9 +259,15 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
-                *ui = find_collision(&state.config.walls, &mouse_pos(&evt));
+                match find_collision(&state.config.walls, &mouse_pos(&evt)) {
+                    None => (),
+                    Some((wid, id)) => {
+                        ui.selected_wall = wid;
+                        ui.current_handle = Some(id);
+                    }
+                }
                 draw_image(state)?;
-                draw_walls(state, ui);
+                draw_walls(state, ui, None);
                 Ok(())
             })
         })
@@ -248,18 +276,21 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
-                let hover = match ui {
-                    None => find_collision(&state.config.walls, &mouse_pos(&evt)),
-                    Some((wid, id)) => {
-                        state.config.walls[*wid]
+                let hover = match ui.current_handle {
+                    None => match find_collision(&state.config.walls, &mouse_pos(&evt)) {
+                        None => None,
+                        Some((wid, id)) => Some((wid, id))
+                    },
+                    Some(id) => {
+                        state.config.walls[ui.selected_wall]
                             .kind
-                            .move_handle(*id, &mouse_pos(&evt));
+                            .move_handle(id, &mouse_pos(&evt));
                         state.async_render(true);
-                        Some((*wid, *id))
+                        Some((ui.selected_wall, id))
                     }
                 };
                 draw_image(state)?;
-                draw_walls(state, &hover);
+                draw_walls(state, ui, hover)?;
                 Ok(())
             })?;
             Ok(())
@@ -269,13 +300,13 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mouseup", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
-                match ui {
+                match ui.current_handle {
                     None => (),
                     Some(_) => {
                         state.async_render(false);
                     }
-                }
-                *ui = None;
+                };
+                ui.current_handle = None;
             });
             Ok(())
         })

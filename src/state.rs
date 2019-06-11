@@ -33,6 +33,23 @@ impl From<shared::Config> for State {
     }
 }
 
+pub fn make_image_data(
+    config: &shared::Config,
+    bright: &[u32],
+) -> Result<web_sys::ImageData, JsValue> {
+    let colored = shared::colorize(config, bright);
+
+    let mut clamped = wasm_bindgen::Clamped(colored.clone());
+    // let mut clamped = Clamped(state.buffer.clone());
+    let data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+        wasm_bindgen::Clamped(clamped.as_mut_slice()),
+        config.width as u32,
+        config.height as u32,
+    )?;
+
+    Ok(data)
+}
+
 impl State {
     pub fn reset_buffer(&mut self) {
         self.buffer = vec![0_u32; self.config.width * self.config.height];
@@ -63,16 +80,7 @@ impl State {
             self.buffer[i] += bright[i];
         }
 
-        let colored = shared::colorize(&self.config, &self.buffer);
-
-        let mut clamped = wasm_bindgen::Clamped(colored.clone());
-        // let mut clamped = Clamped(state.buffer.clone());
-        let data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
-            wasm_bindgen::Clamped(clamped.as_mut_slice()),
-            self.config.width as u32,
-            self.config.height as u32,
-        )?;
-        self.image_data = data;
+        self.image_data = make_image_data(&self.config, &self.buffer)?;
 
         self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
 
@@ -88,6 +96,14 @@ impl State {
         Ok(())
     }
 
+    pub fn debug_render(&mut self) -> Result<(), JsValue> {
+        let brightness = shared::deterministic_calc(&self.config);
+        self.image_data = make_image_data(&self.config, &brightness)?;
+
+        self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+        Ok(())
+    }
+
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
         self.render_id += 1;
 
@@ -96,6 +112,9 @@ impl State {
             id: self.render_id,
             count: if small { 10_000 } else { 100_000 },
         };
+        if self.workers.is_empty() {
+            return self.debug_render();
+        }
 
         for (worker, busy, queued) in self.workers.iter_mut() {
             if *busy {
