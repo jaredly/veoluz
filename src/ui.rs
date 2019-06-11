@@ -14,7 +14,7 @@ pub enum Handle {
     Move(Vector2<line::float>),
 }
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct UiState {
     selected_wall: usize,
     current_handle: Option<Handle>,
@@ -263,6 +263,47 @@ fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
     Ok(input)
 }
 
+// struct Input<F: FnMut(f32, bool) + 'static> {
+//     name: &'static str,
+//     cb: F,
+// }
+
+// impl<F: FnMut(f32, bool) + 'static> Input<F> {
+//     fn new(name: &'static str, cb: F) -> Self {
+//         Input {name, cb}
+//     }
+// }
+
+pub fn setup_input<F: FnMut(f32, bool) + 'static>(name: &'static str, update: F) -> Result<(), JsValue> {
+    let node = get_input(name)?;
+    let rc = std::sync::Arc::new(std::cell::RefCell::new(update));
+    let other = rc.clone();
+
+    use std::ops::DerefMut;
+
+    listen!(
+        node,
+        "input",
+        web_sys::InputEvent,
+        move |_evt| {
+            let input = get_input(name).expect("No input");
+            rc.borrow_mut().deref_mut()(input.value_as_number() as f32, false);
+        }
+    );
+
+
+    listen!(
+        node,
+        "change",
+        web_sys::InputEvent,
+        move |_evt| {
+            let input = get_input(name).expect("No input");
+            other.borrow_mut().deref_mut()(input.value_as_number() as f32, true);
+        }
+    );
+    Ok(())
+}
+
 pub fn setup_button() -> Result<(), JsValue> {
     let button = get_button("render")?;
 
@@ -272,126 +313,6 @@ pub fn setup_button() -> Result<(), JsValue> {
             Ok(())
         })
     });
-
-    listen!(
-        get_input("reflect")?,
-        "input",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("reflect")?;
-                state.config.walls[ui.selected_wall].properties.reflect =
-                    input.value_as_number() as f32;
-                state.async_render(true)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("reflect")?,
-        "change",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("reflect")?;
-                state.config.walls[ui.selected_wall].properties.reflect =
-                    input.value_as_number() as f32;
-                state.async_render(false)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("absorb")?,
-        "input",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("absorb")?;
-                state.config.walls[ui.selected_wall].properties.absorb =
-                    input.value_as_number() as f32;
-                state.async_render(true)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("absorb")?,
-        "change",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("absorb")?;
-                state.config.walls[ui.selected_wall].properties.absorb =
-                    input.value_as_number() as f32;
-                state.async_render(false)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("roughness")?,
-        "input",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("roughness")?;
-                state.config.walls[ui.selected_wall].properties.roughness =
-                    input.value_as_number() as f32;
-                state.async_render(true)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("roughness")?,
-        "change",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("roughness")?;
-                state.config.walls[ui.selected_wall].properties.roughness =
-                    input.value_as_number() as f32;
-                state.async_render(false)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("refraction")?,
-        "input",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("refraction")?;
-                state.config.walls[ui.selected_wall].properties.refraction =
-                    input.value_as_number() as f32;
-                state.async_render(true)?;
-                Ok(())
-            })
-        }
-    );
-
-    listen!(
-        get_input("refraction")?,
-        "change",
-        web_sys::InputEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                let input = get_input("refraction")?;
-                state.config.walls[ui.selected_wall].properties.refraction =
-                    input.value_as_number() as f32;
-                state.async_render(false)?;
-                Ok(())
-            })
-        }
-    );
 
     listen!(get_button("share")?, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
@@ -433,6 +354,57 @@ pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
     Ok(())
 }
 
+fn setup_wall_ui() -> Result<(), JsValue> {
+    setup_input("reflect", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.walls[ui.selected_wall].properties.reflect = value;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("absorb", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.walls[ui.selected_wall].properties.absorb = value;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("roughness", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.walls[ui.selected_wall].properties.roughness = value;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("refraction", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.walls[ui.selected_wall].properties.refraction = value;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
+    Ok(())
+}
+
+fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
+    get_input("reflect")?
+        .set_value_as_number(wall.properties.reflect as f64);
+    get_input("absorb")?
+        .set_value_as_number(wall.properties.absorb as f64);
+    get_input("roughness")?.set_value_as_number(
+        wall.properties.roughness as f64,
+    );
+    get_input("refraction")?.set_value_as_number(
+        wall.properties.refraction as f64,
+    );
+
+    Ok(())
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -446,6 +418,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     canvas.set_height(config.height as u32);
 
     setup_button()?;
+    setup_wall_ui()?;
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
@@ -469,23 +442,14 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         crate::state::try_with(|state| {
             use_ui(|ui| {
                 match find_collision(&state.config.walls, &mouse_pos(&evt)) {
-                    None => (),
+                    None => Ok(()),
                     Some((wid, id)) => {
                         ui.selected_wall = wid;
-                        get_input("reflect")?
-                            .set_value_as_number(state.config.walls[wid].properties.reflect as f64);
-                        get_input("absorb")?
-                            .set_value_as_number(state.config.walls[wid].properties.absorb as f64);
-                        get_input("roughness")?.set_value_as_number(
-                            state.config.walls[wid].properties.roughness as f64,
-                        );
-                        get_input("refraction")?.set_value_as_number(
-                            state.config.walls[wid].properties.refraction as f64,
-                        );
                         ui.current_handle = Some(id);
                         ui.hovered = None;
+                        show_wall_ui(wid, &state.config.walls[wid])
                     }
-                }
+                }?;
                 draw(ui, state)
             })
         })
@@ -516,6 +480,18 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         state.async_render(true)
                     }
                 }?;
+                let document = web_sys::window()
+                    .expect("window")
+                    .document()
+                    .expect("Document");
+                let canvas = document
+                    .get_element_by_id("drawing")
+                    .expect("get Canvas")
+                    .dyn_into::<web_sys::HtmlElement>()?;
+                canvas.style().set_property("cursor", match (ui.hovered, ui.current_handle) {
+                    (None, None) => "default",
+                    _ => "pointer"
+                })?;
                 draw(ui, state)
             })?;
             Ok(())
