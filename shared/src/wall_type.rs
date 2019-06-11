@@ -121,7 +121,7 @@ impl WallType {
 
     pub fn set_point_base(&mut self, point: Point2<line::float>) {
       match self {
-        WallType::Line(wall) => {*wall = Segment::new(point, wall.b().clone())},
+        WallType::Line(wall) => {*wall = Segment::new(point, point + (wall.b() - wall.a()))},
         WallType::Circle(_, center, _, _) => {*center = point},
         WallType::Parabola(parabola) => {
           parabola.transform.translation = nalgebra::Translation2::from(point.coords);
@@ -187,22 +187,22 @@ impl WallType {
                 right,
                 transform,
             }) => match id {
-                0 => transform.translation = nalgebra::Translation2::from(pos.coords),
-                1 => {
+                // 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
+                0 => {
                     let dist = transform.translation.vector - pos.coords;
                     *a = -1.0 / (4.0 * dist.norm_squared().sqrt());
                     transform.rotation = nalgebra::UnitComplex::from_angle(
                         dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
                     );
                 }
-                2 => {
+                1 => {
                     let pos = transform.inverse_transform_point(pos);
                     *left = pos.x;
                     if *right < *left {
                         *right = *left + 10.0;
                     }
                 }
-                3 => {
+                2 => {
                     let pos = transform.inverse_transform_point(pos);
                     *right = pos.x;
                     if *left > *right {
@@ -212,13 +212,13 @@ impl WallType {
                 _ => (),
             },
             WallType::Circle(circle, center, t0, t1) => match id {
-                0 => *center = *pos,
-                1 => {
+                // 0 => *center = *pos,
+                0 => {
                     let d = pos - *center;
                     *t0 = d.y.atan2(d.x);
                     *circle = Ball::new(d.norm_squared().sqrt());
                 }
-                2 => {
+                1 => {
                     let d = pos - *center;
                     *t1 = d.y.atan2(d.x);
                     *circle = Ball::new(d.norm_squared().sqrt());
@@ -237,7 +237,7 @@ impl WallType {
                 right,
                 transform,
             }) => vec![
-                transform.translation.vector.into(),
+                // transform.translation.vector.into(),
                 Point2::from(transform.translation.vector)
                     + transform
                         .rotation
@@ -246,7 +246,7 @@ impl WallType {
                 transform.transform_point(&Point2::new(*right, 0.0)),
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
-                center.clone(),
+                // center.clone(),
                 Point2::new(
                     center.x + t0.cos() * circle.radius(),
                     center.y + t0.sin() * circle.radius(),

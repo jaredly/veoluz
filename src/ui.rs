@@ -195,7 +195,7 @@ fn find_wall_hover(
     let mut close = None;
     for (wid, wall) in walls.iter().enumerate() {
         let dist = wall.kind.point_dist(pos);
-        if dist < 5.0 {
+        if dist < 15.0 {
             match close {
                 Some((_, d, _)) if d < dist => (),
                 _ => close = Some((wid, dist, wall.kind.point_base() - pos)),
