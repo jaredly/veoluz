@@ -9,26 +9,36 @@
       canvas {
         background-color: black;
       }
+      main {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .controls {
+        padding: 16px;
+      }
     </style>
   </head>
   <body>
     <main>
+      <canvas id="drawing" width="600" height="600"></canvas>
       <div class="controls">
         <button class="button-primary" id="render">render</button>
         <button class="button-primary" id="share">share</button>
         <button class="button-primary" id="lasers">show lasers</button>
-        <div style="display:flex;flex-direction: column;width: 300px">
-          Absorb
-          <input id="absorb" type="range" min="0" max="1.0" step="0.01" />
-          Roughness
-          <input id="roughness" type="range" min="0" max="1.0" step="0.01" />
-          Reflect
-          <input id="reflect" type="range" min="0" max="1.0" step="0.01" />
-          Refraction
-          <input id="refraction" type="number" step="0.1" value="1.0" />
+        <div id="wall_ui">
+          <div style="display:flex;flex-direction: column;width: 300px">
+            Absorb
+            <input id="absorb" type="range" min="0" max="1.0" step="0.01" />
+            Roughness
+            <input id="roughness" type="range" min="0" max="1.0" step="0.01" />
+            Reflect
+            <input id="reflect" type="range" min="0" max="1.0" step="0.01" />
+            Refraction
+            <input id="refraction" type="number" step="0.1" value="1.0" />
+          </div>
         </div>
       </div>
-      <canvas id="drawing" width="600" height="600"></canvas>
       <!-- <script src="./index.js"></script> -->
     </main>
   </body>

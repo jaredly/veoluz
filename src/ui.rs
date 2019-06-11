@@ -16,8 +16,7 @@ pub enum Handle {
 
 // #[derive(Clone)]
 pub struct UiState {
-    selected_wall: usize,
-    current_handle: Option<Handle>,
+    selected_wall: Option<(usize, Option<Handle>)>,
     show_lasers: bool,
     mouse_over: bool,
     hovered: Option<(usize, Handle)>,
@@ -25,8 +24,7 @@ pub struct UiState {
 
 lazy_static! {
     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
-        selected_wall: 0,
-        current_handle: None,
+        selected_wall: None,
         show_lasers: false,
         mouse_over: false,
         hovered: None,
@@ -111,13 +109,12 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     for (i, wall) in state.config.walls.iter().enumerate() {
-        let w = if ui.selected_wall == i {
-            3.0
-        } else {
-            match hover {
+        let w = match ui.selected_wall {
+            Some((wid, _)) if wid == i => 3.0,
+            _ => match hover {
                 Some((wid, _)) if wid == i => 2.0,
                 _ => 1.0,
-            }
+            },
         };
         state.ctx.set_line_width(w);
         if wall.properties.reflect == 1.0 {
@@ -142,16 +139,13 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
                         None
                     }
                 }
-                _ => {
-                    if ui.selected_wall == i {
-                        match ui.current_handle {
-                            Some(Handle::Handle(i)) => Some(i),
-                            _ => None,
-                        }
-                    } else {
-                        None
-                    }
-                }
+                _ => match ui.selected_wall {
+                    Some((wid, current_handle)) if wid == i => match current_handle {
+                        Some(Handle::Handle(i)) => Some(i),
+                        _ => None,
+                    },
+                    _ => None,
+                },
             },
         )?;
     }
@@ -251,6 +245,18 @@ fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
     Ok(button)
 }
 
+fn get_element(id: &str) -> Result<web_sys::HtmlElement, JsValue> {
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
+    let input = document
+        .get_element_by_id(id)
+        .expect("get input")
+        .dyn_into::<web_sys::HtmlElement>()?;
+    Ok(input)
+}
+
 fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -274,33 +280,25 @@ fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 //     }
 // }
 
-pub fn setup_input<F: FnMut(f32, bool) + 'static>(name: &'static str, update: F) -> Result<(), JsValue> {
+pub fn setup_input<F: FnMut(f32, bool) + 'static>(
+    name: &'static str,
+    update: F,
+) -> Result<(), JsValue> {
     let node = get_input(name)?;
     let rc = std::sync::Arc::new(std::cell::RefCell::new(update));
     let other = rc.clone();
 
     use std::ops::DerefMut;
 
-    listen!(
-        node,
-        "input",
-        web_sys::InputEvent,
-        move |_evt| {
-            let input = get_input(name).expect("No input");
-            rc.borrow_mut().deref_mut()(input.value_as_number() as f32, false);
-        }
-    );
+    listen!(node, "input", web_sys::InputEvent, move |_evt| {
+        let input = get_input(name).expect("No input");
+        rc.borrow_mut().deref_mut()(input.value_as_number() as f32, false);
+    });
 
-
-    listen!(
-        node,
-        "change",
-        web_sys::InputEvent,
-        move |_evt| {
-            let input = get_input(name).expect("No input");
-            other.borrow_mut().deref_mut()(input.value_as_number() as f32, true);
-        }
-    );
+    listen!(node, "change", web_sys::InputEvent, move |_evt| {
+        let input = get_input(name).expect("No input");
+        other.borrow_mut().deref_mut()(input.value_as_number() as f32, true);
+    });
     Ok(())
 }
 
@@ -314,34 +312,44 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
-    listen!(get_button("share")?, "click", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            // let res = serde_json::to_string(&state.config).unwrap();
-            // location.set_hash(&res);
-            let encoded = bincode::serialize(&state.config).unwrap();
-            let zipped = miniz_oxide::deflate::compress_to_vec(&encoded, 10);
-            log!("Sharing {} vs {}", encoded.len(), zipped.len());
+    listen!(
+        get_button("share")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            crate::state::try_with(|state| {
+                // let res = serde_json::to_string(&state.config).unwrap();
+                // location.set_hash(&res);
+                let encoded = bincode::serialize(&state.config).unwrap();
+                let zipped = miniz_oxide::deflate::compress_to_vec(&encoded, 10);
+                log!("Sharing {} vs {}", encoded.len(), zipped.len());
 
-            let b64 = base64::encode(&zipped);
-            location.set_hash(&b64);
-            Ok(())
-        })
-    });
+                let b64 = base64::encode(&zipped);
+                location.set_hash(&b64);
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("lasers")?, "click", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            ui.show_lasers = !ui.show_lasers;
-            let button = get_button("lasers")?;
-            button.set_inner_html(if ui.show_lasers {
-                "hide lasers"
-            } else {
-                "show lasers"
-            });
-            ui.mouse_over = ui.show_lasers;
-            draw(ui, state)?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("lasers")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, ui| {
+                ui.show_lasers = !ui.show_lasers;
+                let button = get_button("lasers")?;
+                button.set_inner_html(if ui.show_lasers {
+                    "hide lasers"
+                } else {
+                    "show lasers"
+                });
+                ui.mouse_over = ui.show_lasers;
+                draw(ui, state)?;
+                Ok(())
+            })
+        }
+    );
 
     Ok(())
 }
@@ -357,7 +365,9 @@ pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
 fn setup_wall_ui() -> Result<(), JsValue> {
     setup_input("reflect", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.walls[ui.selected_wall].properties.reflect = value;
+            if let Some((wid, _)) = ui.selected_wall {
+                state.config.walls[wid].properties.reflect = value;
+            }
             state.async_render(!finished)?;
             Ok(())
         })
@@ -365,7 +375,9 @@ fn setup_wall_ui() -> Result<(), JsValue> {
 
     setup_input("absorb", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.walls[ui.selected_wall].properties.absorb = value;
+            if let Some((wid, _)) = ui.selected_wall {
+                state.config.walls[wid].properties.absorb = value;
+            }
             state.async_render(!finished)?;
             Ok(())
         })
@@ -373,7 +385,9 @@ fn setup_wall_ui() -> Result<(), JsValue> {
 
     setup_input("roughness", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.walls[ui.selected_wall].properties.roughness = value;
+            if let Some((wid, _)) = ui.selected_wall {
+                state.config.walls[wid].properties.roughness = value;
+            }
             state.async_render(!finished)?;
             Ok(())
         })
@@ -381,7 +395,9 @@ fn setup_wall_ui() -> Result<(), JsValue> {
 
     setup_input("refraction", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.walls[ui.selected_wall].properties.refraction = value;
+            if let Some((wid, _)) = ui.selected_wall {
+                state.config.walls[wid].properties.refraction = value;
+            }
             state.async_render(!finished)?;
             Ok(())
         })
@@ -390,17 +406,20 @@ fn setup_wall_ui() -> Result<(), JsValue> {
     Ok(())
 }
 
+fn hide_wall_ui() -> Result<(), JsValue> {
+    get_element("wall_ui")?
+        .style()
+        .set_property("display", "none")
+}
+
 fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
-    get_input("reflect")?
-        .set_value_as_number(wall.properties.reflect as f64);
-    get_input("absorb")?
-        .set_value_as_number(wall.properties.absorb as f64);
-    get_input("roughness")?.set_value_as_number(
-        wall.properties.roughness as f64,
-    );
-    get_input("refraction")?.set_value_as_number(
-        wall.properties.refraction as f64,
-    );
+    get_element("wall_ui")?
+        .style()
+        .set_property("display", "block")?;
+    get_input("reflect")?.set_value_as_number(wall.properties.reflect as f64);
+    get_input("absorb")?.set_value_as_number(wall.properties.absorb as f64);
+    get_input("roughness")?.set_value_as_number(wall.properties.roughness as f64);
+    get_input("refraction")?.set_value_as_number(wall.properties.refraction as f64);
 
     Ok(())
 }
@@ -442,10 +461,14 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         crate::state::try_with(|state| {
             use_ui(|ui| {
                 match find_collision(&state.config.walls, &mouse_pos(&evt)) {
-                    None => Ok(()),
+                    None => {
+                        ui.selected_wall = None;
+                        ui.hovered = None;
+                        hide_wall_ui();
+                        Ok(())
+                    }
                     Some((wid, id)) => {
-                        ui.selected_wall = wid;
-                        ui.current_handle = Some(id);
+                        ui.selected_wall = Some((wid, Some(id)));
                         ui.hovered = None;
                         show_wall_ui(wid, &state.config.walls[wid])
                     }
@@ -458,26 +481,24 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
-                match ui.current_handle {
-                    None => {
+                match ui.selected_wall {
+                    Some((wid, Some(Handle::Move(pdiff)))) => {
+                        let pos = mouse_pos(&evt);
+                        state.config.walls[wid].kind.set_point_base(pos + pdiff);
+                        state.async_render(true)
+                    }
+                    Some((wid, Some(Handle::Handle(id)))) => {
+                        state.config.walls[wid]
+                            .kind
+                            .move_handle(id, &mouse_pos(&evt));
+                        state.async_render(true)
+                    }
+                    _ => {
                         match find_collision(&state.config.walls, &mouse_pos(&evt)) {
                             Some((wid, id)) => ui.hovered = Some((wid, id)),
                             None => ui.hovered = None,
                         }
                         Ok(())
-                    }
-                    Some(Handle::Move(pdiff)) => {
-                        let pos = mouse_pos(&evt);
-                        state.config.walls[ui.selected_wall]
-                            .kind
-                            .set_point_base(pos + pdiff);
-                        state.async_render(true)
-                    }
-                    Some(Handle::Handle(id)) => {
-                        state.config.walls[ui.selected_wall]
-                            .kind
-                            .move_handle(id, &mouse_pos(&evt));
-                        state.async_render(true)
                     }
                 }?;
                 let document = web_sys::window()
@@ -488,10 +509,13 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     .get_element_by_id("drawing")
                     .expect("get Canvas")
                     .dyn_into::<web_sys::HtmlElement>()?;
-                canvas.style().set_property("cursor", match (ui.hovered, ui.current_handle) {
-                    (None, None) => "default",
-                    _ => "pointer"
-                })?;
+                canvas.style().set_property(
+                    "cursor",
+                    match (ui.hovered, ui.selected_wall) {
+                        (_, Some((_, Some(_)))) | (Some(_), _) => "pointer",
+                        _ => "default",
+                    },
+                )?;
                 draw(ui, state)
             })?;
             Ok(())
@@ -501,13 +525,13 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mouseup", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
-                match ui.current_handle {
-                    None => (),
-                    Some(id) => {
-                        ui.hovered = Some((ui.selected_wall, id));
-                        ui.current_handle = None;
+                match ui.selected_wall {
+                    Some((wid, Some(id))) => {
+                        ui.hovered = Some((wid, id));
+                        ui.selected_wall = Some((wid, None));
                         state.async_render(false);
                     }
+                    _ => (),
                 };
             });
             Ok(())
