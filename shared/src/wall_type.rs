@@ -77,6 +77,58 @@ impl WallType {
         ]
     }
 
+    pub fn point_dist(&self, point: &Point2<line::float>) -> line::float {
+      match self {
+        WallType::Line(wall) => {
+          // y = mx + b
+          // m = wall.dy / wall.dx
+          // b = wall.y0 - m * wall.x0
+          // 
+          // y = nx + c
+          //
+          // mx + b = nx + c
+          // x = (c - b) / (m - n)
+          let wd = wall.b() - wall.a();
+          if wd.x == 0.0 {
+            return std::f32::INFINITY;
+          }
+          let m = wd.y / wd.x;
+          let b = wall.b().y - m * wall.b().x;
+          let n = 1.0 / m;
+          let c = point.y - n * point.x;
+          let x = (c - b) / (m - n);
+          let y = m * x + b;
+          let x0 = wall.a().x.min(wall.b().x);
+          let x1 = wall.a().x.max(wall.b().x);
+          if x0 <= x && x <= x1 {
+            (point - Point2::new(x, y)).norm_squared().sqrt()
+          } else {
+            std::f32::INFINITY
+          }
+        },
+        WallType::Circle(circle, center, t0, t1) => crate::arc::point_dist(point, center, circle.radius(), *t0, *t1),
+        WallType::Parabola(parabola) => crate::parabola::point_dist(point, parabola)
+      }
+    }
+
+    pub fn point_base(&self) -> Point2<line::float> {
+      match self {
+        WallType::Line(wall) => wall.a().clone(),
+        WallType::Circle(_, center, _, _) => center.clone(),
+        WallType::Parabola(parabola) => parabola.transform.translation.vector.into()
+      }
+    }
+
+    pub fn set_point_base(&mut self, point: Point2<line::float>) {
+      match self {
+        WallType::Line(wall) => {*wall = Segment::new(point, wall.b().clone())},
+        WallType::Circle(_, center, _, _) => {*center = point},
+        WallType::Parabola(parabola) => {
+          parabola.transform.translation = nalgebra::Translation2::from(point.coords);
+        }
+      }
+    }
+
     pub fn toi_and_normal_with_ray(
         &self,
         ray: &Ray<line::float>,

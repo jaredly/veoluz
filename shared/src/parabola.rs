@@ -32,6 +32,55 @@ impl Parabola {
     }
 }
 
+/// Ok, finding the closest distance of a point to a parabola, it's wild.
+/// 
+/// ```
+/// y = mx^2 # the parabola
+/// (a, b) # the point
+/// D = (mx^2 - b)^2 + (x - a)^2
+/// # wolfram alpha gives me this as the derivative
+/// D' = -2 a + 2 x - 4 b m x + 4 m^2 x^3
+/// # Real root found by wolfram alpha
+/// x = (sqrt(11664 a^2 m^8 + 864 m^6 (1 - 2 b m)^3) + 108 a m^4)^(1/3)/(6 2^(1/3) m^2) - (2^(1/3) (1 - 2 b m))/(sqrt(11664 a^2 m^8 + 864 m^6 (1 - 2 b m)^3) + 108 a m^4)^(1/3)
+/// 
+/// aa = (sqrt(11664 a^2 m^8 + 864 m^6 (1 - 2 b m)^3) + 108 a m^4)^(1/3)
+/// s2 = 2^(1/3)
+/// x = aa/(6 s2 m^2) - (s2 (1 - 2 b m))/aa
+/// 
+/// x = ((11664.0 * a * a * m.powi(8) + 864 * m.powi(6) * (1.0 - 2.0 * b * m).powi(3)).sqrt() + 108.0 * a * m.powi(4)).powf(1.0 / 3. 0)/(6 * (2.0).powf(1.0/3.0) * m.powi(2)) - ((2.0).powf(1.0 /3.0) * (1.0 - 2.0 * b * m))/((11664.0 a * a m.powi(8) + 864 * m.powi(6) * (1.0 - 2.0 * b * m).powi(3)).sqrt() + 108.0 * a * m.powi(4)).powf(1.0/3.0)
+/// 
+/// dd = (1.0 - 2.0 * b * m)
+/// aa = (11664.0 * a * a * m.powi(8) + 864.0 * m.powi(6) * dd.powi(3)).sqrt()
+/// bb = (aa + 108.0 * a * m.powi(4)).powf(1.0/3.0)
+/// cc = (2.0).powf(1.0/3.0)
+/// x = bb/(6 * cc * m.powi(2)) - (cc * dd)/bb
+/// ```
+/// 
+#[inline]
+pub fn point_dist(p: &Point2<line::float>, parabola: &Parabola) -> line::float {
+  let p = parabola.transform.inverse_transform_point(p);
+
+  let a = p.x as f64;
+  let b = p.y as f64;
+  let m = parabola.a as f64;
+
+  let dd = 1.0 - 2.0 * b * m;
+  let aa = (11664.0 * a * a * m.powi(8) + 864.0 * m.powi(6) * dd.powi(3)).sqrt();
+  let bb = (aa + 108.0 * a * m.powi(4)).powf(1.0/3.0);
+  let cc = (2.0 as f64).powf(1.0/3.0);
+  let x = bb/(6.0 * cc * m.powi(2)) - (cc * dd)/bb;
+
+  if x < parabola.left as f64 {
+    return (Point2::new(parabola.left, parabola.left.powi(2) * parabola.a) - p).norm_squared().sqrt() as line::float
+  }
+  if x > parabola.right as f64 {
+    return (Point2::new(parabola.right, parabola.right.powi(2) * parabola.a) - p).norm_squared().sqrt() as line::float
+  }
+
+  let y = m * x * x;
+  (Point2::new(a, b) - Point2::new(x, y)).norm_squared().sqrt() as line::float
+}
+
 #[inline]
 pub fn ray_parabola_collision(
     ray: &Ray<line::float>,

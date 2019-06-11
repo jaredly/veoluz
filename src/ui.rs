@@ -3,15 +3,24 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
 use crate::state::State;
+use shared::line;
 use shared::{Config, Wall, WallType};
+
+use nalgebra::{Point2, Vector2};
+
+#[derive(Clone, Copy)]
+pub enum Handle {
+    Handle(usize),
+    Move(Vector2<line::float>),
+}
 
 #[derive(Clone)]
 pub struct UiState {
     selected_wall: usize,
-    current_handle: Option<usize>,
+    current_handle: Option<Handle>,
     show_lasers: bool,
     mouse_over: bool,
-    hovered: Option<(usize, usize)>,
+    hovered: Option<(usize, Handle)>,
 }
 
 lazy_static! {
@@ -94,19 +103,23 @@ fn draw_laser(
     Ok(())
 }
 
-use nalgebra::{Point2, Vector2};
-
 fn vector_dir(dir: f32) -> Vector2<f32> {
     Vector2::new(dir.cos(), dir.sin())
 }
 
-fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, usize)>) -> Result<(), JsValue> {
+fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Result<(), JsValue> {
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     for (i, wall) in state.config.walls.iter().enumerate() {
-        state
-            .ctx
-            .set_line_width(if ui.selected_wall == i { 3.0 } else { 1.0 });
+        let w = if ui.selected_wall == i {
+            3.0
+        } else {
+            match hover {
+                Some((wid, _)) if wid == i => 2.0,
+                _ => 1.0,
+            }
+        };
+        state.ctx.set_line_width(w);
         if wall.properties.reflect == 1.0 {
             state.ctx.set_stroke_style(&JsValue::from_str("yellow"));
         } else if wall.properties.absorb == 1.0 {
@@ -122,16 +135,19 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, usize)>) -> Res
             &state.ctx,
             5.0,
             match hover {
-                None => {
-                    if ui.selected_wall == i {
-                        ui.current_handle
+                Some((wid, Handle::Handle(id))) => {
+                    if wid == i {
+                        Some(id)
                     } else {
                         None
                     }
                 }
-                Some((wid, id)) => {
-                    if wid == i {
-                        Some(id)
+                _ => {
+                    if ui.selected_wall == i {
+                        match ui.current_handle {
+                            Some(Handle::Handle(i)) => Some(i),
+                            _ => None,
+                        }
                     } else {
                         None
                     }
@@ -172,14 +188,31 @@ fn mouse_pos(evt: &web_sys::MouseEvent) -> Point2<f32> {
     )
 }
 
-fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, usize)> {
+fn find_wall_hover(
+    walls: &[Wall],
+    pos: &Point2<shared::line::float>,
+) -> Option<(usize, Vector2<line::float>)> {
+    let mut close = None;
+    for (wid, wall) in walls.iter().enumerate() {
+        let dist = wall.kind.point_dist(pos);
+        if dist < 5.0 {
+            match close {
+                Some((_, d, _)) if d < dist => (),
+                _ => close = Some((wid, dist, wall.kind.point_base() - pos)),
+            }
+        }
+    }
+    return close.map(|(wid, _, pdiff)| (wid, pdiff));
+}
+
+fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
         match wall.kind.check_handle(pos, 5.0) {
             None => (),
-            Some(id) => return Some((wid, id)),
+            Some(id) => return Some((wid, Handle::Handle(id))),
         }
     }
-    return None;
+    return find_wall_hover(walls, pos).map(|(wid, pdiff)| (wid, Handle::Move(pdiff)));
 }
 
 #[wasm_bindgen]
@@ -243,7 +276,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("reflect")?,
         "input",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("reflect")?;
                 state.config.walls[ui.selected_wall].properties.reflect =
@@ -258,7 +291,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("reflect")?,
         "change",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("reflect")?;
                 state.config.walls[ui.selected_wall].properties.reflect =
@@ -273,7 +306,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("absorb")?,
         "input",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("absorb")?;
                 state.config.walls[ui.selected_wall].properties.absorb =
@@ -288,7 +321,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("absorb")?,
         "change",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("absorb")?;
                 state.config.walls[ui.selected_wall].properties.absorb =
@@ -303,7 +336,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("roughness")?,
         "input",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("roughness")?;
                 state.config.walls[ui.selected_wall].properties.roughness =
@@ -318,7 +351,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("roughness")?,
         "change",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("roughness")?;
                 state.config.walls[ui.selected_wall].properties.roughness =
@@ -333,7 +366,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("refraction")?,
         "input",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("refraction")?;
                 state.config.walls[ui.selected_wall].properties.refraction =
@@ -348,7 +381,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         get_input("refraction")?,
         "change",
         web_sys::InputEvent,
-        move |evt| {
+        move |_evt| {
             try_state_ui(|state, ui| {
                 let input = get_input("refraction")?;
                 state.config.walls[ui.selected_wall].properties.refraction =
@@ -395,7 +428,7 @@ pub fn setup_button() -> Result<(), JsValue> {
 pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
     draw_image(state)?;
     if ui.mouse_over {
-        draw_walls(state, ui, ui.hovered)?;
+        draw_walls(state, ui, ui.hovered.clone())?;
     }
     Ok(())
 }
@@ -462,18 +495,27 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
                 match ui.current_handle {
-                    None => match find_collision(&state.config.walls, &mouse_pos(&evt)) {
-                        None => ui.hovered = None,
-                        Some((wid, id)) => ui.hovered = Some((wid, id)),
-                    },
-                    Some(id) => {
+                    None => {
+                        match find_collision(&state.config.walls, &mouse_pos(&evt)) {
+                            Some((wid, id)) => ui.hovered = Some((wid, id)),
+                            None => ui.hovered = None,
+                        }
+                        Ok(())
+                    }
+                    Some(Handle::Move(pdiff)) => {
+                        let pos = mouse_pos(&evt);
+                        state.config.walls[ui.selected_wall]
+                            .kind
+                            .set_point_base(pos + pdiff);
+                        state.async_render(true)
+                    }
+                    Some(Handle::Handle(id)) => {
                         state.config.walls[ui.selected_wall]
                             .kind
                             .move_handle(id, &mouse_pos(&evt));
-                        state.async_render(true);
-                        // Some((ui.selected_wall, id))
+                        state.async_render(true)
                     }
-                };
+                }?;
                 draw(ui, state)
             })?;
             Ok(())

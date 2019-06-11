@@ -4,7 +4,8 @@ pub mod wall_type;
 pub mod parabola;
 pub mod arc;
 use serde::{Deserialize, Serialize};
-use wall_type::WallType;
+pub use wall_type::WallType;
+pub use parabola::Parabola;
 use arc::angle_norm;
 
 use std::f32::consts::PI;

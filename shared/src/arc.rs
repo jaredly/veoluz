@@ -10,6 +10,18 @@ pub enum BallResult {
 }
 
 #[inline]
+pub fn point_dist(p: &Point2<line::float>, center: &Point2<line::float>, radius: line::float, t0: line::float, t1: line::float) -> line::float {
+  // TODO check for angles here
+  let diff = p - center;
+  let angle = diff.y.atan2(diff.x);
+  if is_between(angle, t0, t1) {
+    (diff.norm_squared().sqrt() - radius).abs()
+  } else {
+    std::f32::INFINITY
+  }
+}
+
+#[inline]
 pub fn ball_toi_with_ray(
     center: &Point2<line::float>,
     radius: line::float,
