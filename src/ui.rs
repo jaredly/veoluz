@@ -10,13 +10,17 @@ pub struct UiState {
     selected_wall: usize,
     current_handle: Option<usize>,
     show_lasers: bool,
+    mouse_over: bool,
+    hovered: Option<(usize, usize)>,
 }
 
 lazy_static! {
     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
         selected_wall: 0,
         current_handle: None,
-        show_lasers: true,
+        show_lasers: false,
+        mouse_over: false,
+        hovered: None,
     });
 }
 
@@ -227,6 +231,14 @@ pub fn setup_button() -> Result<(), JsValue> {
     Ok(())
 }
 
+pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
+    draw_image(state)?;
+    if ui.mouse_over {
+        draw_walls(state, ui, ui.hovered)?;
+    }
+    Ok(())
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -243,16 +255,19 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-            draw_image(state)?;
-            use_ui(|ui| draw_walls(state, ui, None))?;
-            Ok(())
+            use_ui(|ui| {
+                ui.mouse_over = true;
+                draw(ui, state)
+            })
         })
     });
 
     listen!(canvas, "mouseleave", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-            draw_image(state)?;
-            Ok(())
+            use_ui(|ui| {
+                ui.mouse_over = false;
+                draw(ui, state)
+            })
         })
     });
 
@@ -264,11 +279,10 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     Some((wid, id)) => {
                         ui.selected_wall = wid;
                         ui.current_handle = Some(id);
+                        ui.hovered = None;
                     }
                 }
-                draw_image(state)?;
-                draw_walls(state, ui, None);
-                Ok(())
+                draw(ui, state)
             })
         })
     });
@@ -276,22 +290,20 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
-                let hover = match ui.current_handle {
+                match ui.current_handle {
                     None => match find_collision(&state.config.walls, &mouse_pos(&evt)) {
-                        None => None,
-                        Some((wid, id)) => Some((wid, id))
+                        None => ui.hovered = None,
+                        Some((wid, id)) => ui.hovered = Some((wid, id)),
                     },
                     Some(id) => {
                         state.config.walls[ui.selected_wall]
                             .kind
                             .move_handle(id, &mouse_pos(&evt));
                         state.async_render(true);
-                        Some((ui.selected_wall, id))
+                        // Some((ui.selected_wall, id))
                     }
                 };
-                draw_image(state)?;
-                draw_walls(state, ui, hover)?;
-                Ok(())
+                draw(ui, state)
             })?;
             Ok(())
         })
@@ -302,11 +314,12 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
             use_ui(|ui| {
                 match ui.current_handle {
                     None => (),
-                    Some(_) => {
+                    Some(id) => {
+                        ui.hovered = Some((ui.selected_wall, id));
+                        ui.current_handle = None;
                         state.async_render(false);
                     }
                 };
-                ui.current_handle = None;
             });
             Ok(())
         })

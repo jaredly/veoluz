@@ -30,7 +30,10 @@ fn parse_worker_message(
 fn on_message(wid: usize, evt: web_sys::MessageEvent) -> Result<(), JsValue> {
     let (id, uarr) = parse_worker_message(evt)?;
 
-    state::with(|state| state.handle_render(wid, id, uarr))?;
+    state::with(|state| {
+        state.handle_render(wid, id, uarr)?;
+        ui::use_ui(|ui| ui::draw(ui, state))
+    })?;
 
     Ok(())
 }
