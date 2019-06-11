@@ -130,16 +130,6 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, usize)>) -> Res
         )?;
     }
 
-    if ui.show_lasers {
-        let count = 30;
-        for i in 0..count {
-            draw_laser(
-                &state,
-                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
-            )?;
-        }
-    }
-
     Ok(())
 }
 
@@ -195,15 +185,20 @@ pub fn get_url_config() -> Option<shared::Config> {
         .and_then(|encoded| bincode::deserialize(&encoded).ok())
 }
 
-pub fn setup_button() -> Result<(), JsValue> {
+fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
     let document = web_sys::window()
         .expect("window")
         .document()
         .expect("Document");
     let button = document
-        .get_element_by_id("render")
+        .get_element_by_id(id)
         .expect("get button")
         .dyn_into::<web_sys::HtmlButtonElement>()?;
+    Ok(button)
+}
+
+pub fn setup_button() -> Result<(), JsValue> {
+    let button = get_button("render")?;
 
     listen!(button, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
@@ -212,10 +207,7 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
-    let button = document
-        .get_element_by_id("share")
-        .expect("get share button")
-        .dyn_into::<web_sys::HtmlButtonElement>()?;
+    let button = get_button("share")?;
 
     listen!(button, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
@@ -228,6 +220,20 @@ pub fn setup_button() -> Result<(), JsValue> {
         })
     });
 
+    let button = get_button("lasers")?;
+
+    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            use_ui(|ui| {
+                ui.show_lasers = !ui.show_lasers;
+                let button = get_button("lasers")?;
+                button.set_inner_html(if ui.show_lasers {"hide lasers"} else {"show lasers"});
+                draw(ui, state);
+                Ok(())
+            })
+        })
+    });
+
     Ok(())
 }
 
@@ -235,6 +241,16 @@ pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
     draw_image(state)?;
     if ui.mouse_over {
         draw_walls(state, ui, ui.hovered)?;
+    }
+
+    if ui.show_lasers {
+        let count = 36;
+        for i in 0..count {
+            draw_laser(
+                &state,
+                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
+            )?;
+        }
     }
     Ok(())
 }
