@@ -68,7 +68,7 @@ impl LightKind {
 
     pub fn scale(&mut self, by: usize) {
         match self {
-            LightKind::Point {origin, ..} => {
+            LightKind::Point { origin, .. } => {
                 *origin = *origin * by as f32;
             }
         }
@@ -128,8 +128,8 @@ pub struct Wall {
     pub properties: Properties,
 }
 
-fn xy(point: &Point2<line::float>) -> (line::float, line::float) {
-    (point.x, point.y)
+fn xy(point: &Point2<line::float>, scale: u8) -> (line::float, line::float) {
+    (point.x * scale as line::float, point.y * scale as line::float)
 }
 
 #[inline]
@@ -298,7 +298,7 @@ pub fn find_collision(
 ) -> Option<(line::float, Properties, bool, Vector2<line::float>)> {
     let mut closest = None;
 
-    for (_i, wall) in walls.iter().enumerate() {
+    for wall in walls.iter() {
         match wall.kind.toi_and_normal_with_ray(&ray) {
             None => (),
             Some(intersection) => {
@@ -325,6 +325,24 @@ pub fn find_collision(
     closest
 }
 
+pub fn hit_boundary(boundaries: &[Segment<line::float>], ray: &Ray<line::float>) -> line::float {
+    let mut closest = None;
+    for b in boundaries {
+        use ncollide2d::query::ray_internal::ray::RayCast;
+        match b.toi_with_ray(&nalgebra::geometry::Isometry::identity(), &ray, true) {
+            None => (),
+            Some(toi) => match closest {
+                Some(t) if t > toi => (),
+                _ => closest = Some(toi),
+            },
+        }
+    }
+    match closest {
+        None => 0.0,
+        Some(t) => t,
+    }
+}
+
 // #[derive(Serialize, Deserialize)]
 // pub enum WorkerMsg {
 //     Finished(JsValue)
@@ -335,17 +353,20 @@ pub fn run_ray(
     ray: &mut Ray<line::float>,
     config: &Config,
     walls: &[Wall],
+    boundaries: &[Segment<line::float>],
     brightness_data: &mut [line::uint],
+    scale: u8,
 ) -> bool {
     let max_brightness = 100.0;
     match find_collision(walls, &ray) {
         None => {
+            let toi = hit_boundary(boundaries, ray);
             line::draw_line(
-                xy(&ray.origin),
-                xy(&ray.point_at(600.0)),
+                xy(&ray.origin, scale),
+                xy(&ray.point_at(toi), scale),
                 brightness_data,
-                config.width,
-                config.height,
+                config.width * scale as usize,
+                config.height * scale as usize,
                 max_brightness,
             );
             return true;
@@ -356,11 +377,11 @@ pub fn run_ray(
             //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal)
             // }
             line::draw_line(
-                xy(&ray.origin),
-                xy(&new_origin),
+                xy(&ray.origin, scale),
+                xy(&new_origin, scale),
                 brightness_data,
-                config.width,
-                config.height,
+                config.width * scale as usize,
+                config.height * scale as usize,
                 max_brightness,
             );
             ray.origin = new_origin;
@@ -374,7 +395,7 @@ pub fn run_ray(
 
 pub fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
     let rot = PI * 2.0 / config.reflection as f32;
-    let center = Point2::new(config.width as f32 / 2.0, config.height as f32/ 2.0);
+    let center = Point2::new(config.width as f32 / 2.0, config.height as f32 / 2.0);
     for i in 1..config.reflection {
         let angle = i as f32 * rot;
         for wall in config.walls.iter() {
@@ -391,15 +412,42 @@ pub fn all_walls(config: &Config) -> Vec<Wall> {
     walls
 }
 
-pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
+use ncollide2d::shape::Segment;
+pub fn boundaries(config: &Config) -> Vec<Segment<line::float>> {
+    vec![
+        // left
+        Segment::new(
+            Point2::new(0.0, 0.0),
+            Point2::new(0.0, config.height as line::float),
+        ),
+        // right
+        Segment::new(
+            Point2::new(config.width as line::float, 0.0),
+            Point2::new(config.width as line::float, config.height as line::float),
+        ),
+        // bottom
+        Segment::new(
+            Point2::new(0.0, config.height as line::float),
+            Point2::new(config.width as line::float, config.height as line::float),
+        ),
+        // top
+        Segment::new(
+            Point2::new(0.0, 0.0),
+            Point2::new(config.width as line::float, 0.0),
+        ),
+    ]
+}
+
+pub fn deterministic_calc(config: &Config, scale: u8) -> Vec<line::uint> {
     let _timer = Timer::new("Calculate");
     let width = config.width;
     let height = config.height;
 
-    let mut brightness_data = vec![0; width * height];
+    let mut brightness_data = vec![0; width * height * scale as usize * scale as usize];
 
     let total_light: f32 = config.lights.iter().map(|l| l.brightness).sum();
     let walls = all_walls(config);
+    let boundaries = boundaries(config);
 
     for light in config.lights.iter() {
         let amount = light.brightness / total_light;
@@ -410,7 +458,7 @@ pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
             let mut ray = light.kind.spawn(direction);
 
             for _ in 0..30 {
-                if run_ray(&mut ray, &config, &walls, &mut brightness_data) {
+                if run_ray(&mut ray, &config, &walls, &boundaries, &mut brightness_data, scale) {
                     break;
                 }
             }
@@ -420,17 +468,16 @@ pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
     brightness_data
 }
 
-pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
+pub fn calculate(config: &Config, rays: usize, scale: u8) -> Vec<line::uint> {
     let _timer = Timer::new("Calculate");
     let width = config.width;
     let height = config.height;
 
-    let mut brightness_data = vec![0; width * height];
+    let mut brightness_data = vec![0; width * height * scale as usize * scale as usize];
 
-    let total_light: f32 = {
-        config.lights.iter().map(|l| l.brightness).sum()
-    };
+    let total_light: f32 = { config.lights.iter().map(|l| l.brightness).sum() };
     let walls = all_walls(config);
+    let boundaries = boundaries(config);
 
     // if we don't draw at all, we're still getting only 400k/sec
 
@@ -442,7 +489,7 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
             let mut ray = light.kind.spawn(rand());
 
             for _ in 0..30 {
-                if run_ray(&mut ray, &config, &walls, &mut brightness_data) {
+                if run_ray(&mut ray, &config, &walls, &boundaries, &mut brightness_data, scale) {
                     break;
                 }
             }
@@ -452,24 +499,50 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
     brightness_data
 }
 
-pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
-    // something like 5% of the time is here
-    let _timer = Timer::new("Colorize");
+pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
+    let _timer = Timer::new("Grayscale");
+    let width = config.width * scale as usize;
+    let height = config.height * scale as usize;
 
     let mut top = 0;
-    for x in 0..config.width {
-        for y in 0..config.height {
-            top = top.max(brightness_data[x + y * config.width]);
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[x + y * width]);
         }
     }
 
-    let mut data = vec![0; config.width * config.height * 4];
+    let mut data = vec![0; width * height];
+    let top = top as line::float;
+    for x in 0..width {
+        for y in 0..height {
+            let index = x + y * width;
+            let brightness = brightness_data[x + y * width];
+            data[index] = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
+        }
+    }
+
+    data
+}
+
+pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
+    let _timer = Timer::new("Colorize");
+    let width = config.width * scale as usize;
+    let height = config.height * scale as usize;
+
+    let mut top = 0;
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[x + y * width]);
+        }
+    }
+
+    let mut data = vec![0; width * height * 4];
     let top = top as line::float;
     // let scale =
-    for x in 0..config.width {
-        for y in 0..config.height {
-            let index = (x + y * config.width) * 4;
-            let brightness = brightness_data[x + y * config.width];
+    for x in 0..width {
+        for y in 0..height {
+            let index = (x + y * width) * 4;
+            let brightness = brightness_data[x + y * width];
             data[index] = 255;
             data[index + 1] = 255;
             data[index + 2] = 255;
@@ -480,24 +553,26 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     data
 }
 
-pub fn black_colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
+pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
     // something like 5% of the time is here
     let _timer = Timer::new("Colorize");
+    let width = config.width * scale as usize;
+    let height = config.height * scale as usize;
 
     let mut top = 0;
-    for x in 0..config.width {
-        for y in 0..config.height {
-            top = top.max(brightness_data[x + y * config.width]);
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[x + y * width]);
         }
     }
 
-    let mut data = vec![0; config.width * config.height * 4];
+    let mut data = vec![0; width * height * 4];
     let top = top as line::float;
     // let scale =
-    for x in 0..config.width {
-        for y in 0..config.height {
-            let index = (x + y * config.width) * 4;
-            let brightness = brightness_data[x + y * config.width];
+    for x in 0..width {
+        for y in 0..height {
+            let index = (x + y * width) * 4;
+            let brightness = brightness_data[x + y * width];
             let bright = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
             data[index] = bright;
             data[index + 1] = bright;
@@ -510,9 +585,9 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8
 }
 
 pub fn zen_photon(config: &Config) -> Vec<u8> {
-    let brightness_data = calculate(&config, 100_000);
+    let brightness_data = calculate(&config, 100_000, 1);
 
-    colorize(&config, &brightness_data)
+    colorize(&config, &brightness_data, 1)
 }
 
 pub struct Timer<'a> {

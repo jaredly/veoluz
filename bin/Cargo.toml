@@ -10,6 +10,7 @@ num-traits = "0"
 nalgebra = "*"
 ncollide2d = "*"
 png = "*"
+image = {git="https://github.com/image-rs/image"}
 
 shared = { path="../shared" }
 

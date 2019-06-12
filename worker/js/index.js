@@ -18,7 +18,7 @@ let loop = (times, fn) => {
 import("../crate/pkg").then(module => {
   let handle = data => {
     clearTimeout(timeout);
-    console.log('message', data)
+    // console.log('message', data)
     let res = module.process(data)
     postMessage({id: data.id, buffer: res.buffer}, [res.buffer])
     // loop(20, () => {
