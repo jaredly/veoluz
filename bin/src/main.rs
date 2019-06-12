@@ -27,10 +27,11 @@ fn run(config: shared::Config, outfile: String, count: usize) {
 fn main() -> std::io::Result<()> {
     // argv
     let args: Vec<String> = std::env::args().collect();
-    if args.len() == 4 {
+    if args.len() == 5 {
         let name: String = args[1].clone();
         let outfile: String = args[2].clone();
         let count: usize = args[3].parse().unwrap();
+        let x: usize = args[4].parse().unwrap();
         println!("Arg {}", name);
 
         let mut file = std::fs::File::open(name)?;
@@ -38,12 +39,20 @@ fn main() -> std::io::Result<()> {
 
         use std::io::prelude::*;
         file.read_to_string(&mut contents)?;
-        let config: shared::Config = serde_json::from_str(&contents).unwrap();
+        let mut config: shared::Config = serde_json::from_str(&contents).unwrap();
+        config.width *= x;
+        config.height *= x;
+        for wall in config.walls.iter_mut() {
+            wall.kind.scale(x);
+        }
+        for light in config.lights.iter_mut() {
+            light.kind.scale(x);
+        }
 
         run(config, outfile, count);
 
     } else {
-        println!("Usage: bin some.json out.png 100000")
+        println!("Usage: bin some.json out.png 100000 3")
     }
 
     Ok(())

@@ -51,12 +51,14 @@ fn draw_image(state: &State) -> Result<(), JsValue> {
 
 fn draw_laser(
     state: &State,
-    vector: nalgebra::Vector2<shared::line::float>,
+    direction: line::float,
+    light: &shared::LightSource,
 ) -> Result<(), JsValue> {
-    let mut ray = ncollide2d::query::Ray::new(state.config.light_source, vector);
+    let mut ray = light.kind.spawn(direction);
+    let walls = shared::all_walls(&state.config);
     for _i in 0..10 {
         // log!("Ray: {:?}", ray);
-        match shared::find_collision(&state.config.walls, &ray) {
+        match shared::find_collision(&walls, &ray) {
             None => {
                 state.ctx.set_stroke_style(&"red".into());
                 state.ctx.begin_path();
@@ -108,6 +110,14 @@ fn vector_dir(dir: f32) -> Vector2<f32> {
 fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Result<(), JsValue> {
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
+    let mut extras = vec![];
+    shared::extra_walls(&mut extras, &state.config);
+    for wall in extras {
+        state.ctx.set_line_width(1.0);
+        state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
+        crate::draw::draw(&wall.kind, &state.ctx);
+    }
+
     for (i, wall) in state.config.walls.iter().enumerate() {
         let w = match ui.selected_wall {
             Some((wid, _)) if wid == i => 3.0,
@@ -152,11 +162,14 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
 
     if ui.show_lasers {
         let count = 30;
-        for i in 0..count {
-            draw_laser(
-                &state,
-                vector_dir(std::f32::consts::PI * 2.0 / count as f32 * i as f32),
-            )?;
+        for light in state.config.lights.iter() {
+            for i in 0..count {
+                draw_laser(
+                    &state,
+                    i as f32/ count as f32,
+                    &light
+                )?;
+            }
         }
     }
 

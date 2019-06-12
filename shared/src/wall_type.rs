@@ -13,7 +13,7 @@ use std::f32::consts::PI;
 use nalgebra::{Point2, Vector2};
 
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub enum WallType {
     Line(Segment<line::float>),
     Circle(
@@ -73,6 +73,57 @@ impl WallType {
             WallType::rand_line(width, height),
             WallType::rand_parabola(width, height),
         ]
+    }
+
+    pub fn scale(&mut self, by: usize) {
+        match self {
+            WallType::Line(wall) => {
+                *wall = Segment::new(
+                    wall.a() * by as f32,
+                    wall.b() * by as f32,
+                )
+            },
+            WallType::Circle(ball, center, _, _) => {
+                *ball = Ball::new(ball.radius() * by as f32);
+                *center = *center * by as f32;
+            },
+            WallType::Parabola(parabola) => {
+                parabola.transform.translation.vector *= by as f32;
+            }
+
+        }
+    }
+
+    pub fn rotate_around(&mut self, center: &Point2<line::float>, angle: line::float) {
+        let base = self.point_base();
+        let diff = base - center;
+        let current_angle = diff.y.atan2(diff.x);
+        let dist = diff.norm_squared().sqrt();
+        let new_angle = current_angle + angle;
+        let new_base = Point2::new(center.x + new_angle.cos() * dist, center.y + new_angle.sin() * dist);
+        match self {
+            WallType::Line(wall) =>  {
+                let diff = wall.b() - center;
+                let current_angle = diff.y.atan2(diff.x);
+                let dist = diff.norm_squared().sqrt();
+                let new_angle = current_angle + angle;
+                let new_b = Point2::new(center.x + new_angle.cos() * dist, center.y + new_angle.sin() * dist);
+
+                *wall = Segment::new(
+                    new_base,
+                    new_b
+                );
+            },
+            WallType::Circle(ball, center, t0, t1) => {
+                *center = new_base;
+                *t0 += angle;
+                *t1 += angle;
+            },
+            WallType::Parabola(parabola) => {
+                parabola.transform.translation = nalgebra::Translation2::from(new_base.coords);
+                parabola.transform.rotation = nalgebra::UnitComplex::from_angle(parabola.transform.rotation.angle() + angle);
+            }
+        }
     }
 
     pub fn point_dist(&self, point: &Point2<line::float>) -> line::float {

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use nalgebra::{Point2, Vector2};
 use crate::line;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Parabola {
     pub a: line::float,
     pub left: line::float,

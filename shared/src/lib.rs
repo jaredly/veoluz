@@ -1,17 +1,14 @@
+pub mod arc;
 pub mod line;
 pub mod messaging;
-pub mod wall_type;
 pub mod parabola;
-pub mod arc;
+pub mod wall_type;
+use arc::angle_norm;
+pub use parabola::Parabola;
 use serde::{Deserialize, Serialize};
 pub use wall_type::WallType;
-pub use parabola::Parabola;
-use arc::angle_norm;
 
 use std::f32::consts::PI;
-
-
-
 
 use ncollide2d::query::Ray;
 
@@ -19,7 +16,6 @@ use ncollide2d::query::RayIntersection;
 use ncollide2d::shape::FeatureId;
 
 use nalgebra::{Point2, Vector2};
-
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -36,19 +32,21 @@ fn rand() -> f32 {
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
-        // web_sys::console::log_1(&format!( $( $t )* ).into());
-        ()
-    }
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+        // ()
+    };
 }
 
 use nalgebra as na;
 
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct LightSource {
-    kind: LightKind,
+    pub kind: LightKind,
     // something between 0 and 1 I think?
-    brightness: line::float,
+    pub brightness: line::float,
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum LightKind {
     Point {
         origin: Point2<line::float>,
@@ -57,10 +55,31 @@ pub enum LightKind {
     },
 }
 
+impl LightKind {
+    #[inline]
+    pub fn spawn(&self, direction: line::float) -> Ray<line::float> {
+        match self {
+            LightKind::Point { origin, t0, t1 } => {
+                let angle = direction * (t1 - t0) + t0;
+                Ray::new(*origin, Vector2::new(angle.cos(), angle.sin()))
+            }
+        }
+    }
+
+    pub fn scale(&mut self, by: usize) {
+        match self {
+            LightKind::Point {origin, ..} => {
+                *origin = *origin * by as f32;
+            }
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     pub walls: Vec<Wall>,
-    pub light_source: Point2<line::float>,
+    pub lights: Vec<LightSource>,
+    pub reflection: u8,
     pub width: usize,
     pub height: usize,
 }
@@ -71,7 +90,15 @@ impl Config {
             walls,
             width,
             height,
-            light_source: Point2::new(width as line::float / 2.0, height as line::float / 2.0),
+            reflection: 1,
+            lights: vec![LightSource {
+                kind: LightKind::Point {
+                    origin: Point2::new(width as line::float / 2.0, height as line::float / 2.0),
+                    t0: -PI,
+                    t1: PI,
+                },
+                brightness: 1.0,
+            }],
         }
     }
 }
@@ -95,7 +122,7 @@ pub struct Properties {
     pub refraction: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Wall {
     pub kind: WallType,
     pub properties: Properties,
@@ -265,7 +292,6 @@ impl Wall {
     }
 }
 
-
 pub fn find_collision(
     walls: &[Wall],
     ray: &Ray<line::float>,
@@ -308,10 +334,11 @@ pub fn find_collision(
 pub fn run_ray(
     ray: &mut Ray<line::float>,
     config: &Config,
+    walls: &[Wall],
     brightness_data: &mut [line::uint],
 ) -> bool {
     let max_brightness = 100.0;
-    match find_collision(&config.walls, &ray) {
+    match find_collision(walls, &ray) {
         None => {
             line::draw_line(
                 xy(&ray.origin),
@@ -345,6 +372,25 @@ pub fn run_ray(
     false
 }
 
+pub fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
+    let rot = PI * 2.0 / config.reflection as f32;
+    let center = Point2::new(config.width as f32 / 2.0, config.height as f32/ 2.0);
+    for i in 1..config.reflection {
+        let angle = i as f32 * rot;
+        for wall in config.walls.iter() {
+            let mut wall = wall.clone();
+            wall.kind.rotate_around(&center, angle);
+            walls.push(wall);
+        }
+    }
+}
+
+pub fn all_walls(config: &Config) -> Vec<Wall> {
+    let mut walls = config.walls.clone();
+    extra_walls(&mut walls, config);
+    walls
+}
+
 pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
     let _timer = Timer::new("Calculate");
     let width = config.width;
@@ -352,18 +398,21 @@ pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
 
     let mut brightness_data = vec![0; width * height];
 
-    // if we don't draw at all, we're still getting only 400k/sec
+    let total_light: f32 = config.lights.iter().map(|l| l.brightness).sum();
+    let walls = all_walls(config);
 
-    for r in 0..360 {
-        let direction = (r as f32) / 180.0 * PI;
-        let mut ray = ncollide2d::query::Ray::new(
-            config.light_source,
-            Vector2::new(direction.cos(), direction.sin()),
-        );
+    for light in config.lights.iter() {
+        let amount = light.brightness / total_light;
+        let rrr: f32 = 360.0 * amount * config.lights.len() as f32;
+        let rays: usize = rrr as usize;
+        for r in 0..rays {
+            let direction = (r as f32) / rays as f32;
+            let mut ray = light.kind.spawn(direction);
 
-        for _ in 0..30 {
-            if run_ray(&mut ray, &config, &mut brightness_data) {
-                break;
+            for _ in 0..30 {
+                if run_ray(&mut ray, &config, &walls, &mut brightness_data) {
+                    break;
+                }
             }
         }
     }
@@ -378,19 +427,24 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
 
     let mut brightness_data = vec![0; width * height];
 
+    let total_light: f32 = {
+        config.lights.iter().map(|l| l.brightness).sum()
+    };
+    let walls = all_walls(config);
+
     // if we don't draw at all, we're still getting only 400k/sec
 
-    for _ in 0..rays {
-        let direction = rand() * PI * 2.0;
-        // let direction = (r as f32) / 180.0 * PI;
-        let mut ray = ncollide2d::query::Ray::new(
-            config.light_source,
-            Vector2::new(direction.cos(), direction.sin()),
-        );
+    for light in config.lights.iter() {
+        let amount = light.brightness / total_light;
+        let rrr: f32 = rays as f32 * amount;
+        let rays = rrr as usize;
+        for _ in 0..rays {
+            let mut ray = light.kind.spawn(rand());
 
-        for _ in 0..30 {
-            if run_ray(&mut ray, &config, &mut brightness_data) {
-                break;
+            for _ in 0..30 {
+                if run_ray(&mut ray, &config, &walls, &mut brightness_data) {
+                    break;
+                }
             }
         }
     }

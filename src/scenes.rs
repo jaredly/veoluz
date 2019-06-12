@@ -188,7 +188,20 @@ pub fn apple() -> shared::Config {
         //     // angle_norm(theta - std::f32::consts::PI * 3.0 / 5.0),
         // )))
     }
-    shared::Config::new(walls, width as usize, height as usize)
+    let mut config = shared::Config::new(walls, width as usize, height as usize);
+
+    // config.lights.push(
+    //     shared::LightSource {
+    //         kind: shared::LightKind::Point {
+    //             origin: Point2::new(100.0, 100.0),
+    //             t0: 0.0,
+    //             t1: std::f32::consts::PI
+    //         },
+    //         brightness: 0.5
+    //     }
+    // );
+
+    config
 }
 
 use ncollide2d::shape::Segment;
@@ -338,7 +351,9 @@ pub fn refract2() -> shared::Config {
             ), index),
     ];
 
-    shared::Config::new(walls, width as usize, height as usize)
+    let mut config = shared::Config::new(walls, width as usize, height as usize);
+    config.reflection = 3;
+    config
 }
 
 pub fn refraction_test() -> shared::Config {
