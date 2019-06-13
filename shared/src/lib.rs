@@ -212,10 +212,10 @@ impl Wall {
         Wall {
             kind,
             properties: Properties {
-                reflect: 0.0,
-                absorb: 1.0,
+                reflect: 1.0,
+                absorb: 0.0,
                 roughness: 0.0,
-                refraction: 1.0,
+                refraction: 0.5,
             },
         }
     }

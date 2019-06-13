@@ -70,7 +70,6 @@ pub fn restore(config: &JsValue) {
             ui::reset(&config)?;
             state.config = config;
             state.clear();
-            // TODO update 
             state.async_render(false)
         } else {
             Ok(())
@@ -82,7 +81,10 @@ pub fn restore(config: &JsValue) {
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     // let config = scenes::circle_row();
-    let config = scenes::refract2();
+    // let config = scenes::refract2();
+    let width = 1024;
+    let height = 576;
+    let config = shared::Config::new(vec![], width, height);
     // let config = scenes::playground();
     // let config = scenes::parabola_test();
     // let config = scenes::apple();
