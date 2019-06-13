@@ -21,9 +21,9 @@ use nalgebra::{Point2, Vector2};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
-#[cfg(feature = "wee_alloc")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+// #[cfg(feature = "wee_alloc")]
+// #[global_allocator]
+// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 // use rand::random;
 // use wasm_bindgen::Clamped;
@@ -84,6 +84,7 @@ impl Config {
                 },
                 brightness: 1.0,
             }],
+            exposure: Default::default()
         }
     }
 
@@ -486,6 +487,7 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> 
             top = top.max(brightness_data[x + y * width]);
         }
     }
+    let expose = exposer(config);
 
     let mut data = vec![0; width * height];
     let top = top as line::float;
@@ -500,13 +502,43 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> 
     data
 }
 
-#[inline]
-fn expose(top: line::float, brightness: line::uint) -> u8 {
-    // ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8
-    // ((brightness as line::float / top).sqrt() * 255.0) as u8
-    ((brightness as line::float / top).sqrt() * 500.0).min(255.0) as u8
-    // ((brightness as line::float / top) * 255.0) as u8
+fn exposer<'a>(config: &Config) -> Box<Fn(line::float, line::uint) -> u8> {
+    let min: line::float = config.exposure.min;
+    let max: line::float = config.exposure.max;
+    // if it's 0 - 0.75
+    // we want (x * (255.0 / .75)).max(255.0)
+    // if it's 0.25 - 0.75
+    // we want ((x - .25).min(0.0) * 255.0 / .5).max(255.0)
+    let scale: line::float = 255.0 / (max - min);
+    let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0) as u8;
+    match config.exposure.curve {
+        Curve::FourthRoot => {
+            Box::new(move |top: line::float, brightness: line::uint| 
+            scaler((brightness as line::float / top).sqrt().sqrt()))
+            // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8
+        },
+        // FourthRoot => move |top, brightness| 
+        //     scaler((brightness as line::float / top).sqrt().sqrt()),
+        Curve::SquareRoot => {
+            Box::new(move |top: line::float, brightness: line::uint| 
+            scaler((brightness as line::float / top).sqrt()))
+            // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8;
+            // move |top, brightness: u8| 
+            // scaler((brightness as line::float / top).sqrt())
+        },
+        Curve::Linear => Box::new(move |top, brightness| 
+            scaler(brightness as line::float / top))
+    }
 }
+
+// #[inline]
+// fn expose(top: line::float, brightness: line::uint) -> u8 {
+//     // ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8
+//     // ((brightness as line::float / top).sqrt() * 255.0) as u8
+//     // ((brightness as line::float / top).sqrt() * 500.0).min(255.0) as u8
+//     // (brightness as line::float / top * 1000.0).min(255.0) as u8
+//     (brightness as line::float / top * 4000.0).min(255.0) as u8
+// }
 
 pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
     let _timer = Timer::new("Colorize");
@@ -519,6 +551,8 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
             top = top.max(brightness_data[x + y * width]);
         }
     }
+
+    let expose = exposer(config);
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;
@@ -549,6 +583,7 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8
             top = top.max(brightness_data[x + y * width]);
         }
     }
+    let expose = exposer(config);
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;
@@ -580,13 +615,15 @@ pub struct Timer<'a> {
 
 impl<'a> Timer<'a> {
     pub fn new(name: &'a str) -> Timer<'a> {
-        // web_sys::console::time_with_label(name);
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::time_with_label(name);
         Timer { name }
     }
 }
 
 impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
-        // web_sys::console::time_end_with_label(self.name);
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::time_end_with_label(self.name);
     }
 }

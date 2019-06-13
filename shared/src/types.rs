@@ -44,6 +44,56 @@ pub enum LightKind {
     },
 }
 
+mod v0 {
+  use super::*;
+
+  #[derive(Serialize, Deserialize, Clone, PartialEq)]
+  pub struct Config {
+      pub walls: Vec<Wall>,
+      pub light_source: Point2<line::float>,
+      pub reflection: u8,
+      pub width: usize,
+      pub height: usize,
+  }
+}
+
+pub mod v1 {
+  use super::*;
+
+  #[derive(Serialize, Deserialize, Clone, PartialEq)]
+  pub struct Config {
+      pub walls: Vec<Wall>,
+      pub lights: Vec<LightSource>,
+      pub reflection: u8,
+      pub width: usize,
+      pub height: usize,
+  }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum Curve {
+  FourthRoot,
+  SquareRoot,
+  Linear
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Exposure {
+  pub curve: Curve,
+  pub min: line::float,
+  pub max: line::float,
+}
+
+impl Default for Exposure {
+  fn default() -> Self {
+    Exposure {
+      curve: Curve::FourthRoot,
+      min: 0.0,
+      max: 1.0,
+    }
+  }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     pub walls: Vec<Wall>,
@@ -51,4 +101,23 @@ pub struct Config {
     pub reflection: u8,
     pub width: usize,
     pub height: usize,
+    pub exposure: Exposure
 }
+
+pub fn from_v1(v1::Config {
+  walls, lights, reflection, width, height
+}: v1::Config) -> Config {
+  Config {
+    walls,
+    lights,
+    reflection,
+    width,
+    height,
+    exposure: Exposure {
+      curve: Curve::FourthRoot,
+      min: 0.0,
+      max: 1.0,
+    }
+  }
+}
+

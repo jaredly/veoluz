@@ -234,6 +234,12 @@ extern "C" {
     fn set_hash(this: &Location, val: &str);
 }
 
+pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
+    bincode::deserialize::<shared::Config>(&encoded).or_else(|_| {
+        bincode::deserialize::<shared::v1::Config>(&encoded).map(shared::from_v1)
+    })
+}
+
 pub fn get_url_config() -> Option<shared::Config> {
     let hash = location.hash();
     if hash.len() == 0 {
@@ -243,7 +249,7 @@ pub fn get_url_config() -> Option<shared::Config> {
     base64::decode(&hash)
         .ok()
         .and_then(|zipped| miniz_oxide::inflate::decompress_to_vec(&zipped).ok())
-        .and_then(|encoded| bincode::deserialize(&encoded).ok())
+        .and_then(|encoded| deserialize_bincode(&encoded).ok())
 }
 
 fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
@@ -476,6 +482,54 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
+    setup_input("expose-low", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.exposure.min = value as f32;
+            if value as f32 > state.config.exposure.max - 0.01 {
+                state.config.exposure.max = value as f32 + 0.01;
+                get_input("expose-high")?.set_value_as_number(state.config.exposure.max as f64);
+            }
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("expose-high", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.exposure.max = value as f32;
+            if (value as f32) < state.config.exposure.min + 0.01 {
+                state.config.exposure.min = value as f32 - 0.01;
+                get_input("expose-low")?.set_value_as_number(state.config.exposure.min as f64);
+            }
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    listen!(get_button("expose-fourth")?, "click", web_sys::MouseEvent, move |_evt| {
+        try_state_ui(|state, ui| {
+            state.config.exposure.curve = shared::Curve::FourthRoot;
+            state.reexpose()?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("expose-square")?, "click", web_sys::MouseEvent, move |_evt| {
+        try_state_ui(|state, ui| {
+            state.config.exposure.curve = shared::Curve::SquareRoot;
+            state.reexpose()?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("expose-linear")?, "click", web_sys::MouseEvent, move |_evt| {
+        try_state_ui(|state, ui| {
+            state.config.exposure.curve = shared::Curve::Linear;
+            state.reexpose()?;
+            Ok(())
+        })
+    });
+
     Ok(())
 }
 
@@ -499,6 +553,8 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
 
 pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
     get_input("rotation")?.set_value_as_number(config.reflection as f64);
+    get_input("expose-low")?.set_value_as_number(config.exposure.min as f64);
+    get_input("expose-high")?.set_value_as_number(config.exposure.max as f64);
     Ok(())
 }
 
@@ -516,7 +572,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     setup_button()?;
     setup_wall_ui()?;
-    get_input("rotation")?.set_value_as_number(config.reflection as f64);
+    reset(config)?;
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {

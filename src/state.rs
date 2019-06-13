@@ -104,6 +104,18 @@ impl State {
         Ok(())
     }
 
+    pub fn clear(&mut self) {
+        self.ctx.clear_rect(0.0, 0.0, self.config.width as f64, self.config.height as f64)
+    }
+
+    pub fn reexpose(&mut self) -> Result<(), JsValue> {
+        self.image_data = make_image_data(&self.config, &self.buffer)?;
+
+        self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+
+        Ok(())
+    }
+
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
         self.render_id += 1;
 

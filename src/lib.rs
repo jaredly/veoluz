@@ -57,12 +57,19 @@ pub fn save() -> JsValue {
     })
 }
 
+pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_json::Error> {
+    encoded.into_serde::<shared::Config>().or_else(|_| {
+        encoded.into_serde::<shared::v1::Config>().map(shared::from_v1)
+    })
+}
+
 #[wasm_bindgen]
 pub fn restore(config: &JsValue) {
     state::try_with(|state| {
-        if let Ok(config) = config.into_serde() {
-            ui::reset(&config);
+        if let Ok(config) = deserialize_jsvalue(config) {
+            ui::reset(&config)?;
             state.config = config;
+            state.clear();
             // TODO update 
             state.async_render(false)
         } else {

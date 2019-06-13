@@ -42,11 +42,23 @@
       .controls {
         padding: 16px;
       }
+      #exposure input {
+        width: 400px;
+      }
     </style>
   </head>
   <body>
     <main>
-      <canvas id="drawing" width="600" height="600"></canvas>
+      <div>
+        <canvas id="drawing" width="600" height="600"></canvas>
+        <div id="exposure">
+          <input id="expose-low" type="range" min="0" max="1.0" step="0.001" />
+          <input id="expose-high" type="range" min="0" max="1.0" step="0.001" />
+          <button id="expose-fourth">fourth-root</button>
+          <button id="expose-square">square-root</button>
+          <button id="expose-linear">linear</button>
+        </div>
+      </div>
       <div class="controls">
         <!-- <button class="button-primary" id="render">render</button> -->
         <button class="button-primary" id="share">share</button>

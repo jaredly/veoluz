@@ -43,7 +43,7 @@ impl WallType {
             Ball::new(50.0),
             Point2::new(
                 width as f32 / 2.0,
-                height as f32 / 2.0,
+                height as f32 / 2.0 + 200.0,
             ),
             -PI,
             PI,
@@ -63,7 +63,7 @@ impl WallType {
 
     pub fn basic_line(width: usize, height: usize) -> WallType {
         let c = Point2::new(
-            width as f32 / 2.0,
+            width as f32 / 2.0 + 200.0,
             height as f32 / 2.0,
         );
         let off = Vector2::new(50.0, 50.0);
@@ -72,7 +72,7 @@ impl WallType {
 
     pub fn basic_parabola(width: usize, height: usize) -> WallType {
         let c = Vector2::new(
-            width as f32 / 2.0,
+            width as f32 / 2.0 - 200.0,
             height as f32 / 2.0,
         );
         WallType::Parabola(Parabola {
