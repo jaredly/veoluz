@@ -316,10 +316,56 @@ pub fn setup_input<F: FnMut(f32, bool) + 'static>(
 }
 
 pub fn setup_button() -> Result<(), JsValue> {
-    let button = get_button("render")?;
 
-    listen!(button, "click", web_sys::MouseEvent, move |_evt| {
+    listen!(get_button("render")?, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
+            state.async_render(true)?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("add_line")?, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            state.config.walls.push(
+                shared::Wall::new(
+                    shared::WallType::basic_line(state.config.width, state.config.height)
+                )
+            );
+            state.async_render(true)?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("add_parabola")?, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            state.config.walls.push(
+                shared::Wall::new(
+                    shared::WallType::basic_parabola(state.config.width, state.config.height)
+                )
+            );
+            state.async_render(true)?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("add_arc")?, "click", web_sys::MouseEvent, move |_evt| {
+        crate::state::try_with(|state| {
+            state.config.walls.push(
+                shared::Wall::new(
+                    shared::WallType::basic_circle(state.config.width, state.config.height)
+                )
+            );
+            state.async_render(true)?;
+            Ok(())
+        })
+    });
+
+    listen!(get_button("remove")?, "click", web_sys::MouseEvent, move |_evt| {
+        try_state_ui(|state, ui| {
+            if let Some((wid, _)) = ui.selected_wall {
+                ui.selected_wall = None;
+                state.config.walls.remove(wid);
+            }
             state.async_render(true)?;
             Ok(())
         })
@@ -429,6 +475,14 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
+    setup_input("rotation", |value, finished| {
+        try_state_ui(|state, ui| {
+            state.config.reflection = value as u8;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
     Ok(())
 }
 
@@ -450,6 +504,11 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
     Ok(())
 }
 
+pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
+    get_input("rotation")?.set_value_as_number(config.reflection as f64);
+    Ok(())
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -464,6 +523,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     setup_button()?;
     setup_wall_ui()?;
+    get_input("rotation")?.set_value_as_number(config.reflection as f64);
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {

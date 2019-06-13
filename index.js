@@ -1,3 +1,58 @@
+import localForage from 'localforage'
+
+const rid = () => Math.random().toString(36).slice(2)
+const uuid = () => rid() + rid()
+
+const log = fn => (...args) => fn(...args).catch(err => console.error(err))
+
+const makeSceneNode = (wasm, id, blob) => {
+    const scenes_node = document.getElementById('saves')
+    const time = new Date(parseInt(id.split(':')[0]))
+    const div = document.createElement('div')
+    scenes_node.appendChild(div);
+    div.appendChild(document.createTextNode(time.toLocaleString()))
+    const img = document.createElement('img')
+    img.style.display = 'block'
+    div.appendChild(img)
+    img.style.backgroundColor = 'black'
+    img.style.width = '150px'
+    blob.then(blob => img.src = URL.createObjectURL(blob));
+    // localForage.getItem(id).then(blob => );
+    const bt = document.createElement('button')
+    div.appendChild(bt)
+    bt.textContent = 'Restore'
+    bt.style.cursor = 'pointer'
+    bt.onclick = () => {
+        localForage.getItem(id.slice(0, -':image'.length)).then(config => {
+            wasm.restore(config)
+        })
+    }
+}
+
+const setup = async (wasm) => {
+    const saved_scenes = (await localForage.keys()).filter(name => name.endsWith(':image')).sort();
+    saved_scenes.forEach(id => {
+        makeSceneNode(wasm, id, localForage.getItem(id))
+    })
+    const canvas = document.getElementById('drawing')
+    document.getElementById('save').onclick = log(async () => {
+        const config = wasm.save();
+        const id = Date.now() + ':' + rid();
+        const blob = await new Promise(res => canvas.toBlob(res));
+        saved_scenes.push(id + ':image')
+        makeSceneNode(wasm, id + ':image', Promise.resolve(blob))
+        await localForage.setItem(id, config);
+        await localForage.setItem(id + ':image', blob);
+        console.log('saved!')
+    })
+}
+
 import('./pkg/zenphoton')
-    .then(wasm => wasm.run())
+    .then(wasm => {
+        wasm.run();
+        setup(wasm).catch(err => {
+            console.log('Failed')
+            console.error(err)
+        })
+    })
     .catch(console.error);

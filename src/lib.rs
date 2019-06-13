@@ -51,6 +51,27 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 }
 
 #[wasm_bindgen]
+pub fn save() -> JsValue {
+    state::with(|state| {
+        JsValue::from_serde(&state.config).unwrap()
+    })
+}
+
+#[wasm_bindgen]
+pub fn restore(config: &JsValue) {
+    state::try_with(|state| {
+        if let Ok(config) = config.into_serde() {
+            ui::reset(&config);
+            state.config = config;
+            // TODO update 
+            state.async_render(false)
+        } else {
+            Ok(())
+        }
+    })
+}
+
+#[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     // let config = scenes::circle_row();

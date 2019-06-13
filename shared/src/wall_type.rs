@@ -38,6 +38,18 @@ impl WallType {
         )
     }
 
+    pub fn basic_circle(width: usize, height: usize) -> WallType {
+        WallType::Circle(
+            Ball::new(50.0),
+            Point2::new(
+                width as f32 / 2.0,
+                height as f32 / 2.0,
+            ),
+            -PI,
+            PI,
+        )
+    }
+
     pub fn rand_line(width: usize, height: usize) -> WallType {
         let c = Point2::new(
             rand::random::<f32>() * (width as f32 - 200.0) + 100.0,
@@ -47,6 +59,31 @@ impl WallType {
         let len = rand::random::<f32>() * 70.0 + 30.0;
         let off = Vector2::new(r.cos() * len, r.sin() * len);
         WallType::Line(Segment::new(c + off, c - off))
+    }
+
+    pub fn basic_line(width: usize, height: usize) -> WallType {
+        let c = Point2::new(
+            width as f32 / 2.0,
+            height as f32 / 2.0,
+        );
+        let off = Vector2::new(50.0, 50.0);
+        WallType::Line(Segment::new(c + off, c - off))
+    }
+
+    pub fn basic_parabola(width: usize, height: usize) -> WallType {
+        let c = Vector2::new(
+            width as f32 / 2.0,
+            height as f32 / 2.0,
+        );
+        WallType::Parabola(Parabola {
+            a: 1.0 / (4.0 * 50.0),
+            left: -20.0,
+            right: 20.0,
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from(c),
+                nalgebra::UnitComplex::from_angle(0.0),
+            ),
+        })
     }
 
     pub fn rand_parabola(width: usize, height: usize) -> WallType {
@@ -75,6 +112,23 @@ impl WallType {
         ]
     }
 
+    pub fn translate(&mut self, by: Vector2<line::float>) {
+        match self {
+            WallType::Line(wall) => {
+                *wall = Segment::new(
+                    wall.a() + by,
+                    wall.b() + by,
+                )
+            },
+            WallType::Circle(ball, center, _, _) => {
+                *center = *center + by;
+            },
+            WallType::Parabola(parabola) => {
+                parabola.transform.translation.vector += by;
+            }
+        }
+    }
+
     pub fn scale(&mut self, by: usize) {
         match self {
             WallType::Line(wall) => {
@@ -90,7 +144,6 @@ impl WallType {
             WallType::Parabola(parabola) => {
                 parabola.transform.translation.vector *= by as f32;
             }
-
         }
     }
 

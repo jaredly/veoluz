@@ -25,19 +25,22 @@ fn run(config: shared::Config, outfile: String, count: usize, scale: u8) {
 
     let pixels = shared::grayscale(&config, &brightness_data, scale);
 
-    let fout = &mut BufWriter::new(File::create(outfile).unwrap());
-    image::tiff::TiffEncoder::new(fout).encode(
-        &pixels,
-    config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)
-    ).unwrap();
-    // Save the buffer as "image.png"
-    // image::save_buffer(outfile, &pixels, config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)).unwrap()
+    if outfile.ends_with(".tiff") {
+        let fout = &mut BufWriter::new(File::create(outfile).unwrap());
+        image::tiff::TiffEncoder::new(fout).encode(
+            &pixels,
+        config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)
+        ).unwrap();
+    } else {
+        // Save the buffer as "image.png"
+        image::save_buffer(outfile, &pixels, config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)).unwrap()
+    }
 }
 
 fn main() -> std::io::Result<()> {
     // argv
     let args: Vec<String> = std::env::args().collect();
-    if args.len() == 5 {
+    if args.len() >= 5 {
         let name: String = args[1].clone();
         let outfile: String = args[2].clone();
         let count: usize = args[3].parse().unwrap();
@@ -50,6 +53,7 @@ fn main() -> std::io::Result<()> {
         use std::io::prelude::*;
         file.read_to_string(&mut contents)?;
         let mut config: shared::Config = serde_json::from_str(&contents).unwrap();
+        config.resize_center(config.width, config.width);
         // config.width *= x;
         // config.height *= x;
         // for wall in config.walls.iter_mut() {

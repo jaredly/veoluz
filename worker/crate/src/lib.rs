@@ -39,7 +39,7 @@ pub fn process(message: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
     set_panic_hook();
 
     let message: shared::messaging::Message = message.into_serde().expect("Invalid message");
-    let mut data = shared::calculate(&message.config, message.count);
+    let mut data = shared::calculate(&message.config, message.count, 1);
     // log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
     Ok(Clamped(to_le(&mut data).to_vec()))

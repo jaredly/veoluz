@@ -37,7 +37,7 @@ pub fn make_image_data(
     config: &shared::Config,
     bright: &[u32],
 ) -> Result<web_sys::ImageData, JsValue> {
-    let colored = shared::colorize(config, bright);
+    let colored = shared::colorize(config, bright, 1);
 
     let mut clamped = wasm_bindgen::Clamped(colored.clone());
     // let mut clamped = Clamped(state.buffer.clone());
@@ -97,7 +97,7 @@ impl State {
     }
 
     pub fn debug_render(&mut self) -> Result<(), JsValue> {
-        let brightness = shared::deterministic_calc(&self.config);
+        let brightness = shared::deterministic_calc(&self.config, 1);
         self.image_data = make_image_data(&self.config, &brightness)?;
 
         self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;

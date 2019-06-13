@@ -32,6 +32,7 @@ fn rand() -> f32 {
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
+        #[cfg(target_arch = "wasm32")]
         web_sys::console::log_1(&format!( $( $t )* ).into());
         // ()
     };
@@ -73,6 +74,13 @@ impl LightKind {
             }
         }
     }
+    pub fn translate(&mut self, by: Vector2<line::float>) {
+        match self {
+            LightKind::Point { origin, .. } => {
+                *origin = *origin + by;
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
@@ -99,6 +107,22 @@ impl Config {
                 },
                 brightness: 1.0,
             }],
+        }
+    }
+
+    pub fn resize_center(&mut self, width: usize, height: usize) {
+        let uw = self.width;
+        let uh = self.height;
+        let ucenter = Point2::new(uw as f32 / 2.0, uh as f32 / 2.0);
+        let center = Point2::new(width as f32 / 2.0, height as f32 / 2.0);
+        let diff = center - ucenter;
+        self.width = width;
+        self.height = height;
+        for light in self.lights.iter_mut() {
+            light.kind.translate(diff);
+        }
+        for wall in self.walls.iter_mut() {
+            wall.kind.translate(diff);
         }
     }
 }
@@ -457,7 +481,7 @@ pub fn deterministic_calc(config: &Config, scale: u8) -> Vec<line::uint> {
             let direction = (r as f32) / rays as f32;
             let mut ray = light.kind.spawn(direction);
 
-            for _ in 0..30 {
+            for _ in 0..100 {
                 if run_ray(&mut ray, &config, &walls, &boundaries, &mut brightness_data, scale) {
                     break;
                 }
