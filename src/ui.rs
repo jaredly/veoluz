@@ -317,13 +317,6 @@ pub fn setup_input<F: FnMut(f32, bool) + 'static>(
 
 pub fn setup_button() -> Result<(), JsValue> {
 
-    listen!(get_button("render")?, "click", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            state.async_render(true)?;
-            Ok(())
-        })
-    });
-
     listen!(get_button("add_line")?, "click", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             state.config.walls.push(
@@ -331,7 +324,7 @@ pub fn setup_button() -> Result<(), JsValue> {
                     shared::WallType::basic_line(state.config.width, state.config.height)
                 )
             );
-            state.async_render(true)?;
+            state.async_render(false)?;
             Ok(())
         })
     });
@@ -343,7 +336,7 @@ pub fn setup_button() -> Result<(), JsValue> {
                     shared::WallType::basic_parabola(state.config.width, state.config.height)
                 )
             );
-            state.async_render(true)?;
+            state.async_render(false)?;
             Ok(())
         })
     });
@@ -355,7 +348,7 @@ pub fn setup_button() -> Result<(), JsValue> {
                     shared::WallType::basic_circle(state.config.width, state.config.height)
                 )
             );
-            state.async_render(true)?;
+            state.async_render(false)?;
             Ok(())
         })
     });
@@ -366,7 +359,7 @@ pub fn setup_button() -> Result<(), JsValue> {
                 ui.selected_wall = None;
                 state.config.walls.remove(wid);
             }
-            state.async_render(true)?;
+            state.async_render(false)?;
             Ok(())
         })
     });

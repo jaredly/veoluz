@@ -7,6 +7,8 @@ use arc::angle_norm;
 pub use parabola::Parabola;
 use serde::{Deserialize, Serialize};
 pub use wall_type::WallType;
+pub mod types;
+pub use types::*;
 
 use std::f32::consts::PI;
 
@@ -40,22 +42,6 @@ macro_rules! log {
 
 use nalgebra as na;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct LightSource {
-    pub kind: LightKind,
-    // something between 0 and 1 I think?
-    pub brightness: line::float,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub enum LightKind {
-    Point {
-        origin: Point2<line::float>,
-        t0: line::float,
-        t1: line::float,
-    },
-}
-
 impl LightKind {
     #[inline]
     pub fn spawn(&self, direction: line::float) -> Ray<line::float> {
@@ -81,15 +67,6 @@ impl LightKind {
             }
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct Config {
-    pub walls: Vec<Wall>,
-    pub lights: Vec<LightSource>,
-    pub reflection: u8,
-    pub width: usize,
-    pub height: usize,
 }
 
 impl Config {
@@ -125,31 +102,6 @@ impl Config {
             wall.kind.translate(diff);
         }
     }
-}
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
-pub struct Properties {
-    // percentage of incoming light that's just absorbed
-    // TODO(color): this should be a triple, for each rgb component... or something?
-    pub absorb: f32,
-    // of the light that's not absorbed, how much is reflected (vs transmitted)?
-    pub reflect: f32,
-    // when reflecting, how much is scattered (vs a pure reflection)
-    pub roughness: f32,
-    // when transmitting, what's the index of refraction?
-
-    // this is the index of refraction from *left* to *right*
-    // - circle "left" is outside, "right" inside
-    // - line, "left" when at the first point facing the second point.
-    // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
-    // Face(1) is hitting the right side
-    pub refraction: f32,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
-pub struct Wall {
-    pub kind: WallType,
-    pub properties: Properties,
 }
 
 fn xy(point: &Point2<line::float>, scale: u8) -> (line::float, line::float) {
@@ -541,11 +493,19 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> 
         for y in 0..height {
             let index = x + y * width;
             let brightness = brightness_data[x + y * width];
-            data[index] = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
+            data[index] = expose(top, brightness);
         }
     }
 
     data
+}
+
+#[inline]
+fn expose(top: line::float, brightness: line::uint) -> u8 {
+    // ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8
+    // ((brightness as line::float / top).sqrt() * 255.0) as u8
+    ((brightness as line::float / top).sqrt() * 500.0).min(255.0) as u8
+    // ((brightness as line::float / top) * 255.0) as u8
 }
 
 pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
@@ -570,7 +530,7 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
             data[index] = 255;
             data[index + 1] = 255;
             data[index + 2] = 255;
-            data[index + 3] = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
+            data[index + 3] = expose(top, brightness);
         }
     }
 
@@ -597,7 +557,7 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8
         for y in 0..height {
             let index = (x + y * width) * 4;
             let brightness = brightness_data[x + y * width];
-            let bright = ((brightness as line::float / top).sqrt().sqrt() * 255.0) as u8;
+            let bright = expose(top, brightness);
             data[index] = bright;
             data[index + 1] = bright;
             data[index + 2] = bright;
