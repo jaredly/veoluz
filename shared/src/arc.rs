@@ -1,8 +1,8 @@
 use crate::line;
-use ncollide2d::shape::Ball;
 use nalgebra::{Point2, Vector2};
 use ncollide2d::query::Ray;
 use ncollide2d::query::RayIntersection;
+use ncollide2d::shape::Ball;
 
 pub enum BallResult {
     Inside(line::float),
@@ -10,15 +10,21 @@ pub enum BallResult {
 }
 
 #[inline]
-pub fn point_dist(p: &Point2<line::float>, center: &Point2<line::float>, radius: line::float, t0: line::float, t1: line::float) -> line::float {
-  // TODO check for angles here
-  let diff = p - center;
-  let angle = diff.y.atan2(diff.x);
-  if is_between(angle, t0, t1) {
-    (diff.norm_squared().sqrt() - radius).abs()
-  } else {
-    std::f32::INFINITY
-  }
+pub fn point_dist(
+    p: &Point2<line::float>,
+    center: &Point2<line::float>,
+    radius: line::float,
+    t0: line::float,
+    t1: line::float,
+) -> line::float {
+    // TODO check for angles here
+    let diff = p - center;
+    let angle = diff.y.atan2(diff.x);
+    if is_between(angle, t0, t1) {
+        (diff.norm_squared().sqrt() - radius).abs()
+    } else {
+        std::f32::INFINITY
+    }
 }
 
 #[inline]

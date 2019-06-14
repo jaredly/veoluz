@@ -30,7 +30,7 @@ macro_rules! log {
     ( $( $t:tt )* ) => {
         // web_sys::console::log_1(&format!( $( $t )* ).into());
         ()
-    }
+    };
 }
 
 // use wasm_bindgen::prelude::*;
@@ -106,14 +106,29 @@ pub fn draw_line(
     */
 
     if steep {
-
         let x0part = start.0.fract();
         if x0part != 0.0 {
             let total = 1.0 - x0part;
             let ypart = y.fract();
-            draw(data, width, height, full, y as int, start.0 as int, total * (1.0 - ypart));
+            draw(
+                data,
+                width,
+                height,
+                full,
+                y as int,
+                start.0 as int,
+                total * (1.0 - ypart),
+            );
             if ypart > 0.0 {
-                draw(data, width, height, full, y as int + 1, start.0 as int, total * ypart);
+                draw(
+                    data,
+                    width,
+                    height,
+                    full,
+                    y as int + 1,
+                    start.0 as int,
+                    total * ypart,
+                );
             }
         }
 
@@ -134,20 +149,43 @@ pub fn draw_line(
             let total = x0part;
             let ypart = y.fract();
             let last = end.0.floor() as int;
-            draw(data, width, height, full, y as int, last, total * (1.0 - ypart));
+            draw(
+                data,
+                width,
+                height,
+                full,
+                y as int,
+                last,
+                total * (1.0 - ypart),
+            );
             if ypart > 0.0 {
                 draw(data, width, height, full, y as int + 1, last, total * ypart);
             }
         }
     } else {
-
         let x0part = start.0.fract();
         if x0part != 0.0 {
             let total = 1.0 - x0part;
             let ypart = y.fract();
-            draw(data, width, height, full, start.0 as int, y as int, total * (1.0 - ypart));
+            draw(
+                data,
+                width,
+                height,
+                full,
+                start.0 as int,
+                y as int,
+                total * (1.0 - ypart),
+            );
             if ypart > 0.0 {
-                draw(data, width, height, full, start.0 as int, y as int + 1, total * ypart);
+                draw(
+                    data,
+                    width,
+                    height,
+                    full,
+                    start.0 as int,
+                    y as int + 1,
+                    total * ypart,
+                );
             }
         }
 
@@ -169,12 +207,19 @@ pub fn draw_line(
             let total = x0part;
             let ypart = y.fract();
             let last = end.0.floor() as int;
-            draw(data, width, height, full, last, y as int, total * (1.0 - ypart));
+            draw(
+                data,
+                width,
+                height,
+                full,
+                last,
+                y as int,
+                total * (1.0 - ypart),
+            );
             if ypart > 0.0 {
                 draw(data, width, height, full, last, y as int + 1, total * ypart);
             }
         }
-
     }
     // let t = now();
     // if t - s > 10.0 {

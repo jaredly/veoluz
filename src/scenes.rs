@@ -1,10 +1,9 @@
-use nalgebra::{Point2};
+use nalgebra::Point2;
 
 use ncollide2d::shape::Ball;
 use shared;
 use shared::line;
 use shared::{Wall, WallType};
-
 
 use std::f32::consts::PI;
 
@@ -324,31 +323,32 @@ pub fn refract2() -> shared::Config {
             WallType::Line(Segment::new(
                 Point2::new(cx - 50.0, cy - 50.0),
                 Point2::new(cx + 50.0, cy - 70.0),
-            )), index),
+            )),
+            index,
+        ),
         Wall::transparent(
-            WallType::Circle(
-                Ball::new(50.0),
-                Point2::new(cx, cy + 200.0),
-                -PI,
-                PI,
-            ), index),
+            WallType::Circle(Ball::new(50.0), Point2::new(cx, cy + 200.0), -PI, PI),
+            index,
+        ),
         Wall::transparent(
-            WallType::Parabola(
-                shared::Parabola::new(
-                    -70.0,
-                    -50.0,
-                    50.0,
-                    Point2::new(cx - 100.0, cy),
-                    PI / 2.0
-                )
-            ), index),
+            WallType::Parabola(shared::Parabola::new(
+                -70.0,
+                -50.0,
+                50.0,
+                Point2::new(cx - 100.0, cy),
+                PI / 2.0,
+            )),
+            index,
+        ),
         Wall::transparent(
             WallType::Circle(
                 Ball::new(50.0),
                 Point2::new(cx + 100.0, cy + 200.0),
                 0.0,
                 PI,
-            ), index),
+            ),
+            index,
+        ),
     ];
 
     let mut config = shared::Config::new(walls, width as usize, height as usize);

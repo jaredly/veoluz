@@ -84,7 +84,7 @@ impl Config {
                 },
                 brightness: 1.0,
             }],
-            exposure: Default::default()
+            exposure: Default::default(),
         }
     }
 
@@ -106,7 +106,10 @@ impl Config {
 }
 
 fn xy(point: &Point2<line::float>, scale: u8) -> (line::float, line::float) {
-    (point.x * scale as line::float, point.y * scale as line::float)
+    (
+        point.x * scale as line::float,
+        point.y * scale as line::float,
+    )
 }
 
 #[inline]
@@ -435,7 +438,14 @@ pub fn deterministic_calc(config: &Config, scale: u8) -> Vec<line::uint> {
             let mut ray = light.kind.spawn(direction);
 
             for _ in 0..100 {
-                if run_ray(&mut ray, &config, &walls, &boundaries, &mut brightness_data, scale) {
+                if run_ray(
+                    &mut ray,
+                    &config,
+                    &walls,
+                    &boundaries,
+                    &mut brightness_data,
+                    scale,
+                ) {
                     break;
                 }
             }
@@ -466,7 +476,14 @@ pub fn calculate(config: &Config, rays: usize, scale: u8) -> Vec<line::uint> {
             let mut ray = light.kind.spawn(rand());
 
             for _ in 0..30 {
-                if run_ray(&mut ray, &config, &walls, &boundaries, &mut brightness_data, scale) {
+                if run_ray(
+                    &mut ray,
+                    &config,
+                    &walls,
+                    &boundaries,
+                    &mut brightness_data,
+                    scale,
+                ) {
                     break;
                 }
             }
@@ -513,21 +530,22 @@ fn exposer<'a>(config: &Config) -> Box<Fn(line::float, line::uint) -> u8> {
     let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0) as u8;
     match config.exposure.curve {
         Curve::FourthRoot => {
-            Box::new(move |top: line::float, brightness: line::uint| 
-            scaler((brightness as line::float / top).sqrt().sqrt()))
+            Box::new(move |top: line::float, brightness: line::uint| {
+                scaler((brightness as line::float / top).sqrt().sqrt())
+            })
             // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8
-        },
-        // FourthRoot => move |top, brightness| 
+        }
+        // FourthRoot => move |top, brightness|
         //     scaler((brightness as line::float / top).sqrt().sqrt()),
         Curve::SquareRoot => {
-            Box::new(move |top: line::float, brightness: line::uint| 
-            scaler((brightness as line::float / top).sqrt()))
+            Box::new(move |top: line::float, brightness: line::uint| {
+                scaler((brightness as line::float / top).sqrt())
+            })
             // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8;
-            // move |top, brightness: u8| 
+            // move |top, brightness: u8|
             // scaler((brightness as line::float / top).sqrt())
-        },
-        Curve::Linear => Box::new(move |top, brightness| 
-            scaler(brightness as line::float / top))
+        }
+        Curve::Linear => Box::new(move |top, brightness| scaler(brightness as line::float / top)),
     }
 }
 

@@ -105,7 +105,12 @@ impl State {
     }
 
     pub fn clear(&mut self) {
-        self.ctx.clear_rect(0.0, 0.0, self.config.width as f64, self.config.height as f64)
+        self.ctx.clear_rect(
+            0.0,
+            0.0,
+            self.config.width as f64,
+            self.config.height as f64,
+        )
     }
 
     pub fn reexpose(&mut self) -> Result<(), JsValue> {

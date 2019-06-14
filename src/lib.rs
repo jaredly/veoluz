@@ -7,13 +7,12 @@ use wasm_bindgen::prelude::*;
 
 use wasm_bindgen::JsCast;
 
-
 #[macro_use]
 mod utils;
+mod draw;
 mod scenes;
 mod state;
 mod ui;
-mod draw;
 
 fn parse_worker_message(
     evt: web_sys::MessageEvent,
@@ -52,14 +51,14 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 
 #[wasm_bindgen]
 pub fn save() -> JsValue {
-    state::with(|state| {
-        JsValue::from_serde(&state.config).unwrap()
-    })
+    state::with(|state| JsValue::from_serde(&state.config).unwrap())
 }
 
 pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_json::Error> {
     encoded.into_serde::<shared::Config>().or_else(|_| {
-        encoded.into_serde::<shared::v1::Config>().map(shared::from_v1)
+        encoded
+            .into_serde::<shared::v1::Config>()
+            .map(shared::from_v1)
     })
 }
 
@@ -92,7 +91,7 @@ pub fn run() -> Result<(), JsValue> {
 
     let config = match ui::get_url_config() {
         None => config,
-        Some(config) => config
+        Some(config) => config,
     };
 
     state::setState(config.into());

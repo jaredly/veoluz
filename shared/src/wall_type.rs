@@ -1,17 +1,16 @@
 use crate::line;
+use crate::parabola::{ray_parabola_collision, Parabola};
 use serde::{Deserialize, Serialize};
-use crate::parabola::{Parabola, ray_parabola_collision};
 
 use ncollide2d::query::Ray;
 use ncollide2d::shape::Ball;
 
-use ncollide2d::shape::Segment;
 use ncollide2d::query::RayIntersection;
 use ncollide2d::shape::FeatureId;
+use ncollide2d::shape::Segment;
 use std::f32::consts::PI;
 
 use nalgebra::{Point2, Vector2};
-
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub enum WallType {
@@ -41,10 +40,7 @@ impl WallType {
     pub fn basic_circle(width: usize, height: usize) -> WallType {
         WallType::Circle(
             Ball::new(50.0),
-            Point2::new(
-                width as f32 / 2.0,
-                height as f32 / 2.0 + 200.0,
-            ),
+            Point2::new(width as f32 / 2.0, height as f32 / 2.0 + 200.0),
             -PI,
             PI,
         )
@@ -62,19 +58,13 @@ impl WallType {
     }
 
     pub fn basic_line(width: usize, height: usize) -> WallType {
-        let c = Point2::new(
-            width as f32 / 2.0 + 200.0,
-            height as f32 / 2.0,
-        );
+        let c = Point2::new(width as f32 / 2.0 + 200.0, height as f32 / 2.0);
         let off = Vector2::new(50.0, 50.0);
         WallType::Line(Segment::new(c + off, c - off))
     }
 
     pub fn basic_parabola(width: usize, height: usize) -> WallType {
-        let c = Vector2::new(
-            width as f32 / 2.0 - 200.0,
-            height as f32 / 2.0,
-        );
+        let c = Vector2::new(width as f32 / 2.0 - 200.0, height as f32 / 2.0);
         WallType::Parabola(Parabola {
             a: 1.0 / (4.0 * 50.0),
             left: -20.0,
@@ -114,15 +104,10 @@ impl WallType {
 
     pub fn translate(&mut self, by: Vector2<line::float>) {
         match self {
-            WallType::Line(wall) => {
-                *wall = Segment::new(
-                    wall.a() + by,
-                    wall.b() + by,
-                )
-            },
+            WallType::Line(wall) => *wall = Segment::new(wall.a() + by, wall.b() + by),
             WallType::Circle(ball, center, _, _) => {
                 *center = *center + by;
-            },
+            }
             WallType::Parabola(parabola) => {
                 parabola.transform.translation.vector += by;
             }
@@ -132,15 +117,12 @@ impl WallType {
     pub fn scale(&mut self, by: usize) {
         match self {
             WallType::Line(wall) => {
-                *wall = Segment::new(
-                    wall.a() * by as f32,
-                    wall.b() * by as f32,
-                )
-            },
+                *wall = Segment::new(wall.a() * by as f32, wall.b() * by as f32)
+            }
             WallType::Circle(ball, center, _, _) => {
                 *ball = Ball::new(ball.radius() * by as f32);
                 *center = *center * by as f32;
-            },
+            }
             WallType::Parabola(parabola) => {
                 parabola.transform.translation.vector *= by as f32;
             }
@@ -153,82 +135,88 @@ impl WallType {
         let current_angle = diff.y.atan2(diff.x);
         let dist = diff.norm_squared().sqrt();
         let new_angle = current_angle + angle;
-        let new_base = Point2::new(center.x + new_angle.cos() * dist, center.y + new_angle.sin() * dist);
+        let new_base = Point2::new(
+            center.x + new_angle.cos() * dist,
+            center.y + new_angle.sin() * dist,
+        );
         match self {
-            WallType::Line(wall) =>  {
+            WallType::Line(wall) => {
                 let diff = wall.b() - center;
                 let current_angle = diff.y.atan2(diff.x);
                 let dist = diff.norm_squared().sqrt();
                 let new_angle = current_angle + angle;
-                let new_b = Point2::new(center.x + new_angle.cos() * dist, center.y + new_angle.sin() * dist);
-
-                *wall = Segment::new(
-                    new_base,
-                    new_b
+                let new_b = Point2::new(
+                    center.x + new_angle.cos() * dist,
+                    center.y + new_angle.sin() * dist,
                 );
-            },
+
+                *wall = Segment::new(new_base, new_b);
+            }
             WallType::Circle(ball, center, t0, t1) => {
                 *center = new_base;
                 *t0 += angle;
                 *t1 += angle;
-            },
+            }
             WallType::Parabola(parabola) => {
                 parabola.transform.translation = nalgebra::Translation2::from(new_base.coords);
-                parabola.transform.rotation = nalgebra::UnitComplex::from_angle(parabola.transform.rotation.angle() + angle);
+                parabola.transform.rotation =
+                    nalgebra::UnitComplex::from_angle(parabola.transform.rotation.angle() + angle);
             }
         }
     }
 
     pub fn point_dist(&self, point: &Point2<line::float>) -> line::float {
-      match self {
-        WallType::Line(wall) => {
-          // y = mx + b
-          // m = wall.dy / wall.dx
-          // b = wall.y0 - m * wall.x0
-          // 
-          // y = nx + c
-          //
-          // mx + b = nx + c
-          // x = (c - b) / (m - n)
-          let wd = wall.b() - wall.a();
-          if wd.x == 0.0 {
-            return std::f32::INFINITY;
-          }
-          let m = wd.y / wd.x;
-          let b = wall.b().y - m * wall.b().x;
-          let n = 1.0 / m;
-          let c = point.y - n * point.x;
-          let x = (c - b) / (m - n);
-          let y = m * x + b;
-          let x0 = wall.a().x.min(wall.b().x);
-          let x1 = wall.a().x.max(wall.b().x);
-          if x0 <= x && x <= x1 {
-            (point - Point2::new(x, y)).norm_squared().sqrt()
-          } else {
-            std::f32::INFINITY
-          }
-        },
-        WallType::Circle(circle, center, t0, t1) => crate::arc::point_dist(point, center, circle.radius(), *t0, *t1),
-        WallType::Parabola(parabola) => crate::parabola::point_dist(point, parabola)
-      }
+        match self {
+            WallType::Line(wall) => {
+                // y = mx + b
+                // m = wall.dy / wall.dx
+                // b = wall.y0 - m * wall.x0
+                //
+                // y = nx + c
+                //
+                // mx + b = nx + c
+                // x = (c - b) / (m - n)
+                let wd = wall.b() - wall.a();
+                if wd.x == 0.0 {
+                    return std::f32::INFINITY;
+                }
+                let m = wd.y / wd.x;
+                let b = wall.b().y - m * wall.b().x;
+                let n = 1.0 / m;
+                let c = point.y - n * point.x;
+                let x = (c - b) / (m - n);
+                let y = m * x + b;
+                let x0 = wall.a().x.min(wall.b().x);
+                let x1 = wall.a().x.max(wall.b().x);
+                if x0 <= x && x <= x1 {
+                    (point - Point2::new(x, y)).norm_squared().sqrt()
+                } else {
+                    std::f32::INFINITY
+                }
+            }
+            WallType::Circle(circle, center, t0, t1) => {
+                crate::arc::point_dist(point, center, circle.radius(), *t0, *t1)
+            }
+            WallType::Parabola(parabola) => crate::parabola::point_dist(point, parabola),
+        }
     }
 
     pub fn point_base(&self) -> Point2<line::float> {
-      match self {
-        WallType::Line(wall) => wall.a().clone(),
-        WallType::Circle(_, center, _, _) => center.clone(),
-        WallType::Parabola(parabola) => parabola.transform.translation.vector.into()
-      }
+        match self {
+            WallType::Line(wall) => wall.a().clone(),
+            WallType::Circle(_, center, _, _) => center.clone(),
+            WallType::Parabola(parabola) => parabola.transform.translation.vector.into(),
+        }
     }
 
     pub fn set_point_base(&mut self, point: Point2<line::float>) {
-      match self {
-        WallType::Line(wall) => {*wall = Segment::new(point, point + (wall.b() - wall.a()))},
-        WallType::Circle(_, center, _, _) => {*center = point},
-        WallType::Parabola(parabola) => {
-          parabola.transform.translation = nalgebra::Translation2::from(point.coords);
+        match self {
+            WallType::Line(wall) => *wall = Segment::new(point, point + (wall.b() - wall.a())),
+            WallType::Circle(_, center, _, _) => *center = point,
+            WallType::Parabola(parabola) => {
+                parabola.transform.translation = nalgebra::Translation2::from(point.coords);
+            }
         }
-      }
     }
 
     pub fn toi_and_normal_with_ray(

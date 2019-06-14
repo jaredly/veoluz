@@ -138,7 +138,8 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         }
         crate::draw::draw(&wall.kind, &state.ctx);
         state.ctx.set_line_width(1.0);
-        crate::draw::draw_handles(&wall.kind, 
+        crate::draw::draw_handles(
+            &wall.kind,
             &state.ctx,
             5.0,
             match hover {
@@ -164,11 +165,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         let count = 30;
         for light in state.config.lights.iter() {
             for i in 0..count {
-                draw_laser(
-                    &state,
-                    i as f32/ count as f32,
-                    &light
-                )?;
+                draw_laser(&state, i as f32 / count as f32, &light)?;
             }
         }
     }
@@ -235,9 +232,8 @@ extern "C" {
 }
 
 pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
-    bincode::deserialize::<shared::Config>(&encoded).or_else(|_| {
-        bincode::deserialize::<shared::v1::Config>(&encoded).map(shared::from_v1)
-    })
+    bincode::deserialize::<shared::Config>(&encoded)
+        .or_else(|_| bincode::deserialize::<shared::v1::Config>(&encoded).map(shared::from_v1))
 }
 
 pub fn get_url_config() -> Option<shared::Config> {
@@ -322,53 +318,78 @@ pub fn setup_input<F: FnMut(f32, bool) + 'static>(
 }
 
 pub fn setup_button() -> Result<(), JsValue> {
+    listen!(
+        get_button("add_line")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            crate::state::try_with(|state| {
+                state
+                    .config
+                    .walls
+                    .push(shared::Wall::new(shared::WallType::basic_line(
+                        state.config.width,
+                        state.config.height,
+                    )));
+                state.async_render(false)?;
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("add_line")?, "click", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            state.config.walls.push(
-                shared::Wall::new(
-                    shared::WallType::basic_line(state.config.width, state.config.height)
-                )
-            );
-            state.async_render(false)?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("add_parabola")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            crate::state::try_with(|state| {
+                state
+                    .config
+                    .walls
+                    .push(shared::Wall::new(shared::WallType::basic_parabola(
+                        state.config.width,
+                        state.config.height,
+                    )));
+                state.async_render(false)?;
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("add_parabola")?, "click", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            state.config.walls.push(
-                shared::Wall::new(
-                    shared::WallType::basic_parabola(state.config.width, state.config.height)
-                )
-            );
-            state.async_render(false)?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("add_arc")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            crate::state::try_with(|state| {
+                state
+                    .config
+                    .walls
+                    .push(shared::Wall::new(shared::WallType::basic_circle(
+                        state.config.width,
+                        state.config.height,
+                    )));
+                state.async_render(false)?;
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("add_arc")?, "click", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            state.config.walls.push(
-                shared::Wall::new(
-                    shared::WallType::basic_circle(state.config.width, state.config.height)
-                )
-            );
-            state.async_render(false)?;
-            Ok(())
-        })
-    });
-
-    listen!(get_button("remove")?, "click", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            if let Some((wid, _)) = ui.selected_wall {
-                ui.selected_wall = None;
-                state.config.walls.remove(wid);
-            }
-            state.async_render(false)?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("remove")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, ui| {
+                if let Some((wid, _)) = ui.selected_wall {
+                    ui.selected_wall = None;
+                    state.config.walls.remove(wid);
+                }
+                state.async_render(false)?;
+                Ok(())
+            })
+        }
+    );
 
     listen!(
         get_button("share")?,
@@ -396,7 +417,9 @@ pub fn setup_button() -> Result<(), JsValue> {
         move |_evt| {
             crate::state::try_with(|state| {
                 let res = serde_json::to_string_pretty(&state.config).unwrap();
-                get_element("textarea")?.dyn_into::<web_sys::HtmlTextAreaElement>()?.set_value(&res);
+                get_element("textarea")?
+                    .dyn_into::<web_sys::HtmlTextAreaElement>()?
+                    .set_value(&res);
                 Ok(())
             })
         }
@@ -506,29 +529,44 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
-    listen!(get_button("expose-fourth")?, "click", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            state.config.exposure.curve = shared::Curve::FourthRoot;
-            state.reexpose()?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("expose-fourth")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, ui| {
+                state.config.exposure.curve = shared::Curve::FourthRoot;
+                state.reexpose()?;
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("expose-square")?, "click", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            state.config.exposure.curve = shared::Curve::SquareRoot;
-            state.reexpose()?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("expose-square")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, ui| {
+                state.config.exposure.curve = shared::Curve::SquareRoot;
+                state.reexpose()?;
+                Ok(())
+            })
+        }
+    );
 
-    listen!(get_button("expose-linear")?, "click", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            state.config.exposure.curve = shared::Curve::Linear;
-            state.reexpose()?;
-            Ok(())
-        })
-    });
+    listen!(
+        get_button("expose-linear")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, ui| {
+                state.config.exposure.curve = shared::Curve::Linear;
+                state.reexpose()?;
+                Ok(())
+            })
+        }
+    );
 
     Ok(())
 }
