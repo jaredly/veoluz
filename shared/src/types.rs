@@ -1,4 +1,4 @@
-use crate::line;
+use crate::line::float;
 use crate::wall_type::WallType;
 use nalgebra::{Point2, Vector2};
 use serde::{Deserialize, Serialize};
@@ -32,15 +32,15 @@ pub struct Wall {
 pub struct LightSource {
     pub kind: LightKind,
     // something between 0 and 1 I think?
-    pub brightness: line::float,
+    pub brightness: float,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum LightKind {
     Point {
-        origin: Point2<line::float>,
-        t0: line::float,
-        t1: line::float,
+        origin: Point2<float>,
+        t0: float,
+        t1: float,
     },
 }
 
@@ -50,7 +50,7 @@ mod v0 {
     #[derive(Serialize, Deserialize, Clone, PartialEq)]
     pub struct Config {
         pub walls: Vec<Wall>,
-        pub light_source: Point2<line::float>,
+        pub light_source: Point2<float>,
         pub reflection: u8,
         pub width: usize,
         pub height: usize,
@@ -80,8 +80,8 @@ pub enum Curve {
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Exposure {
     pub curve: Curve,
-    pub min: line::float,
-    pub max: line::float,
+    pub min: float,
+    pub max: float,
 }
 
 impl Default for Exposure {
@@ -126,3 +126,58 @@ pub fn from_v1(
         },
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Coloration {
+    pub exposure: Exposure,
+    pub background_color: String,
+    pub highlight_color: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Rendering {
+  pub coloration: Coloration,
+  pub width: usize,
+  pub height: usize,
+  pub zoom: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum Entity {
+    Wall(Wall),
+    Light(LightSource)
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum Transform {
+    Reflection { angle: float, center: Point2<float> },
+    Rotation {
+        center: Point2<float>,
+        count: u8,
+    },
+    Translation {
+        count: u8,
+        vector: Vector2<float>,
+        spacing: float,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct SceneGroup {
+    pub contents: Vec<Entity>,
+    pub transforms: Vec<Transform>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Config2 {
+    // the physics of it
+    pub scene: Vec<SceneGroup>,
+    // the view on it
+    pub rendering: Rendering,
+    // turning the brightness data into a picture
+    pub coloration: Coloration,
+}
+
+
+
+
