@@ -102,7 +102,7 @@ impl WallType {
         ]
     }
 
-    pub fn translate(&mut self, by: Vector2<line::float>) {
+    pub fn translate(&mut self, by: &Vector2<line::float>) {
         match self {
             WallType::Line(wall) => *wall = Segment::new(wall.a() + by, wall.b() + by),
             WallType::Circle(ball, center, _, _) => {

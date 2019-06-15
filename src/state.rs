@@ -24,9 +24,9 @@ impl From<shared::Config> for State {
             render_id: 0,
             last_rendered: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
-            image_data: web_sys::ImageData::new_with_sw(config.width as u32, config.height as u32)
+            image_data: web_sys::ImageData::new_with_sw(config.rendering.width as u32, config.rendering.height as u32)
                 .expect("Can't make an imagedata"),
-            buffer: vec![0_u32; config.width * config.height],
+            buffer: vec![0_u32; config.rendering.width * config.rendering.height],
             workers: vec![],
             config,
         }
@@ -43,8 +43,8 @@ pub fn make_image_data(
     // let mut clamped = Clamped(state.buffer.clone());
     let data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
         wasm_bindgen::Clamped(clamped.as_mut_slice()),
-        config.width as u32,
-        config.height as u32,
+        config.rendering.width as u32,
+        config.rendering.height as u32,
     )?;
 
     Ok(data)
@@ -52,7 +52,7 @@ pub fn make_image_data(
 
 impl State {
     pub fn reset_buffer(&mut self) {
-        self.buffer = vec![0_u32; self.config.width * self.config.height];
+        self.buffer = vec![0_u32; self.config.rendering.width * self.config.rendering.height];
     }
 
     pub fn add_worker(&mut self, worker: web_sys::Worker) {
@@ -74,7 +74,7 @@ impl State {
             self.last_rendered = id;
         }
 
-        let mut bright = vec![0_u32; self.config.width * self.config.height];
+        let mut bright = vec![0_u32; self.config.rendering.width * self.config.rendering.height];
         array.copy_to(&mut bright);
         for i in 0..bright.len() {
             self.buffer[i] += bright[i];
@@ -97,7 +97,7 @@ impl State {
     }
 
     pub fn debug_render(&mut self) -> Result<(), JsValue> {
-        let brightness = shared::deterministic_calc(&self.config, 1);
+        let brightness = shared::calculate::deterministic_calc(&self.config);
         self.image_data = make_image_data(&self.config, &brightness)?;
 
         self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
@@ -108,8 +108,8 @@ impl State {
         self.ctx.clear_rect(
             0.0,
             0.0,
-            self.config.width as f64,
-            self.config.height as f64,
+            self.config.rendering.width as f64,
+            self.config.rendering.height as f64,
         )
     }
 

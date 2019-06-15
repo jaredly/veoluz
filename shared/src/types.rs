@@ -84,7 +84,7 @@ pub struct Exposure {
     pub max: float,
 }
 
-impl Default for Exposure {
+impl Exposure {
     fn default() -> Self {
         Exposure {
             curve: Curve::FourthRoot,
@@ -94,90 +94,145 @@ impl Default for Exposure {
     }
 }
 
+pub mod v2 {
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Clone, PartialEq)]
+    pub struct Config {
+        pub walls: Vec<Wall>,
+        pub lights: Vec<LightSource>,
+        pub reflection: u8,
+        pub width: usize,
+        pub height: usize,
+        pub exposure: Exposure,
+    }
+
+    pub fn from_v1(
+        v1::Config {
+            walls,
+            lights,
+            reflection,
+            width,
+            height,
+        }: v1::Config,
+    ) -> Config {
+        Config {
+            walls,
+            lights,
+            reflection,
+            width,
+            height,
+            exposure: Exposure {
+                curve: Curve::FourthRoot,
+                min: 0.0,
+                max: 1.0,
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Transform {
+    pub rotational_symmetry: u8,
+    pub reflection: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum Coloration {
+    Rgb {
+        background: (u8, u8, u8),
+        highlight: (u8, u8, u8),
+    },
+    // For the moment I'll expect the first one to be lower
+    // ermmm should I allow modifying the saturation and lightness?
+    // that can come later probably
+    HueRange {
+        start: f32,
+        end: f32,
+        saturation: f32,
+        lightness: f32,
+    }, // TODO make colorful schemes and such
+}
+
+impl Coloration {
+    fn default() -> Self {
+        Coloration::Rgb {
+            background: (0, 0, 0),
+            highlight: (255, 255, 255),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct Rendering {
+    pub exposure: Exposure,
+    pub coloration: Coloration,
+    pub width: usize,
+    pub height: usize,
+    // default 0.0, 0.0
+    pub center: Point2<float>,
+    // default 1.0
+    pub zoom: float,
+}
+
+impl Rendering {
+    pub fn new(width: usize, height: usize) -> Self {
+        Rendering {
+            exposure: Exposure::default(),
+            coloration: Coloration::default(),
+            width,
+            height,
+            center: Point2::origin(),
+            zoom: 1.0,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     pub walls: Vec<Wall>,
     pub lights: Vec<LightSource>,
-    pub reflection: u8,
-    pub width: usize,
-    pub height: usize,
-    pub exposure: Exposure,
+    pub transform: Transform,
+    pub rendering: Rendering,
 }
 
-pub fn from_v1(
-    v1::Config {
+pub fn from_v2(
+    v2::Config {
         walls,
         lights,
         reflection,
+        exposure,
         width,
         height,
-    }: v1::Config,
+    }: v2::Config,
 ) -> Config {
+    let translate = Vector2::new(-(width as f32) / 2.0, -(height as f32) / 2.0);
     Config {
-        walls,
-        lights,
-        reflection,
-        width,
-        height,
-        exposure: Exposure {
-            curve: Curve::FourthRoot,
-            min: 0.0,
-            max: 1.0,
+        walls: walls
+            .into_iter()
+            .map(|mut wall| {
+                wall.kind.translate(&translate);
+                wall
+            })
+            .collect(),
+        lights: lights
+            .into_iter()
+            .map(|mut light| {
+                light.kind.translate(&translate);
+                light
+            })
+            .collect(),
+        transform: Transform {
+            rotational_symmetry: reflection,
+            reflection: false,
+        },
+        rendering: Rendering {
+            width,
+            height,
+            exposure,
+            coloration: Coloration::default(),
+            center: Point2::origin(),
+            zoom: 1.0,
         },
     }
 }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub struct Coloration {
-//     pub exposure: Exposure,
-//     pub background_color: (u8, u8, u8),
-//     pub highlight_color: (u8, u8, u8),
-// }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub struct Rendering {
-//   pub coloration: Coloration,
-//   pub width: usize,
-//   pub height: usize,
-//   pub zoom: usize,
-// }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub enum Entity {
-//     Wall(Wall),
-//     Light(LightSource)
-// }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub enum Transform {
-//     Reflection { angle: float, center: Point2<float> },
-//     Rotation {
-//         center: Point2<float>,
-//         count: u8,
-//     },
-//     Translation {
-//         count: u8,
-//         vector: Vector2<float>,
-//         spacing: float,
-//     },
-// }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub struct SceneGroup {
-//     pub contents: Vec<Entity>,
-//     pub transforms: Vec<Transform>,
-// }
-
-// #[derive(Serialize, Deserialize, Clone, PartialEq)]
-// pub struct Config2 {
-//     // the physics of it
-//     pub scene: Vec<SceneGroup>,
-//     // the view on it
-//     pub rendering: Rendering,
-//     // turning the brightness data into a picture
-//     pub coloration: Coloration,
-// }
-
-
-
-

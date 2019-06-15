@@ -55,10 +55,10 @@ fn draw_laser(
     light: &shared::LightSource,
 ) -> Result<(), JsValue> {
     let mut ray = light.kind.spawn(direction);
-    let walls = shared::all_walls(&state.config);
+    let walls = state.config.all_walls();
     for _i in 0..10 {
         // log!("Ray: {:?}", ray);
-        match shared::find_collision(&walls, &ray) {
+        match shared::calculate::find_collision(&walls, &ray) {
             None => {
                 state.ctx.set_stroke_style(&"red".into());
                 state.ctx.begin_path();
@@ -70,7 +70,7 @@ fn draw_laser(
             }
             Some((toi, properties, left_side, normal)) => {
                 let (new_origin, stop) =
-                    shared::bounce_ray(&mut ray, toi, properties, left_side, normal);
+                    shared::calculate::bounce_ray(&mut ray, toi, properties, left_side, normal);
 
                 state.ctx.set_stroke_style(&"red".into());
                 state.ctx.begin_path();
@@ -110,15 +110,19 @@ fn vector_dir(dir: f32) -> Vector2<f32> {
 fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Result<(), JsValue> {
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
-    let mut extras = vec![];
-    shared::extra_walls(&mut extras, &state.config);
+    let (zoom, dx, dy) = state.config.transform();
+    state.ctx.save();
+    state.ctx.translate(dx as f64, dy as f64);
+    state.ctx.scale(zoom as f64, zoom as f64);
+
+    let mut extras = state.config.extra_walls();
     for wall in extras {
         state.ctx.set_line_width(1.0);
         state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
         crate::draw::draw(&wall.kind, &state.ctx);
     }
 
-    for (i, wall) in state.config.walls.iter().enumerate() {
+    for (i, wall) in state.config.main_walls().iter().enumerate() {
         let w = match ui.selected_wall {
             Some((wid, _)) if wid == i => 3.0,
             _ => match hover {
@@ -169,6 +173,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             }
         }
     }
+    state.ctx.restore();
 
     Ok(())
 }
@@ -181,15 +186,15 @@ macro_rules! listen {
     };
 }
 
-fn mouse_pos(evt: &web_sys::MouseEvent) -> Point2<f32> {
+fn mouse_pos(rendering: &shared::Rendering, evt: &web_sys::MouseEvent) -> Point2<f32> {
     let ui: &web_sys::Event = evt.as_ref();
     let m = ui.target().unwrap();
     let target: &web_sys::Element = m.dyn_ref::<web_sys::Element>().unwrap();
     let rect = target.get_bounding_client_rect();
-    Point2::new(
+    rendering.inverse_transform_point(&Point2::new(
         evt.x() as f32 - rect.x() as f32,
         evt.y() as f32 - rect.y() as f32,
-    )
+    ))
 }
 
 fn find_wall_hover(
@@ -233,7 +238,10 @@ extern "C" {
 
 pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
     bincode::deserialize::<shared::Config>(&encoded)
-        .or_else(|_| bincode::deserialize::<shared::v1::Config>(&encoded).map(shared::from_v1))
+        .or_else(|_| bincode::deserialize::<shared::v1::Config>(&encoded)
+        .map(shared::v2::from_v1)
+        .map(shared::from_v2)
+        )
 }
 
 pub fn get_url_config() -> Option<shared::Config> {
@@ -295,6 +303,23 @@ fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 //     }
 // }
 
+pub fn setup_checkbox<F: FnMut(bool) + 'static>(
+    name: &'static str,
+    update: F,
+) -> Result<(), JsValue> {
+    let node = get_input(name)?;
+    let rc = std::sync::Arc::new(std::cell::RefCell::new(update));
+    let other = rc.clone();
+
+    use std::ops::DerefMut;
+
+    listen!(node, "change", web_sys::InputEvent, move |_evt| {
+        let input = get_input(name).expect("No input");
+        other.borrow_mut().deref_mut()(input.checked());
+    });
+    Ok(())
+}
+
 pub fn setup_input<F: FnMut(f32, bool) + 'static>(
     name: &'static str,
     update: F,
@@ -328,8 +353,8 @@ pub fn setup_button() -> Result<(), JsValue> {
                     .config
                     .walls
                     .push(shared::Wall::new(shared::WallType::basic_line(
-                        state.config.width,
-                        state.config.height,
+                        state.config.rendering.width,
+                        state.config.rendering.height,
                     )));
                 state.async_render(false)?;
                 Ok(())
@@ -347,8 +372,8 @@ pub fn setup_button() -> Result<(), JsValue> {
                     .config
                     .walls
                     .push(shared::Wall::new(shared::WallType::basic_parabola(
-                        state.config.width,
-                        state.config.height,
+                        state.config.rendering.width,
+                        state.config.rendering.height,
                     )));
                 state.async_render(false)?;
                 Ok(())
@@ -366,8 +391,8 @@ pub fn setup_button() -> Result<(), JsValue> {
                     .config
                     .walls
                     .push(shared::Wall::new(shared::WallType::basic_circle(
-                        state.config.width,
-                        state.config.height,
+                        state.config.rendering.width,
+                        state.config.rendering.height,
                     )));
                 state.async_render(false)?;
                 Ok(())
@@ -497,9 +522,17 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
+    setup_checkbox("reflection", |value| {
+        try_state_ui(|state, ui| {
+            state.config.transform.reflection = value;
+            state.async_render(false)?;
+            Ok(())
+        })
+    })?;
+
     setup_input("rotation", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.reflection = value as u8;
+            state.config.transform.rotational_symmetry = value as u8;
             state.async_render(!finished)?;
             Ok(())
         })
@@ -507,10 +540,10 @@ fn setup_wall_ui() -> Result<(), JsValue> {
 
     setup_input("expose-low", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.exposure.min = value as f32;
-            if value as f32 > state.config.exposure.max - 0.01 {
-                state.config.exposure.max = value as f32 + 0.01;
-                get_input("expose-high")?.set_value_as_number(state.config.exposure.max as f64);
+            state.config.rendering.exposure.min = value as f32;
+            if value as f32 > state.config.rendering.exposure.max - 0.01 {
+                state.config.rendering.exposure.max = value as f32 + 0.01;
+                get_input("expose-high")?.set_value_as_number(state.config.rendering.exposure.max as f64);
             }
             state.reexpose()?;
             Ok(())
@@ -519,10 +552,10 @@ fn setup_wall_ui() -> Result<(), JsValue> {
 
     setup_input("expose-high", |value, finished| {
         try_state_ui(|state, ui| {
-            state.config.exposure.max = value as f32;
-            if (value as f32) < state.config.exposure.min + 0.01 {
-                state.config.exposure.min = value as f32 - 0.01;
-                get_input("expose-low")?.set_value_as_number(state.config.exposure.min as f64);
+            state.config.rendering.exposure.max = value as f32;
+            if (value as f32) < state.config.rendering.exposure.min + 0.01 {
+                state.config.rendering.exposure.min = value as f32 - 0.01;
+                get_input("expose-low")?.set_value_as_number(state.config.rendering.exposure.min as f64);
             }
             state.reexpose()?;
             Ok(())
@@ -535,7 +568,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         web_sys::MouseEvent,
         move |_evt| {
             try_state_ui(|state, ui| {
-                state.config.exposure.curve = shared::Curve::FourthRoot;
+                state.config.rendering.exposure.curve = shared::Curve::FourthRoot;
                 state.reexpose()?;
                 Ok(())
             })
@@ -548,7 +581,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         web_sys::MouseEvent,
         move |_evt| {
             try_state_ui(|state, ui| {
-                state.config.exposure.curve = shared::Curve::SquareRoot;
+                state.config.rendering.exposure.curve = shared::Curve::SquareRoot;
                 state.reexpose()?;
                 Ok(())
             })
@@ -561,7 +594,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         web_sys::MouseEvent,
         move |_evt| {
             try_state_ui(|state, ui| {
-                state.config.exposure.curve = shared::Curve::Linear;
+                state.config.rendering.exposure.curve = shared::Curve::Linear;
                 state.reexpose()?;
                 Ok(())
             })
@@ -590,9 +623,10 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
 }
 
 pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
-    get_input("rotation")?.set_value_as_number(config.reflection as f64);
-    get_input("expose-low")?.set_value_as_number(config.exposure.min as f64);
-    get_input("expose-high")?.set_value_as_number(config.exposure.max as f64);
+    get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
+    get_input("reflection")?.set_checked(config.transform.reflection);
+    get_input("expose-low")?.set_value_as_number(config.rendering.exposure.min as f64);
+    get_input("expose-high")?.set_value_as_number(config.rendering.exposure.max as f64);
     Ok(())
 }
 
@@ -605,8 +639,8 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         .get_element_by_id("drawing")
         .expect("get Canvas")
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
-    canvas.set_width(config.width as u32);
-    canvas.set_height(config.height as u32);
+    canvas.set_width(config.rendering.width as u32);
+    canvas.set_height(config.rendering.height as u32);
 
     setup_button()?;
     setup_wall_ui()?;
@@ -633,7 +667,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
-                match find_collision(&state.config.walls, &mouse_pos(&evt)) {
+                match find_collision(&state.config.walls, &mouse_pos(&state.config.rendering, &evt)) {
                     None => {
                         ui.selected_wall = None;
                         ui.hovered = None;
@@ -656,18 +690,18 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
             use_ui(|ui| -> Result<(), JsValue> {
                 match ui.selected_wall {
                     Some((wid, Some(Handle::Move(pdiff)))) => {
-                        let pos = mouse_pos(&evt);
+                        let pos = mouse_pos(&state.config.rendering, &evt);
                         state.config.walls[wid].kind.set_point_base(pos + pdiff);
                         state.async_render(true)
                     }
                     Some((wid, Some(Handle::Handle(id)))) => {
                         state.config.walls[wid]
                             .kind
-                            .move_handle(id, &mouse_pos(&evt));
+                            .move_handle(id, &mouse_pos(&state.config.rendering, &evt));
                         state.async_render(true)
                     }
                     _ => {
-                        match find_collision(&state.config.walls, &mouse_pos(&evt)) {
+                        match find_collision(&state.config.walls, &mouse_pos(&state.config.rendering, &evt)) {
                             Some((wid, id)) => ui.hovered = Some((wid, id)),
                             None => ui.hovered = None,
                         }

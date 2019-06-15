@@ -18,15 +18,34 @@ const makeSceneNode = (wasm, id, blob) => {
     img.style.width = '150px'
     blob.then(blob => img.src = URL.createObjectURL(blob));
     // localForage.getItem(id).then(blob => );
+
     const bt = document.createElement('button')
     div.appendChild(bt)
     bt.textContent = 'Restore'
     bt.style.cursor = 'pointer'
     bt.onclick = () => {
         localForage.getItem(id.slice(0, -':image'.length)).then(config => {
+            for (const node of document.querySelectorAll('.selected')) {
+                node.classList.remove('selected')
+            }
+            div.classList.add('selected')
+            // console.log('Restoring', config)
             wasm.restore(config)
         })
     }
+
+    const ubt = document.createElement('button')
+    div.appendChild(ubt)
+    ubt.textContent = 'Update'
+    ubt.style.cursor = 'pointer'
+    ubt.onclick = log(async () => {
+        const config = wasm.save();
+        const canvas = document.getElementById('drawing')
+        const blob = await new Promise(res => canvas.toBlob(res));
+        img.src = URL.createObjectURL(blob);
+        await localForage.setItem(id.slice(0, -':image'.length), config);
+        await localForage.setItem(id, blob);
+    })
 }
 
 const setup = async (wasm) => {

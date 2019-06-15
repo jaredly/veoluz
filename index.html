@@ -15,6 +15,9 @@
         flex-wrap: wrap;
         align-items: flex-start;
       }
+      .selected {
+        outline: 5px solid green;
+      }
       #saves {
         display: flex;
         flex-wrap: wrap;
@@ -66,9 +69,12 @@
           <button id="add_parabola">Add parabola</button>
           <button id="add_arc">Add arc</button>
         </div>
-        <div>
+        <div style="margin: 16px 0">
           Rotational Symmetry
           <input id="rotation" type="number" step="1" value="1" />
+          <br/>
+          Reflect across the y axis
+          <input type="checkbox" id="reflection" />
         </div>
         <!-- <button class="button-primary" id="render">render</button> -->
         <div>

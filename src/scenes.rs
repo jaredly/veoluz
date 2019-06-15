@@ -352,7 +352,7 @@ pub fn refract2() -> shared::Config {
     ];
 
     let mut config = shared::Config::new(walls, width as usize, height as usize);
-    config.reflection = 3;
+    config.transform.rotational_symmetry = 3;
     config
 }
 
