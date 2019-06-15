@@ -129,6 +129,42 @@ impl WallType {
         }
     }
 
+    pub fn reflect_across(&mut self, x: line::float) {
+        match self {
+            WallType::Line(wall) => {
+                let mut a = wall.a().clone();
+                let mut b = wall.b().clone();
+                a.x -= (a.x - x) * 2.0;
+                b.x -= (b.x - x) * 2.0;
+                *wall = Segment::new(
+                    b, a
+                )
+            }
+            WallType::Circle(_ball, center, t0, t1) => {
+                center.x -= (center.x - x) * 2.0;
+                let t1n = crate::arc::angle_norm(-(*t0 + PI/2.0) - PI / 2.0);
+                let t0n = crate::arc::angle_norm(-(*t1 + PI/2.0) - PI / 2.0);
+                *t0 = t0n;
+                *t1 = t1n;
+            }
+            WallType::Parabola(parabola) => {
+                parabola.transform.translation.vector.x -= (parabola.transform.translation.vector.x - x) * 2.0;
+                let mut angle = parabola.transform.rotation.angle();
+                // angle = crate::arc::angle_norm(-(angle + PI/2.0) - PI / 2.0);
+                angle = crate::arc::angle_norm(-angle);
+                // left = -20
+                // right = 10
+                // left = -10
+                // right = 20
+                let (l, r) = (parabola.left, parabola.right);
+                parabola.left = -r;
+                parabola.right = -l;
+                parabola.transform.rotation =
+                    nalgebra::UnitComplex::from_angle(angle);
+            }
+        }
+    }
+
     pub fn rotate_around(&mut self, center: &Point2<line::float>, angle: line::float) {
         let base = self.point_base();
         let diff = base - center;

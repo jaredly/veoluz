@@ -374,11 +374,19 @@ pub fn run_ray(
 }
 
 pub fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
+    let mut orig_walls = config.walls.clone();
+    for wall in config.walls.iter() {
+        let mut wall = wall.clone();
+        wall.kind.reflect_across(config.width as f32 / 2.0);
+        walls.push(wall.clone());
+        orig_walls.push(wall);
+    }
+
     let rot = PI * 2.0 / config.reflection as f32;
     let center = Point2::new(config.width as f32 / 2.0, config.height as f32 / 2.0);
     for i in 1..config.reflection {
         let angle = i as f32 * rot;
-        for wall in config.walls.iter() {
+        for wall in orig_walls.iter() {
             let mut wall = wall.clone();
             wall.kind.rotate_around(&center, angle);
             walls.push(wall);
@@ -512,14 +520,14 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> 
         for y in 0..height {
             let index = x + y * width;
             let brightness = brightness_data[x + y * width];
-            data[index] = expose(top, brightness);
+            data[index] = expose(top, brightness) as u8;
         }
     }
 
     data
 }
 
-fn exposer<'a>(config: &Config) -> Box<Fn(line::float, line::uint) -> u8> {
+fn exposer<'a>(config: &Config) -> Box<Fn(line::float, line::uint) -> f32> {
     let min: line::float = config.exposure.min;
     let max: line::float = config.exposure.max;
     // if it's 0 - 0.75
@@ -527,7 +535,7 @@ fn exposer<'a>(config: &Config) -> Box<Fn(line::float, line::uint) -> u8> {
     // if it's 0.25 - 0.75
     // we want ((x - .25).min(0.0) * 255.0 / .5).max(255.0)
     let scale: line::float = 255.0 / (max - min);
-    let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0) as u8;
+    let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0);
     match config.exposure.curve {
         Curve::FourthRoot => {
             Box::new(move |top: line::float, brightness: line::uint| {
@@ -570,6 +578,11 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
         }
     }
 
+    let front = (255.0, 255.0, 255.0);
+    let back = (0.0, 50.0, 0.0);
+    // let front = (131.0, 43.0, 93.0);
+    // let front = (255.0, 200.0, 230.0);
+
     let expose = exposer(config);
 
     let mut data = vec![0; width * height * 4];
@@ -579,10 +592,14 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
         for y in 0..height {
             let index = (x + y * width) * 4;
             let brightness = brightness_data[x + y * width];
-            data[index] = 255;
-            data[index + 1] = 255;
-            data[index + 2] = 255;
-            data[index + 3] = expose(top, brightness);
+            let exposed = expose(top, brightness) / 255.0;
+            data[index] = (front.0 * exposed + back.0 * (1.0 - exposed)) as u8;
+            data[index + 1] = (front.1 * exposed + back.1 * (1.0 - exposed)) as u8;
+            data[index + 2] = (front.2 * exposed + back.2 * (1.0 - exposed)) as u8;
+            // data[index] = 255 - exposed;
+            // data[index + 1] = 255 - exposed;
+            // data[index + 2] = 255 - exposed;
+            data[index + 3] = 255;
         }
     }
 
@@ -610,7 +627,7 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8
         for y in 0..height {
             let index = (x + y * width) * 4;
             let brightness = brightness_data[x + y * width];
-            let bright = expose(top, brightness);
+            let bright = expose(top, brightness) as u8;
             data[index] = bright;
             data[index + 1] = bright;
             data[index + 2] = bright;
