@@ -74,7 +74,13 @@ pub fn restore(config: &JsValue) {
     state::try_with(|state| {
         if let Ok(config) = deserialize_jsvalue(config) {
             ui::reset(&config)?;
+            let size_changed = config.rendering.width != state.config.rendering.width || config.rendering.height != state.config.rendering.height;
             state.config = config;
+            if size_changed {
+                state.ctx.canvas().unwrap().set_width(state.config.rendering.width as u32);
+                state.ctx.canvas().unwrap().set_height(state.config.rendering.height as u32);
+                state.reset_buffer();
+            }
             state.clear();
             state.async_render(false)
         } else {

@@ -292,6 +292,19 @@ fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
     Ok(input)
 }
 
+fn set_text(id: &'static str, text: String) -> Result<(), JsValue> {
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
+    let element = document
+        .get_element_by_id(id)
+        .expect("get input")
+        .dyn_into::<web_sys::HtmlElement>()?;
+    element.set_inner_text(&text);
+    Ok(())
+}
+
 // struct Input<F: FnMut(f32, bool) + 'static> {
 //     name: &'static str,
 //     cb: F,
@@ -541,10 +554,30 @@ fn setup_wall_ui() -> Result<(), JsValue> {
     setup_input("zoom", |value, finished| {
         try_state_ui(|state, _ui| {
             state.config.rendering.zoom = value as f32;
+            set_text("zoom-text", format!("{}", value))?;
             state.async_render(!finished)?;
             Ok(())
         })
     })?;
+
+    listen!(
+        get_button("resize")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| {
+            try_state_ui(|state, _ui| {
+                let wi = get_input("width")?;
+                let hi = get_input("height")?;
+                state.config.rendering.width = wi.value_as_number() as usize;
+                state.config.rendering.height = hi.value_as_number() as usize;
+                state.ctx.canvas().unwrap().set_width(state.config.rendering.width as u32);
+                state.ctx.canvas().unwrap().set_height(state.config.rendering.height as u32);
+                state.clear();
+                state.reset_buffer();
+                state.async_render(false)
+            })
+        }
+    );
 
     setup_input("expose-low", |value, finished| {
         try_state_ui(|state, ui| {
@@ -634,6 +667,9 @@ pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
     get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
     get_input("reflection")?.set_checked(config.transform.reflection);
     get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);
+    get_input("width")?.set_value_as_number(config.rendering.width as f64);
+    get_input("height")?.set_value_as_number(config.rendering.height as f64);
+    set_text("zoom-text", format!("{}", config.rendering.zoom))?;
     get_input("expose-low")?.set_value_as_number(config.rendering.exposure.min as f64);
     get_input("expose-high")?.set_value_as_number(config.rendering.exposure.max as f64);
     Ok(())

@@ -48,42 +48,59 @@
       #exposure input {
         width: 400px;
       }
+      #rendering {
+        padding: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
     </style>
   </head>
   <body>
     <main>
       <div>
         <canvas id="drawing" width="600" height="600"></canvas>
-        <div id="exposure">
-          <input id="expose-low" type="range" min="0" max="1.0" step="0.001" />
-          <input id="expose-high" type="range" min="0" max="1.0" step="0.001" />
-          <button id="expose-fourth">fourth-root</button>
-          <button id="expose-square">square-root</button>
-          <button id="expose-linear">linear</button>
+        <div id="rendering">
+          <div id="exposure">
+            <input id="expose-low" type="range" min="0" max="1.0" step="0.001" />
+            <br/>
+            <input id="expose-high" type="range" min="0" max="1.0" step="0.001" />
+            <div>
+              <button id="expose-fourth">fourth-root</button>
+              <button id="expose-square">square-root</button>
+              <button id="expose-linear">linear</button>
+            </div>
+          </div>
+          <div id="transform">
+            Rotational Symmetry
+            <input id="rotation" type="number" step="1" value="1" />
+            <br/>
+            Reflect across the y axis
+            <input type="checkbox" id="reflection" />
+          </div>
+          <div id="rest">
+            Width <input type="number" step="50" id="width"><br/>
+            Height <input type="number" step="50" id="height"><br/>
+            <button id="resize">Resize</button><br/>
+            Zoom level
+            <input id="zoom" type="range" min="0.2" max="4" step="0.1" />
+            <span id="zoom-text">1.0</span>
+          </div>
         </div>
       </div>
 
       <div class="controls">
+        <div>
+          <button class="button-primary" id="share">permalink</button>
+          <button class="button-primary" id="lasers">show lasers (debug)</button>
+        </div>
         <div id="add_buttons">
           <button id="add_line">Add line</button>
           <button id="add_parabola">Add parabola</button>
           <button id="add_arc">Add arc</button>
         </div>
-        <div style="margin: 16px 0">
-          Rotational Symmetry
-          <input id="rotation" type="number" step="1" value="1" />
-          <br/>
-          Reflect across the y axis
-          <input type="checkbox" id="reflection" />
-          <br/>
-          Zoom level
-          <input id="zoom" type="range" min="0.2" max="4" step="0.1" />
-        </div>
         <!-- <button class="button-primary" id="render">render</button> -->
-        <div>
-          <button class="button-primary" id="share">permalink</button>
-          <button class="button-primary" id="lasers">show lasers (debug)</button>
-        </div>
         <div id="wall_ui" style="display: none;margin: 16px 0">
           <strong style="margin-bottom: 8px">
             Wall Settings
@@ -107,7 +124,6 @@
           <div id="saves"></div>
         </div>
       </div>
-      <!-- <script src="./index.js"></script> -->
     </main>
   </body>
 </html>
