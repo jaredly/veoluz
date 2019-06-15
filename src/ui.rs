@@ -538,6 +538,14 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
+    setup_input("zoom", |value, finished| {
+        try_state_ui(|state, _ui| {
+            state.config.rendering.zoom = value as f32;
+            state.async_render(!finished)?;
+            Ok(())
+        })
+    })?;
+
     setup_input("expose-low", |value, finished| {
         try_state_ui(|state, ui| {
             state.config.rendering.exposure.min = value as f32;
@@ -625,6 +633,7 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
 pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
     get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
     get_input("reflection")?.set_checked(config.transform.reflection);
+    get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);
     get_input("expose-low")?.set_value_as_number(config.rendering.exposure.min as f64);
     get_input("expose-high")?.set_value_as_number(config.rendering.exposure.max as f64);
     Ok(())
