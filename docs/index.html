@@ -9,16 +9,136 @@
       canvas {
         background-color: black;
       }
+      main {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .selected {
+        outline: 5px solid green;
+      }
+      #saves {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        width: 310px;
+        justify-content: space-between;
+        margin-top: 32px;
+      }
+      #save {
+        margin-top: 32px;
+      }
+      #saves {
+        max-height: 600px;
+        overflow: scroll;
+      }
+      #add_buttons {
+        margin: 16px 0;
+      }
+      #saves img {
+        width:150px;
+        background-color: black;
+        margin: 8px 0;
+      }
+      #saves > div {
+        margin-bottom: 16px;
+        font-size: 80%;
+        font-family: system-ui, sans-serif;
+      }
+      .controls {
+        padding: 16px;
+      }
+      #exposure input {
+        width: 400px;
+      }
+      #rendering {
+        padding: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
     </style>
   </head>
   <body>
     <main>
-      <div class="controls">
-        <button class="button-primary" id="render">render</button>
-        <button class="button-primary" id="share">share</button>
+      <div>
+        <canvas id="drawing" width="600" height="600"></canvas>
+        <div id="rendering">
+          <div id="exposure">
+            <input id="expose-low" type="range" min="0" max="1.0" step="0.001" />
+            <br/>
+            <input id="expose-high" type="range" min="0" max="1.0" step="0.001" />
+            <div>
+              <button id="expose-fourth">fourth-root</button>
+              <button id="expose-square">square-root</button>
+              <button id="expose-linear">linear</button>
+            </div>
+            <div>
+              Highlight <br/>
+              R <input id="f-r" type="range" min="0" max="255" step="1" /> <br/>
+              G <input id="f-g" type="range" min="0" max="255" step="1" /> <br/>
+              B <input id="f-b" type="range" min="0" max="255" step="1" /> <br/>
+              Background <br/>
+              R <input id="b-r" type="range" min="0" max="255" step="1" /> <br/>
+              G <input id="b-g" type="range" min="0" max="255" step="1" /> <br/>
+              B <input id="b-b" type="range" min="0" max="255" step="1" /> <br/>
+            </div>
+          </div>
+          <div id="transform">
+            Rotational Symmetry
+            <input id="rotation" type="number" step="1" value="1" />
+            <br/>
+            Reflect across the y axis
+            <input type="checkbox" id="reflection" />
+          </div>
+          <div id="rest">
+            Width <input type="number" step="50" id="width"><br/>
+            Height <input type="number" step="50" id="height"><br/>
+            <button id="resize">Resize</button><br/>
+            Zoom level
+            <input id="zoom" type="range" min="0.2" max="6" step="0.1" />
+            <span style="width: 30px;display:inline-block" id="zoom-text">1.0</span>
+          </div>
+        </div>
       </div>
-      <canvas id="drawing" width="600" height="600"></canvas>
-      <!-- <script src="./index.js"></script> -->
+
+      <div class="controls">
+        <div>
+          <button class="button-primary" id="share">permalink</button>
+          <button class="button-primary" id="lasers">show lasers (debug)</button>
+        </div>
+        <div id="add_buttons">
+          <button id="add_line">Add line</button>
+          <button id="add_parabola">Add parabola</button>
+          <button id="add_arc">Add arc</button>
+        </div>
+        <!-- <button class="button-primary" id="render">render</button> -->
+        <div id="wall_ui" style="display: none;margin: 16px 0">
+          <strong style="margin-bottom: 8px">
+            Wall Settings
+          </strong>
+          <div style="display:flex;flex-direction: column;width: 300px">
+            Absorb
+            <input id="absorb" type="range" min="0" max="1.0" step="0.01" />
+            Roughness
+            <input id="roughness" type="range" min="0" max="1.0" step="0.01" />
+            Reflect
+            <input id="reflect" type="range" min="0" max="1.0" step="0.01" />
+            Refraction
+            <input id="refraction" type="number" step="0.1" value="1.0" />
+            <button id="remove">Remove this wall</button>
+          </div>
+        </div>
+        <button class="button-primary" id="json">export json</button>
+        <textarea style="display:block;font-family:monospace" id="textarea">Click "export json" to export the current config as json</textarea>
+        <div style="margin: 16px 0">
+          <button id="save">Save scene</button>
+          <img id="preview" style="display:none" >
+          <div id="saves"></div>
+        </div>
+      </div>
     </main>
   <script type="text/javascript" src="index.js"></script></body>
 </html>
