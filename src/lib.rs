@@ -71,10 +71,10 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
 
 #[wasm_bindgen]
 pub fn restore(config: &JsValue) {
-    state::try_with(|state| {
+    ui::try_state_ui(|state, ui| {
         if let Ok(config) = deserialize_jsvalue(config) {
             state.invalidate_past_renders();
-            ui::reset(&config)?;
+            ui::reset(&config, ui)?;
             let size_changed = config.rendering.width != state.config.rendering.width || config.rendering.height != state.config.rendering.height;
             state.config = config;
             if size_changed {

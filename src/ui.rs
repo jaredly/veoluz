@@ -429,6 +429,7 @@ pub fn setup_button() -> Result<(), JsValue> {
             try_state_ui(|state, ui| {
                 if let Some((wid, _)) = ui.selected_wall {
                     ui.selected_wall = None;
+                    hide_wall_ui()?;
                     state.config.walls.remove(wid);
                 }
                 state.async_render(false)?;
@@ -731,7 +732,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
     Ok(())
 }
 
-fn hide_wall_ui() -> Result<(), JsValue> {
+pub fn hide_wall_ui() -> Result<(), JsValue> {
     get_element("wall_ui")?
         .style()
         .set_property("display", "none")
@@ -749,7 +750,8 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
     Ok(())
 }
 
-pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
+fn reset_config(config: &shared::Config) -> Result<(), JsValue> {
+
     match config.rendering.coloration {
         shared::Coloration::HueRange {..} => unimplemented!(),
         shared::Coloration::Rgb { highlight, background} => {
@@ -772,6 +774,12 @@ pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
     Ok(())
 }
 
+pub fn reset(config: &shared::Config, ui: &mut UiState) -> Result<(), JsValue> {
+    ui.selected_wall = None;
+    hide_wall_ui()?;
+    reset_config(config)
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -786,7 +794,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     setup_button()?;
     setup_wall_ui()?;
-    reset(config)?;
+    reset_config(config)?;
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
