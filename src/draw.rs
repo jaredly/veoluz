@@ -32,7 +32,7 @@ pub fn draw_handles(
     Ok(())
 }
 
-pub fn draw(wall: &WallType, ctx: &CanvasRenderingContext2d) {
+pub fn draw(wall: &WallType, ctx: &CanvasRenderingContext2d, auxilliary: bool) {
     match wall {
         WallType::Parabola(Parabola {
             a,
@@ -53,19 +53,28 @@ pub fn draw(wall: &WallType, ctx: &CanvasRenderingContext2d) {
             }
             ctx.stroke();
 
-            let p0 = transform.transform_point(&Point2::new(*left, 0.0));
-            let p1 = transform.transform_point(&Point2::new(*right, 0.0));
-            ctx.begin_path();
-            ctx.move_to(p0.x as f64, p0.y as f64);
-            ctx.line_to(p1.x as f64, p1.y as f64);
-            ctx.stroke();
+            if auxilliary {
+                let dashes = js_sys::Array::new();
+                dashes.push(&JsValue::from(1.0f64));
+                dashes.push(&JsValue::from(3.0f64));
+                ctx.set_line_dash(&dashes);
+                let p0 = transform.transform_point(&Point2::new(*left, 0.0));
+                let p1 = transform.transform_point(&Point2::new(*right, 0.0));
+                ctx.begin_path();
+                ctx.move_to(p0.x as f64, p0.y as f64);
+                ctx.line_to(p1.x as f64, p1.y as f64);
+                ctx.stroke();
 
-            let p0 = transform.transform_point(&Point2::new(0.0, 0.0));
-            let p1 = transform.transform_point(&Point2::new(0.0, 1.0 / (4.0 * a)));
-            ctx.begin_path();
-            ctx.move_to(p0.x as f64, p0.y as f64);
-            ctx.line_to(p1.x as f64, p1.y as f64);
-            ctx.stroke();
+                let p0 = transform.transform_point(&Point2::new(0.0, 0.0));
+                let p1 = transform.transform_point(&Point2::new(0.0, 1.0 / (4.0 * a)));
+                ctx.begin_path();
+                ctx.move_to(p0.x as f64, p0.y as f64);
+                ctx.line_to(p1.x as f64, p1.y as f64);
+                ctx.stroke();
+
+                let dashes = js_sys::Array::new();
+                ctx.set_line_dash(&dashes);
+            }
         }
         WallType::Line(wall) => {
             ctx.begin_path();

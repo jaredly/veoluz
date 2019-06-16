@@ -115,12 +115,20 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.translate(dx as f64, dy as f64);
     state.ctx.scale(zoom as f64, zoom as f64);
 
+    let dashes = js_sys::Array::new();
+    dashes.push(&JsValue::from(1.0f64));
+    dashes.push(&JsValue::from(3.0f64));
+    state.ctx.set_line_dash(&dashes);
+    state.ctx.set_line_width(1.0);
+    state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
+
     let mut extras = state.config.extra_walls();
     for wall in extras {
-        state.ctx.set_line_width(1.0);
-        state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
-        crate::draw::draw(&wall.kind, &state.ctx);
+        crate::draw::draw(&wall.kind, &state.ctx, false);
     }
+
+    let dashes = js_sys::Array::new();
+    state.ctx.set_line_dash(&dashes);
 
     for (i, wall) in state.config.main_walls().iter().enumerate() {
         let w = match ui.selected_wall {
@@ -140,7 +148,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         } else {
             state.ctx.set_stroke_style(&JsValue::from_str("blue"));
         }
-        crate::draw::draw(&wall.kind, &state.ctx);
+        crate::draw::draw(&wall.kind, &state.ctx, true);
         state.ctx.set_line_width(1.0);
         crate::draw::draw_handles(
             &wall.kind,
