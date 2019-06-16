@@ -603,6 +603,84 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
+    setup_input("b-r", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { background, .. } => {
+                    background.0 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("b-g", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { background, .. } => {
+                    background.1 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("b-b", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { background, .. } => {
+                    background.2 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("f-r", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { highlight, .. } => {
+                    highlight.0 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("f-g", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { highlight, .. } => {
+                    highlight.1 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
+    setup_input("f-b", |value, _finished| {
+        try_state_ui(|state, _ui| {
+            match &mut state.config.rendering.coloration {
+                shared::Coloration::HueRange {..} => (),
+                shared::Coloration::Rgb { highlight, .. } => {
+                    highlight.2 = value as u8;
+                }
+            };
+            state.reexpose()?;
+            Ok(())
+        })
+    })?;
+
     listen!(
         get_button("expose-fourth")?,
         "click",
@@ -664,6 +742,17 @@ fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
 }
 
 pub fn reset(config: &shared::Config) -> Result<(), JsValue> {
+    match config.rendering.coloration {
+        shared::Coloration::HueRange {..} => unimplemented!(),
+        shared::Coloration::Rgb { highlight, background} => {
+            get_input("f-r")?.set_value_as_number(highlight.0 as f64);
+            get_input("f-g")?.set_value_as_number(highlight.1 as f64);
+            get_input("f-b")?.set_value_as_number(highlight.2 as f64);
+            get_input("b-r")?.set_value_as_number(background.0 as f64);
+            get_input("b-g")?.set_value_as_number(background.1 as f64);
+            get_input("b-b")?.set_value_as_number(background.2 as f64);
+        }
+    };
     get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
     get_input("reflection")?.set_checked(config.transform.reflection);
     get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);

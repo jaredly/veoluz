@@ -5,6 +5,8 @@ const uuid = () => rid() + rid()
 
 const log = fn => (...args) => fn(...args).catch(err => console.error(err))
 
+let hideTimeout = null
+
 const makeSceneNode = (wasm, id, blob) => {
     const scenes_node = document.getElementById('saves')
     const time = new Date(parseInt(id.split(':')[0]))
@@ -16,6 +18,25 @@ const makeSceneNode = (wasm, id, blob) => {
     div.appendChild(img)
     img.style.backgroundColor = 'black'
     img.style.width = '150px'
+    img.onmouseover = evt => {
+        clearTimeout(hideTimeout)
+        let preview = document.getElementById('preview')
+        preview.src = img.src
+        preview.style.width = img.naturalWidth + 'px'
+        preview.style.height = img.naturalHeight + 'px'
+        preview.style.position = 'fixed';
+        preview.style.bottom = '16px';
+        preview.style.left = '16px';
+        preview.style.pointerEvents = 'none'
+        preview.style.display = 'block'
+        preview.style.zIndex = '100'
+        preview.style.background = 'black'
+    }
+    img.onmouseout = () => {
+        hideTimeout = setTimeout(() => {
+            document.getElementById('preview').style.display = 'none'
+        }, 200)
+    }
     blob.then(blob => img.src = URL.createObjectURL(blob));
     // localForage.getItem(id).then(blob => );
 

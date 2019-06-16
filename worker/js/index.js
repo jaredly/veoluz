@@ -7,11 +7,13 @@ onmessage = (evt) => {
 let timeout = null
 let requestId = 0;
 
-let loop = (times, fn) => {
-  if (times === 0) return
+let loopUntil = (fn) => {
   timeout = setTimeout(() => {
-    fn();
-    loop(times - 1, fn)
+    if (fn()) {
+      console.log('finished')
+      return
+    };
+    loopUntil(fn)
   }, 1)
 }
 
@@ -20,11 +22,20 @@ import("../crate/pkg").then(module => {
     clearTimeout(timeout);
     // console.log('message', data)
     let res = module.process(data)
-    postMessage({id: data.id, buffer: res.buffer}, [res.buffer])
-    // loop(20, () => {
-    //   let res = module.process(data)
-    //   postMessage(res.buffer, [res.buffer])
-    // })
+    // console.log('res', res)
+    let rays = res.rays();
+    let buffer = res.data().buffer;
+    let total_rays = rays;
+    postMessage({id: data.id, buffer: buffer}, [buffer])
+
+    loopUntil(() => {
+      let res = module.process(data)
+      let rays = res.rays();
+      total_rays += rays;
+      let buffer = res.data().buffer;
+      postMessage({id: data.id, buffer: buffer}, [buffer])
+      return total_rays >= data.count
+    })
     // res = module.process(data)
     // postMessage(res.buffer, [res.buffer])
     // res = module.process(data)

@@ -40,7 +40,7 @@ impl WallType {
     pub fn basic_circle(width: usize, height: usize) -> WallType {
         WallType::Circle(
             Ball::new(50.0),
-            Point2::new(width as f32 / 2.0, height as f32 / 2.0 + 200.0),
+            Point2::new(0.0, 200.0),
             -PI,
             PI,
         )
@@ -58,17 +58,17 @@ impl WallType {
     }
 
     pub fn basic_line(width: usize, height: usize) -> WallType {
-        let c = Point2::new(width as f32 / 2.0 + 200.0, height as f32 / 2.0);
+        let c = Point2::new(200.0, 0.0);
         let off = Vector2::new(50.0, 50.0);
         WallType::Line(Segment::new(c + off, c - off))
     }
 
     pub fn basic_parabola(width: usize, height: usize) -> WallType {
-        let c = Vector2::new(width as f32 / 2.0 - 200.0, height as f32 / 2.0);
+        let c = Vector2::new(-200.0, 0.0);
         WallType::Parabola(Parabola {
-            a: 1.0 / (4.0 * 50.0),
-            left: -20.0,
-            right: 20.0,
+            a: 1.0 / (4.0 * 30.0),
+            left: -60.0,
+            right: 60.0,
             transform: nalgebra::Isometry2::from_parts(
                 nalgebra::Translation2::from(c),
                 nalgebra::UnitComplex::from_angle(0.0),

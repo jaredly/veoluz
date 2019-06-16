@@ -33,16 +33,32 @@ fn to_le(v: &mut [u32]) -> &[u8] {
     unsafe { v.align_to().1 }
 }
 
+#[wasm_bindgen]
+pub struct Response {
+    data: Clamped<Vec<u8>>,
+    rays: usize,
+}
+
+#[wasm_bindgen]
+impl Response {
+    pub fn rays(&self) -> usize {
+        self.rays
+    }
+    pub fn data(self) -> Clamped<Vec<u8>> {
+        self.data
+    }
+}
+
 // Called by our JS entry point to run the example.
 #[wasm_bindgen]
-pub fn process(message: JsValue) -> Result<Clamped<Vec<u8>>, JsValue> {
+pub fn process(message: JsValue) -> Result<Response, JsValue> {
     set_panic_hook();
 
     let message: shared::messaging::Message = message.into_serde().expect("Invalid message");
-    let mut data = shared::calculate(&message.config, message.count, 1);
+    let (mut data, rays) = shared::calculate::timed(&message.config, message.count, 100.0);
     // log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
-    Ok(Clamped(to_le(&mut data).to_vec()))
+    Ok(Response { data: Clamped(to_le(&mut data).to_vec()), rays })
 }
 
 fn set_panic_hook() {

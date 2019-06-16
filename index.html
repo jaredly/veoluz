@@ -29,6 +29,10 @@
       #save {
         margin-top: 32px;
       }
+      #saves {
+        max-height: 600px;
+        overflow: scroll;
+      }
       #add_buttons {
         margin: 16px 0;
       }
@@ -71,6 +75,16 @@
               <button id="expose-square">square-root</button>
               <button id="expose-linear">linear</button>
             </div>
+            <div>
+              Highlight <br/>
+              R <input id="f-r" type="range" min="0" max="255" step="1" /> <br/>
+              G <input id="f-g" type="range" min="0" max="255" step="1" /> <br/>
+              B <input id="f-b" type="range" min="0" max="255" step="1" /> <br/>
+              Background <br/>
+              R <input id="b-r" type="range" min="0" max="255" step="1" /> <br/>
+              G <input id="b-g" type="range" min="0" max="255" step="1" /> <br/>
+              B <input id="b-b" type="range" min="0" max="255" step="1" /> <br/>
+            </div>
           </div>
           <div id="transform">
             Rotational Symmetry
@@ -84,8 +98,8 @@
             Height <input type="number" step="50" id="height"><br/>
             <button id="resize">Resize</button><br/>
             Zoom level
-            <input id="zoom" type="range" min="0.2" max="4" step="0.1" />
-            <span id="zoom-text">1.0</span>
+            <input id="zoom" type="range" min="0.2" max="6" step="0.1" />
+            <span style="width: 30px;display:inline-block" id="zoom-text">1.0</span>
           </div>
         </div>
       </div>
@@ -121,6 +135,7 @@
         <textarea style="display:block;font-family:monospace" id="textarea">Click "export json" to export the current config as json</textarea>
         <div style="margin: 16px 0">
           <button id="save">Save scene</button>
+          <img id="preview" style="display:none" >
           <div id="saves"></div>
         </div>
       </div>

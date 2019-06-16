@@ -69,7 +69,7 @@ fn exposer<'a>(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
 // }
 
 pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
-    let _timer = Timer::new("Colorize");
+    // let _timer = Timer::new("Colorize");
     let width = config.rendering.width * scale as usize;
     let height = config.rendering.height * scale as usize;
 
@@ -80,8 +80,15 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
         }
     }
 
-    let front = (255.0, 255.0, 255.0);
-    let back = (0.0, 50.0, 0.0);
+    // let front = (255.0, 255.0, 255.0);
+    // let back = (0.0, 50.0, 0.0);
+    let (front, back) = match config.rendering.coloration {
+      Coloration::HueRange {..} => unimplemented!(),
+      Coloration::Rgb {highlight, background} => (
+        (highlight.0 as f32, highlight.1 as f32, highlight.2 as f32),
+        (background.0 as f32, background.1 as f32, background.2 as f32),
+        )
+    };
     // let front = (131.0, 43.0, 93.0);
     // let front = (255.0, 200.0, 230.0);
 
@@ -110,7 +117,7 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
 
 pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
     // something like 5% of the time is here
-    let _timer = Timer::new("Colorize");
+    // let _timer = Timer::new("Colorize");
     let width = config.rendering.width * scale as usize;
     let height = config.rendering.height * scale as usize;
 

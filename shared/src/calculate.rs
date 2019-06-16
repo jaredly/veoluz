@@ -28,6 +28,14 @@ fn reflect(one: line::float, by: line::float) -> line::float {
     angle_norm((-transformed) + by)
 }
 
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+        // ()
+    };
+}
+
 #[inline]
 fn check(v: f32) -> bool {
     if v == 0.0 {
@@ -296,25 +304,6 @@ pub fn calculate(config: &Config, rays: usize, scale: u8) -> Vec<line::uint> {
 
     // if we don't draw at all, we're still getting only 400k/sec
 
-    /*
-     * Center's at 100, 200
-     * width = 500
-     * height = 600
-     * zoom = 2
-     * 
-     * bounds tl at 100 - 125, 200 - 150.
-     * 
-     * a point at (center= 100,200) needs to end up at 250, 300
-     * a point at (-25, 50) needs to end up at 0, 0
-     * a point at (90, 180) == (center + (-10, -20)) needs to end up at (250, 300) + (-10, -20) * zoom
-     * 
-     * hw + (x - cx) * zoom
-     * hh + (y - cy) * zoom?
-     * 
-     * hw + x*zoom - cx*zoom
-     * hh + y*zoom - cy*zoom
-     */
-
     let transform = config.transform();
 
     for light in config.all_lights().iter() {
@@ -340,4 +329,67 @@ pub fn calculate(config: &Config, rays: usize, scale: u8) -> Vec<line::uint> {
     }
 
     brightness_data
+}
+
+use wasm_bindgen::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = Date)]
+    fn now() -> f64;
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usize) {
+    let width = config.rendering.width;
+    let height = config.rendering.height;
+
+    let mut brightness_data = vec![0; width * height];
+
+    let total_light: f32 = { config.lights.iter().map(|l| l.brightness).sum() };
+    let walls = config.all_walls();
+    let boundaries = boundaries(config);
+
+    // if we don't draw at all, we're still getting only 400k/sec
+
+    let transform = config.transform();
+
+    // TODO support multiple lights
+    let light = &config.all_lights()[0];
+
+    // for light in config.all_lights().iter() {
+    let amount = light.brightness / total_light;
+    let rrr: f32 = rays as f32 * amount;
+    let rays = rrr as usize;
+
+    let start = now();
+    let mut rendered = rays;
+
+    for r in 0..rays {
+        let mut ray = light.kind.spawn(rand());
+
+        for _ in 0..30 {
+            if run_ray(
+                &mut ray,
+                &config,
+                &walls,
+                &boundaries,
+                &mut brightness_data,
+                transform
+            ) {
+                break;
+            }
+        }
+
+        if r % 100 == 0 && now() - start > limit {
+            // log!("{} rays rendered", r);
+            rendered = r;
+            break;
+        }
+    }
+    // log!("Time took: {} vs limit {}", now() - start, limit);
+    // }
+
+    (brightness_data, rendered)
 }
