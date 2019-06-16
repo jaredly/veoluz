@@ -73,6 +73,7 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
 pub fn restore(config: &JsValue) {
     state::try_with(|state| {
         if let Ok(config) = deserialize_jsvalue(config) {
+            state.invalidate_past_renders();
             ui::reset(&config)?;
             let size_changed = config.rendering.width != state.config.rendering.width || config.rendering.height != state.config.rendering.height;
             state.config = config;

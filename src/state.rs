@@ -59,6 +59,11 @@ impl State {
         self.workers.push((worker, false, None))
     }
 
+    pub fn invalidate_past_renders(&mut self) {
+        self.render_id += 1;
+        self.last_rendered = self.render_id;
+    }
+
     pub fn handle_render(
         &mut self,
         worker: usize,
