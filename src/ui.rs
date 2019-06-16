@@ -271,7 +271,7 @@ fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
         .expect("Document");
     let button = document
         .get_element_by_id(id)
-        .expect("get button")
+        .expect(&("get button ".to_owned() + id.clone()))
         .dyn_into::<web_sys::HtmlButtonElement>()?;
     Ok(button)
 }
