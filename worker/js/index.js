@@ -10,7 +10,7 @@ let requestId = 0;
 let loopUntil = (fn) => {
   timeout = setTimeout(() => {
     if (fn()) {
-      console.log('finished')
+      // console.log('finished')
       return
     };
     loopUntil(fn)
