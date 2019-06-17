@@ -791,6 +791,17 @@ pub fn reset(config: &shared::Config, ui: &mut UiState) -> Result<(), JsValue> {
     reset_config(config)
 }
 
+#[wasm_bindgen]
+extern "C" {
+    type WheelEvent;
+
+    #[wasm_bindgen(method, getter, js_name = deltaY)]
+    fn delta_y(this: &WheelEvent) -> f64;
+
+    #[wasm_bindgen(method, js_name = preventDefault)]
+    fn prevent_default(this: &WheelEvent);
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -822,6 +833,14 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                 ui.mouse_over = false;
                 draw(ui, state)
             })
+        })
+    });
+
+    listen!(canvas, "wheel", WheelEvent, move |evt: WheelEvent| {
+        crate::state::try_with(|state| {
+            state.config.rendering.zoom = (evt.delta_y() as f32 * -0.01 + state.config.rendering.zoom).max(0.0);
+            evt.prevent_default();
+            state.async_render(true)
         })
     });
 
