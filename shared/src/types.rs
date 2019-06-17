@@ -38,6 +38,9 @@ pub struct LightSource {
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum LightKind {
     Point {
+        // TODO add an "offset" number that makes it start a bit out from the center
+        // which will reduce the "bright point" in the middle, and probably make a cool
+        // dark circle in the center too
         origin: Point2<float>,
         t0: float,
         t1: float,

@@ -17,8 +17,9 @@ pub enum Handle {
 
 pub enum Selection {
     Wall(usize, Option<Handle>),
+    Light(usize, bool),
     Pan {grab: Point2<float>, center: Point2<float>},
-    Multiple(Vec<usize>, Option<Vector2<float>>)
+    Multiple(Vec<usize>, Option<Vec<Vector2<float>>>)
 }
 
 // #[derive(Clone)]
@@ -833,14 +834,40 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         ui.selection = Some(Selection::Pan {grab: pos, center: state.config.rendering.center});
                         ui.hovered = None;
                         hide_wall_ui()?;
-                        Ok(())
                     }
                     Some((wid, id)) => {
-                        ui.selection = Some(Selection::Wall(wid, Some(id)));
-                        ui.hovered = None;
-                        show_wall_ui(wid, &state.config.walls[wid])
+                        if evt.shift_key() {
+                            let mut walls = match &ui.selection {
+                                Some(Selection::Multiple(walls, _)) => walls.clone(),
+                                Some(Selection::Wall(wid, _)) => vec![*wid],
+                                _ => vec![]
+                            };
+                            // TODO allow removing
+                            walls.push(wid);
+                            let pdiffs = walls.iter().map(|wid|
+                                state.config.walls[*wid].kind.point_base() - pos
+                            ).collect();
+                            ui.selection = Some(Selection::Multiple(walls, Some(pdiffs)));
+                        } else if let Some(Selection::Multiple(walls, _)) = &ui.selection {
+                            if walls.contains(&wid) {
+                                let mut walls = walls.clone();
+                                walls.push(wid);
+                                let pdiffs = walls.iter().map(|wid|
+                                    state.config.walls[*wid].kind.point_base() - pos
+                                ).collect();
+                                ui.selection = Some(Selection::Multiple(walls, Some(pdiffs)));
+                            } else {
+                                ui.selection = Some(Selection::Wall(wid, Some(id)));
+                                ui.hovered = None;
+                            }
+                            show_wall_ui(wid, &state.config.walls[wid])?;
+                        } else {
+                            ui.selection = Some(Selection::Wall(wid, Some(id)));
+                            ui.hovered = None;
+                            show_wall_ui(wid, &state.config.walls[wid])?;
+                        }
                     }
-                }?;
+                };
                 draw(ui, state)
             })
         })
@@ -849,22 +876,34 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
-                match ui.selection {
+                match &mut ui.selection {
                     Some(Selection::Wall(wid, Some(Handle::Move(pdiff)))) => {
                         let pos = mouse_pos(&state.config.rendering, &evt);
-                        state.config.walls[wid].kind.set_point_base(pos + pdiff);
+                        state.config.walls[*wid].kind.set_point_base(pos + *pdiff);
                         state.async_render(true)
                     }
                     Some(Selection::Wall(wid, Some(Handle::Handle(id)))) => {
-                        state.config.walls[wid]
+                        state.config.walls[*wid]
                             .kind
-                            .move_handle(id, &mouse_pos(&state.config.rendering, &evt));
+                            .move_handle(*id, &mouse_pos(&state.config.rendering, &evt));
                         state.async_render(true)
                     }
                     Some(Selection::Pan{grab, center}) => {
-                        let pos = mouse_pos(&state.config.rendering, &evt) + (center - state.config.rendering.center);
-                        state.config.rendering.center = center - (pos - grab);
+                        let pos = mouse_pos(&state.config.rendering, &evt) + (*center - state.config.rendering.center);
+                        state.config.rendering.center = *center - (pos - *grab);
                         state.async_render(true)
+                    }
+                    Some(Selection::Multiple(wids, pdiffs)) => {
+                        match pdiffs {
+                            Some(pdiffs) => {
+                                let pos = mouse_pos(&state.config.rendering, &evt);
+                                for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
+                                    state.config.walls[*wid].kind.set_point_base(pos + pdiff);
+                                }
+                                state.async_render(true)
+                            },
+                            None => Ok(())
+                        }
                     }
                     _ => {
                         match find_collision(&state.config.walls, &mouse_pos(&state.config.rendering, &evt)) {
@@ -898,14 +937,18 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mouseup", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
-                match ui.selection {
+                match &ui.selection {
                     Some(Selection::Wall(wid, Some(id))) => {
-                        ui.hovered = Some((wid, id));
-                        ui.selection = Some(Selection::Wall(wid, None));
+                        ui.hovered = Some((*wid, *id));
+                        ui.selection = Some(Selection::Wall(*wid, None));
                         state.async_render(false);
                     }
                     Some(Selection::Pan{..}) => {
                         ui.selection = None;
+                        state.async_render(false);
+                    }
+                    Some(Selection::Multiple(wids, _)) => {
+                        ui.selection = Some(Selection::Multiple(wids.clone(), None));
                         state.async_render(false);
                     }
                     _ => (),

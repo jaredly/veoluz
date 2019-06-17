@@ -12,6 +12,9 @@ use std::f32::consts::PI;
 
 use nalgebra::{Point2, Vector2};
 
+// Ideas for other wall types:
+// - a "portal" that has two straight lines, and transports from one to the other
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub enum WallType {
     Line(Segment<line::float>),
