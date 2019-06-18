@@ -8,6 +8,9 @@ pub struct State {
     pub ctx: CanvasRenderingContext2d,
     pub image_data: web_sys::ImageData,
     pub config: shared::Config,
+    pub history: Vec<shared::Config>,
+    pub history_index: usize,
+    pub last_rendered_config: Option<shared::Config>,
     pub buffer: Vec<u32>,
     pub workers: Vec<(web_sys::Worker, bool, Option<shared::messaging::Message>)>,
 }
@@ -28,6 +31,9 @@ impl From<shared::Config> for State {
                 .expect("Can't make an imagedata"),
             buffer: vec![0_u32; config.rendering.width * config.rendering.height],
             workers: vec![],
+            history: vec![config.clone()],
+            history_index: 0,
+            last_rendered_config: None,
             config,
         }
     }
@@ -62,6 +68,56 @@ impl State {
     pub fn invalidate_past_renders(&mut self) {
         self.render_id += 1;
         self.last_rendered = self.render_id;
+    }
+
+    pub fn undo(&mut self) -> Result<(), JsValue> {
+        log!("Undo {} {}", self.history.len(), self.history_index);
+        self.history_index = (self.history_index + 1).min(self.history.len() - 1);
+        if let Some(config) = self.history.get(self.history.len() - self.history_index - 1) {
+            self.config = config.clone();
+            self.async_render(false)?;
+        }
+        Ok(())
+    }
+
+    pub fn redo(&mut self) -> Result<(), JsValue> {
+        if self.history_index == 0 {
+            log!("nothing to redo");
+            return Ok(())
+        }
+        log!("redo");
+        self.history_index = (self.history_index - 1).max(0);
+        if let Some(config) = self.history.get(self.history.len() - self.history_index - 1) {
+            self.config = config.clone();
+            self.async_render(false)?;
+        }
+        Ok(())
+    }
+
+    pub fn maybe_save_history(&mut self) {
+        log!("saving history");
+        // If the lastest is the same
+        if self.history_index == 0 && self.history.last().map_or(false, |last| *last == self.config) {
+            return;
+        }
+        if self.history_index != 0 && self.history.get(self.history.len() - self.history_index - 1).map_or(false, |last| *last == self.config) {
+            return
+        }
+
+        log!("ok");
+        // snip undone stuff
+        if self.history_index != 0 {
+            self.history = self.history[0..self.history.len() - self.history_index].to_vec();
+            self.history_index = 0;
+        }
+
+        // if self.history.last().map_or(true, |last| *last != self.config) {
+        self.history.push(self.config.clone());
+        if self.history.len() > 500 {
+            // trim to 500 len
+            self.history = self.history[self.history.len()-500..].to_vec();
+        }
+        // }
     }
 
     pub fn handle_render(
@@ -127,6 +183,15 @@ impl State {
     }
 
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
+        match &self.last_rendered_config {
+            Some(config) if *config == self.config => {
+                // Ignore it probably
+                return Ok(());
+            }
+            _ => ()
+        }
+
+        self.last_rendered_config = Some(self.config.clone());
         self.render_id += 1;
 
         let message = shared::messaging::Message {

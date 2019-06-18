@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
 use crate::state::State;
 use shared::line;
-use shared::{Config, Wall, WallType};
+use shared::{Wall};
 use line::float;
 
 use nalgebra::{Point2, Vector2};
@@ -124,23 +124,23 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
 
     let (zoom, dx, dy) = state.config.transform();
     state.ctx.save();
-    state.ctx.translate(dx as f64, dy as f64);
-    state.ctx.scale(zoom as f64, zoom as f64);
+    state.ctx.translate(dx as f64, dy as f64)?;
+    state.ctx.scale(zoom as f64, zoom as f64)?;
 
     let dashes = js_sys::Array::new();
     dashes.push(&JsValue::from(1.0f64));
     dashes.push(&JsValue::from(3.0f64));
-    state.ctx.set_line_dash(&dashes);
+    state.ctx.set_line_dash(&dashes)?;
     state.ctx.set_line_width(1.0);
     state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
 
-    let mut extras = state.config.extra_walls();
+    let extras = state.config.extra_walls();
     for wall in extras {
         crate::draw::draw(&wall.kind, &state.ctx, false);
     }
 
     let dashes = js_sys::Array::new();
-    state.ctx.set_line_dash(&dashes);
+    state.ctx.set_line_dash(&dashes)?;
 
     for (i, wall) in state.config.main_walls().iter().enumerate() {
         let w = match &ui.selection {
@@ -524,6 +524,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 state.config.walls[wid].properties.reflect = value;
             }
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history()}
             Ok(())
         })
     })?;
@@ -534,6 +535,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 state.config.walls[wid].properties.absorb = value;
             }
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history()}
             Ok(())
         })
     })?;
@@ -544,6 +546,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 state.config.walls[wid].properties.roughness = value;
             }
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history()}
             Ok(())
         })
     })?;
@@ -554,22 +557,25 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 state.config.walls[wid].properties.refraction = value;
             }
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history()}
             Ok(())
         })
     })?;
 
     setup_checkbox("reflection", |value| {
-        try_state_ui(|state, ui| {
+        try_state_ui(|state, _ui| {
             state.config.transform.reflection = value;
             state.async_render(false)?;
+            state.maybe_save_history();
             Ok(())
         })
     })?;
 
     setup_input("rotation", |value, finished| {
-        try_state_ui(|state, ui| {
+        try_state_ui(|state, _ui| {
             state.config.transform.rotational_symmetry = value as u8;
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
@@ -579,6 +585,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
             state.config.rendering.zoom = value as f32;
             set_text("zoom-text", format!("{}", value))?;
             state.async_render(!finished)?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
@@ -597,36 +604,39 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 state.ctx.canvas().unwrap().set_height(state.config.rendering.height as u32);
                 state.clear();
                 state.reset_buffer();
+                state.maybe_save_history();
                 state.async_render(false)
             })
         }
     );
 
     setup_input("expose-low", |value, finished| {
-        try_state_ui(|state, ui| {
+        try_state_ui(|state, _ui| {
             state.config.rendering.exposure.min = value as f32;
             if value as f32 > state.config.rendering.exposure.max - 0.01 {
                 state.config.rendering.exposure.max = value as f32 + 0.01;
                 get_input("expose-high")?.set_value_as_number(state.config.rendering.exposure.max as f64);
             }
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
     setup_input("expose-high", |value, finished| {
-        try_state_ui(|state, ui| {
+        try_state_ui(|state, _ui| {
             state.config.rendering.exposure.max = value as f32;
             if (value as f32) < state.config.rendering.exposure.min + 0.01 {
                 state.config.rendering.exposure.min = value as f32 - 0.01;
                 get_input("expose-low")?.set_value_as_number(state.config.rendering.exposure.min as f64);
             }
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("b-r", |value, _finished| {
+    setup_input("b-r", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -635,11 +645,12 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("b-g", |value, _finished| {
+    setup_input("b-g", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -648,11 +659,12 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("b-b", |value, _finished| {
+    setup_input("b-b", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -661,11 +673,12 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("f-r", |value, _finished| {
+    setup_input("f-r", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -674,11 +687,12 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("f-g", |value, _finished| {
+    setup_input("f-g", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -687,11 +701,12 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
 
-    setup_input("f-b", |value, _finished| {
+    setup_input("f-b", |value, finished| {
         try_state_ui(|state, _ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange {..} => (),
@@ -700,6 +715,7 @@ fn setup_wall_ui() -> Result<(), JsValue> {
                 }
             };
             state.reexpose()?;
+            if (finished) {state.maybe_save_history();}
             Ok(())
         })
     })?;
@@ -709,9 +725,10 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, ui| {
+            try_state_ui(|state, _ui| {
                 state.config.rendering.exposure.curve = shared::Curve::FourthRoot;
                 state.reexpose()?;
+                state.maybe_save_history();
                 Ok(())
             })
         }
@@ -722,9 +739,10 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, ui| {
+            try_state_ui(|state, _ui| {
                 state.config.rendering.exposure.curve = shared::Curve::SquareRoot;
                 state.reexpose()?;
+                state.maybe_save_history();
                 Ok(())
             })
         }
@@ -735,12 +753,27 @@ fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, ui| {
+            try_state_ui(|state, _ui| {
                 state.config.rendering.exposure.curve = shared::Curve::Linear;
                 state.reexpose()?;
+                state.maybe_save_history();
                 Ok(())
             })
         }
+    );
+
+    listen!(
+        get_button("undo")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| try_state_ui(|state, _ui| state.undo())
+    );
+
+    listen!(
+        get_button("redo")?,
+        "click",
+        web_sys::MouseEvent,
+        move |_evt| try_state_ui(|state, _ui| state.redo())
     );
 
     Ok(())
@@ -752,7 +785,7 @@ pub fn hide_wall_ui() -> Result<(), JsValue> {
         .set_property("display", "none")
 }
 
-fn show_wall_ui(idx: usize, wall: &Wall) -> Result<(), JsValue> {
+fn show_wall_ui(_idx: usize, wall: &Wall) -> Result<(), JsValue> {
     get_element("wall_ui")?
         .style()
         .set_property("display", "block")?;
@@ -817,7 +850,7 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
     let cursor = match (ui.hovered, &ui.selection) {
             (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
             (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
-            (_, Some(Selection::Pan{..})) => "pointer",
+            (_, Some(Selection::Pan {..})) => "pointer",
             _ => "default",
         };
     // log!("cursor {} - {:?} - {:?}", cursor, ui.hovered, ui.selection);
@@ -924,22 +957,19 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(web_sys::window().unwrap(), "keydown", web_sys::KeyboardEvent, move |evt: web_sys::KeyboardEvent| {
         if evt.key() == "Meta" {
-
-            try_state_ui(|state,ui| {
+            use_ui(|ui| {
                 match &mut ui.selection {
-                    Some(Selection::Wall(wid, Some((handle, orig)))) => {
+                    Some(Selection::Wall(_, Some((_, orig)))) => {
                         *orig = ui.last_mouse_pos.clone();
                     },
                     _ => ()
                 };
-                Ok(())
             })
         }
         // log!("Key {}", evt.key());
     });
 
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
-        // evt.prevent_default();
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
                 let mut pos = mouse_pos(&state.config.rendering, &evt);
@@ -966,20 +996,14 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         state.config.rendering.center = *center - (pos - *grab);
                         state.async_render(true)
                     }
-                    Some(Selection::Multiple(wids, pdiffs)) => {
-                        match pdiffs {
-                            Some((pdiffs, original_point)) => {
-                                // let pos = mouse_pos(&state.config.rendering, &evt);
-                                if evt.meta_key() {
-                                    pos = *original_point + (pos - *original_point) / 10.0;
-                                }
-                                for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
-                                    state.config.walls[*wid].kind.set_point_base(pos + pdiff);
-                                }
-                                state.async_render(true)
-                            },
-                            None => Ok(())
+                    Some(Selection::Multiple(wids, Some((pdiffs, original_point)))) => {
+                        if evt.meta_key() {
+                            pos = *original_point + (pos - *original_point) / 10.0;
                         }
+                        for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
+                            state.config.walls[*wid].kind.set_point_base(pos + pdiff);
+                        }
+                        state.async_render(true)
                     }
                     _ => {
                         match find_collision(&state.config.walls, &mouse_pos(&state.config.rendering, &evt)) {
@@ -999,25 +1023,26 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     });
 
     listen!(canvas, "mouseup", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            use_ui(|ui| {
-                match &ui.selection {
-                    Some(Selection::Wall(wid, Some((id, _)))) => {
-                        ui.hovered = Some((*wid, *id));
-                        ui.selection = Some(Selection::Wall(*wid, None));
-                        state.async_render(false);
-                    }
-                    Some(Selection::Pan{..}) => {
-                        ui.selection = None;
-                        state.async_render(false);
-                    }
-                    Some(Selection::Multiple(wids, _)) => {
-                        ui.selection = Some(Selection::Multiple(wids.clone(), None));
-                        state.async_render(false);
-                    }
-                    _ => (),
-                };
-            });
+        try_state_ui(|state, ui| {
+            match &ui.selection {
+                Some(Selection::Wall(wid, Some((id, _)))) => {
+                    ui.hovered = Some((*wid, *id));
+                    ui.selection = Some(Selection::Wall(*wid, None));
+                    state.async_render(false)?;
+                }
+                Some(Selection::Pan{..}) => {
+                    ui.selection = None;
+                    state.async_render(false)?;
+                }
+                Some(Selection::Multiple(wids, _)) => {
+                    ui.selection = Some(Selection::Multiple(wids.clone(), None));
+                    state.async_render(false)?;
+                }
+                _ => (),
+            };
+            state.maybe_save_history();
+
+            update_cursor(ui)?;
             Ok(())
         })
     });
