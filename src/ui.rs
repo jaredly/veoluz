@@ -15,6 +15,7 @@ pub enum Handle {
     Move(Vector2<float>),
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum AddKindName {
     Light,
     Circle,
@@ -26,7 +27,7 @@ pub enum AddKindName {
 pub enum Selection {
     Wall(usize, Option<(Handle, Point2<float>)>),
     Light(usize, bool),
-    // Adding(AddKindName, Option<Point2<float>>),
+    Adding(AddKindName),
     Pan {
         grab: Point2<float>,
         center: Point2<float>,
@@ -139,7 +140,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.scale(zoom as f64, zoom as f64)?;
 
     let dashes = js_sys::Array::new();
-    dashes.push(&JsValue::from(1.0f64));
+    dashes.push(&JsValue::from(2.0f64));
     dashes.push(&JsValue::from(3.0f64));
     state.ctx.set_line_dash(&dashes)?;
     state.ctx.set_line_width(1.0);
@@ -403,17 +404,21 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            crate::state::try_with(|state| {
-                state
-                    .config
-                    .walls
-                    .push(shared::Wall::new(shared::WallType::basic_line(
-                        state.config.rendering.width,
-                        state.config.rendering.height,
-                    )));
-                state.async_render(false)?;
-                Ok(())
+            use_ui(|ui| {
+                ui.selection = Some(Selection::Adding(AddKindName::Line));
             })
+            // crate::state::try_with(|state| {
+            //     // state
+            //     //     .config
+            //     //     .walls
+            //     //     .push(shared::Wall::new(shared::WallType::basic_line(
+            //     //         state.config.rendering.width,
+            //     //         state.config.rendering.height,
+            //     //     )));
+            //     // state.async_render(false)?;
+            //     // ui.selection = 
+            //     Ok(())
+            // })
         }
     );
 
@@ -422,17 +427,20 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            crate::state::try_with(|state| {
-                state
-                    .config
-                    .walls
-                    .push(shared::Wall::new(shared::WallType::basic_parabola(
-                        state.config.rendering.width,
-                        state.config.rendering.height,
-                    )));
-                state.async_render(false)?;
-                Ok(())
+            use_ui(|ui| {
+                ui.selection = Some(Selection::Adding(AddKindName::Parabola));
             })
+            // crate::state::try_with(|state| {
+            //     state
+            //         .config
+            //         .walls
+            //         .push(shared::Wall::new(shared::WallType::basic_parabola(
+            //             state.config.rendering.width,
+            //             state.config.rendering.height,
+            //         )));
+            //     state.async_render(false)?;
+            //     Ok(())
+            // })
         }
     );
 
@@ -441,17 +449,20 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            crate::state::try_with(|state| {
-                state
-                    .config
-                    .walls
-                    .push(shared::Wall::new(shared::WallType::basic_circle(
-                        state.config.rendering.width,
-                        state.config.rendering.height,
-                    )));
-                state.async_render(false)?;
-                Ok(())
+            use_ui(|ui| {
+                ui.selection = Some(Selection::Adding(AddKindName::Circle));
             })
+            // crate::state::try_with(|state| {
+            //     state
+            //         .config
+            //         .walls
+            //         .push(shared::Wall::new(shared::WallType::basic_circle(
+            //             state.config.rendering.width,
+            //             state.config.rendering.height,
+            //         )));
+            //     state.async_render(false)?;
+            //     Ok(())
+            // })
         }
     );
 
@@ -909,6 +920,7 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
         .expect("get Canvas")
         .dyn_into::<web_sys::HtmlElement>()?;
     let cursor = match (ui.hovered, &ui.selection) {
+        (_, Some(Selection::Adding(_))) => "crosshair",
         (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
         (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
         (_, Some(Selection::Pan { .. })) => "pointer",
@@ -968,6 +980,26 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                 let pos = mouse_pos(&state.config.rendering, &evt);
                 use std::ops::Deref;
                 evt.deref().prevent_default();
+
+                if let Some(Selection::Adding(kind)) = &mut ui.selection {
+                    state.config.walls.push(Wall::new(
+                        match kind {
+                            AddKindName::Light => unimplemented!(),
+                            AddKindName::Line => shared::WallType::line(
+                                pos.clone(),
+                                pos
+                            ),
+                            AddKindName::Circle => shared::WallType::circle(
+                                pos.clone(), 5.0, -shared::line::PI, shared::line::PI),
+                            AddKindName::Parabola => shared::WallType::parabola(
+                                pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
+                        }
+                    ));
+                    ui.selection = Some(Selection::Wall(state.config.walls.len() - 1, Some((Handle::Handle(0), pos))));
+                    update_cursor(ui)?;
+                    return draw(ui, state)
+                }
+
                 match find_collision(&state.config.walls, &pos) {
                     None => {
                         ui.selection = Some(Selection::Pan {

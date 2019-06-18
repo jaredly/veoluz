@@ -9,6 +9,7 @@ use ncollide2d::query::RayIntersection;
 use ncollide2d::shape::FeatureId;
 use ncollide2d::shape::Segment;
 use std::f32::consts::PI;
+use line::float;
 
 use nalgebra::{Point2, Vector2};
 
@@ -42,6 +43,31 @@ impl WallType {
 
     pub fn basic_circle(width: usize, height: usize) -> WallType {
         WallType::Circle(Ball::new(50.0), Point2::new(0.0, 200.0), -PI, PI)
+    }
+
+    pub fn line(p1: Point2<line::float>, p2: Point2<line::float>) -> Self {
+        WallType::Line(Segment::new(p1, p2))
+    }
+
+    pub fn circle(center: Point2<line::float>, radius: line::float, t0: line::float, t1: line::float) -> Self {
+        WallType::Circle(
+            Ball::new(radius),
+            center,
+            t0,
+            t1
+        )
+    }
+
+    pub fn parabola(center: Point2<float>, focus_offset: Vector2<float>, left: float, right: float) -> Self {
+        WallType::Parabola(Parabola {
+            a: 1.0 / (4.0 * focus_offset.norm_squared().sqrt()),
+            left,
+            right,
+            transform: nalgebra::Isometry2::from_parts(
+                nalgebra::Translation2::from(center.coords),
+                nalgebra::UnitComplex::from_angle(focus_offset.y.atan2(focus_offset.x)),
+            ),
+        })
     }
 
     pub fn rand_line(width: usize, height: usize) -> WallType {
@@ -338,12 +364,12 @@ impl WallType {
                 0 => {
                     let d = pos - *center;
                     *t0 = d.y.atan2(d.x);
-                    *circle = Ball::new(d.norm_squared().sqrt());
+                    *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
                 }
                 1 => {
                     let d = pos - *center;
                     *t1 = d.y.atan2(d.x);
-                    *circle = Ball::new(d.norm_squared().sqrt());
+                    *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
                 }
                 _ => (),
             },
