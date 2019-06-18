@@ -89,7 +89,8 @@ const setup = async (wasm) => {
 
 import('./pkg/zenphoton')
     .then(wasm => {
-        wasm.run();
+        import('./ui/App.bs.js');
+        // wasm.run();
         setup(wasm).catch(err => {
             console.log('Failed')
             console.error(err)

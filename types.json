@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "engines": {
+    "Js.Json": {
+      "output": "ui/TypeSerde.re",
+      "helpers": "TypeHelpers"
+    }
+  },
+  "entries": [
+    {
+      "file": "ui/Types.re",
+      "type": "directory"
+    }
+  ],
+  "custom": [],
+  "milkSchemaVersion": 1
+}

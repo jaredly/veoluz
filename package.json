@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "webpack",
+    "bs": "bsb -make-world",
     "serve": "webpack-dev-server"
   },
   "devDependencies": {

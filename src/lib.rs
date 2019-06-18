@@ -49,6 +49,9 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
     Ok(worker)
 }
 
+// #{wasm_bindgen}
+// pub fn 
+
 #[wasm_bindgen]
 pub fn save() -> JsValue {
     state::with(|state| JsValue::from_serde(&state.config).unwrap())
@@ -100,6 +103,7 @@ pub fn restore(config: &JsValue) {
                 state.reset_buffer();
             }
             state.clear();
+            state.maybe_save_history();
             state.async_render(false)
         } else {
             Ok(())

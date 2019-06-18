@@ -85,7 +85,7 @@ impl Config {
             lights: vec![LightSource {
                 kind: LightKind::Point {
                     origin: Point2::origin(),
-                    offset: 0.0,
+                    offset: 50.0,
                     t0: -PI,
                     t1: PI,
                 },
