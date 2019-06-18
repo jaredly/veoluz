@@ -9,12 +9,13 @@ use line::float;
 
 use nalgebra::{Point2, Vector2};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Handle {
     Handle(usize),
     Move(Vector2<float>),
 }
 
+#[derive(Clone, Debug)]
 pub enum Selection {
     Wall(usize, Option<(Handle, Point2<float>)>),
     Light(usize, bool),
@@ -29,6 +30,7 @@ pub struct UiState {
     show_lasers: bool,
     mouse_over: bool,
     hovered: Option<(usize, Handle)>,
+    last_mouse_pos: Point2<float>,
 }
 
 lazy_static! {
@@ -37,6 +39,7 @@ lazy_static! {
         show_lasers: false,
         mouse_over: false,
         hovered: None,
+        last_mouse_pos: Point2::new(0.0, 0.0)
     });
 }
 
@@ -802,6 +805,28 @@ extern "C" {
     fn prevent_default(this: &WheelEvent);
 }
 
+fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
+    let document = web_sys::window()
+        .expect("window")
+        .document()
+        .expect("Document");
+    let canvas = document
+        .get_element_by_id("drawing")
+        .expect("get Canvas")
+        .dyn_into::<web_sys::HtmlElement>()?;
+    let cursor = match (ui.hovered, &ui.selection) {
+            (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
+            (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
+            (_, Some(Selection::Pan{..})) => "pointer",
+            _ => "default",
+        };
+    // log!("cursor {} - {:?} - {:?}", cursor, ui.hovered, ui.selection);
+    canvas.style().set_property(
+        "cursor",
+        cursor,
+    )
+}
+
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -848,6 +873,8 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         crate::state::try_with(|state| {
             use_ui(|ui| {
                 let pos = mouse_pos(&state.config.rendering, &evt);
+                use std::ops::Deref;
+                evt.deref().prevent_default();
                 match find_collision(&state.config.walls, &pos) {
                     None => {
                         ui.selection = Some(Selection::Pan {grab: pos, center: state.config.rendering.center});
@@ -889,17 +916,36 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         }
                     }
                 };
+                update_cursor(ui)?;
                 draw(ui, state)
             })
         })
     });
 
+    listen!(web_sys::window().unwrap(), "keydown", web_sys::KeyboardEvent, move |evt: web_sys::KeyboardEvent| {
+        if evt.key() == "Meta" {
+
+            try_state_ui(|state,ui| {
+                match &mut ui.selection {
+                    Some(Selection::Wall(wid, Some((handle, orig)))) => {
+                        *orig = ui.last_mouse_pos.clone();
+                    },
+                    _ => ()
+                };
+                Ok(())
+            })
+        }
+        // log!("Key {}", evt.key());
+    });
+
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
+        // evt.prevent_default();
         crate::state::try_with(|state| {
             use_ui(|ui| -> Result<(), JsValue> {
+                let mut pos = mouse_pos(&state.config.rendering, &evt);
+                ui.last_mouse_pos = pos.clone();
                 match &mut ui.selection {
                     Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
-                        let mut pos = mouse_pos(&state.config.rendering, &evt);
                         if evt.meta_key() {
                             pos = *original_point + (pos - *original_point) / 10.0;
                         }
@@ -907,7 +953,6 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         state.async_render(true)
                     }
                     Some(Selection::Wall(wid, Some((Handle::Handle(id), original_point)))) => {
-                        let mut pos = mouse_pos(&state.config.rendering, &evt);
                         if evt.meta_key() {
                             pos = *original_point + (pos - *original_point) / 10.0;
                         }
@@ -917,14 +962,14 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         state.async_render(true)
                     }
                     Some(Selection::Pan{grab, center}) => {
-                        let pos = mouse_pos(&state.config.rendering, &evt) + (*center - state.config.rendering.center);
+                        let pos = pos + (*center - state.config.rendering.center);
                         state.config.rendering.center = *center - (pos - *grab);
                         state.async_render(true)
                     }
                     Some(Selection::Multiple(wids, pdiffs)) => {
                         match pdiffs {
                             Some(pdiffs) => {
-                                let pos = mouse_pos(&state.config.rendering, &evt);
+                                // let pos = mouse_pos(&state.config.rendering, &evt);
                                 for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
                                     state.config.walls[*wid].kind.set_point_base(pos + pdiff);
                                 }
@@ -941,23 +986,9 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         Ok(())
                     }
                 }?;
-                let document = web_sys::window()
-                    .expect("window")
-                    .document()
-                    .expect("Document");
-                let canvas = document
-                    .get_element_by_id("drawing")
-                    .expect("get Canvas")
-                    .dyn_into::<web_sys::HtmlElement>()?;
-                canvas.style().set_property(
-                    "cursor",
-                    match (ui.hovered, &ui.selection) {
-                        (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
-                        (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
-                        (_, Some(Selection::Pan{..})) => "drag",
-                        _ => "default",
-                    },
-                )?;
+                use std::ops::Deref;
+                evt.deref().prevent_default();
+                update_cursor(ui)?;
                 draw(ui, state)
             })?;
             Ok(())
