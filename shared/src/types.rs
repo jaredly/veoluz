@@ -22,33 +22,44 @@ pub struct Properties {
     pub refraction: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
-pub struct Wall {
-    pub kind: WallType,
-    pub properties: Properties,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub struct LightSource {
-    pub kind: LightKind,
-    // something between 0 and 1 I think?
-    pub brightness: float,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub enum LightKind {
-    Point {
-        // TODO add an "offset" number that makes it start a bit out from the center
-        // which will reduce the "bright point" in the middle, and probably make a cool
-        // dark circle in the center too
-        origin: Point2<float>,
-        t0: float,
-        t1: float,
-    },
-}
-
-mod v0 {
+pub mod v0 {
     use super::*;
+
+    #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+    pub struct Wall {
+        pub kind: WallType,
+        pub properties: Properties,
+        // TODO add "hide"
+    }
+
+    #[derive(Serialize, Deserialize, Clone, PartialEq)]
+    pub enum LightKind {
+        Point {
+            // TODO add an "offset" number that makes it start a bit out from the center
+            // which will reduce the "bright point" in the middle, and probably make a cool
+            // dark circle in the center too
+            origin: Point2<float>,
+            t0: float,
+            t1: float,
+        },
+    }
+
+    impl LightKind {
+        pub fn translate(&mut self, by: &Vector2<float>) {
+            match self {
+                LightKind::Point { origin, .. } => {
+                    *origin = *origin + by;
+                }
+            }
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, PartialEq)]
+    pub struct LightSource {
+        pub kind: LightKind,
+        // something between 0 and 1 I think?
+        pub brightness: float,
+    }
 
     #[derive(Serialize, Deserialize, Clone, PartialEq)]
     pub struct Config {
@@ -65,8 +76,8 @@ pub mod v1 {
 
     #[derive(Serialize, Deserialize, Clone, PartialEq)]
     pub struct Config {
-        pub walls: Vec<Wall>,
-        pub lights: Vec<LightSource>,
+        pub walls: Vec<v0::Wall>,
+        pub lights: Vec<v0::LightSource>,
         pub reflection: u8,
         pub width: usize,
         pub height: usize,
@@ -102,8 +113,8 @@ pub mod v2 {
 
     #[derive(Serialize, Deserialize, Clone, PartialEq)]
     pub struct Config {
-        pub walls: Vec<Wall>,
-        pub lights: Vec<LightSource>,
+        pub walls: Vec<v0::Wall>,
+        pub lights: Vec<v0::LightSource>,
         pub reflection: u8,
         pub width: usize,
         pub height: usize,
@@ -191,6 +202,111 @@ impl Rendering {
     }
 }
 
+pub mod v3 {
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Clone, PartialEq)]
+    pub struct Config {
+        pub walls: Vec<v0::Wall>,
+        pub lights: Vec<v0::LightSource>,
+        pub transform: Transform,
+        pub rendering: Rendering,
+    }
+
+    pub fn from_v2(
+        v2::Config {
+            walls,
+            lights,
+            reflection,
+            exposure,
+            width,
+            height,
+        }: v2::Config,
+    ) -> Config {
+        let translate = Vector2::new(-(width as f32) / 2.0, -(height as f32) / 2.0);
+        Config {
+            walls: walls
+                .into_iter()
+                .map(|mut wall| {
+                    wall.kind.translate(&translate);
+                    wall
+                })
+                .collect(),
+            lights: lights
+                .into_iter()
+                .map(|mut light| {
+                    light.kind.translate(&translate);
+                    light
+                })
+                .collect(),
+            transform: Transform {
+                rotational_symmetry: reflection,
+                reflection: false,
+            },
+            rendering: Rendering {
+                width,
+                height,
+                exposure,
+                coloration: Coloration::default(),
+                center: Point2::origin(),
+                zoom: 1.0,
+            },
+        }
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+pub struct Wall {
+    pub kind: WallType,
+    pub properties: Properties,
+    pub hide: bool,
+}
+
+impl From<v0::Wall> for Wall {
+    fn from(other: v0::Wall) -> Self {
+        Wall {
+            kind: other.kind.clone(),
+            properties: other.properties.clone(),
+            hide: false,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub enum LightKind {
+    Point {
+        offset: float,
+        origin: Point2<float>,
+        t0: float,
+        t1: float,
+    },
+}
+
+impl From<v0::LightKind> for LightKind {
+    fn from(other: v0::LightKind) -> Self {
+        match other {
+            v0::LightKind::Point {origin, t0, t1} => LightKind::Point{origin, offset: 0.0, t0, t1}
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct LightSource {
+    pub kind: LightKind,
+    // something between 0 and 1 I think?
+    pub brightness: float,
+}
+
+impl From<v0::LightSource> for LightSource {
+    fn from(other: v0::LightSource) -> Self {
+        LightSource {
+            kind: other.kind.into(),
+            brightness: other.brightness,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     pub walls: Vec<Wall>,
@@ -199,43 +315,18 @@ pub struct Config {
     pub rendering: Rendering,
 }
 
-pub fn from_v2(
-    v2::Config {
+pub fn from_v3(
+    v3::Config {
         walls,
         lights,
-        reflection,
-        exposure,
-        width,
-        height,
-    }: v2::Config,
+        transform,
+        rendering,
+    }: v3::Config,
 ) -> Config {
-    let translate = Vector2::new(-(width as f32) / 2.0, -(height as f32) / 2.0);
     Config {
-        walls: walls
-            .into_iter()
-            .map(|mut wall| {
-                wall.kind.translate(&translate);
-                wall
-            })
-            .collect(),
-        lights: lights
-            .into_iter()
-            .map(|mut light| {
-                light.kind.translate(&translate);
-                light
-            })
-            .collect(),
-        transform: Transform {
-            rotational_symmetry: reflection,
-            reflection: false,
-        },
-        rendering: Rendering {
-            width,
-            height,
-            exposure,
-            coloration: Coloration::default(),
-            center: Point2::origin(),
-            zoom: 1.0,
-        },
+        walls: walls.into_iter().map(|wall| wall.into()).collect(),
+        lights: lights.into_iter().map(|light| light.into()).collect(),
+        transform,
+        rendering,
     }
 }

@@ -59,14 +59,21 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
         .into_serde::<shared::Config>()
         .or_else(|_| {
             encoded
+                .into_serde::<shared::v3::Config>()
+                .map(shared::from_v3)
+        })
+        .or_else(|_| {
+            encoded
                 .into_serde::<shared::v2::Config>()
-                .map(shared::from_v2)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
         })
         .or_else(|_| {
             encoded
                 .into_serde::<shared::v1::Config>()
                 .map(shared::v2::from_v1)
-                .map(shared::from_v2)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
         })
 }
 

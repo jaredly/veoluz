@@ -51,9 +51,13 @@ impl LightKind {
     #[inline]
     pub fn spawn(&self, direction: line::float) -> Ray<line::float> {
         match self {
-            LightKind::Point { origin, t0, t1 } => {
+            LightKind::Point { offset, origin, t0, t1 } => {
                 let angle = direction * (t1 - t0) + t0;
-                Ray::new(*origin, Vector2::new(angle.cos(), angle.sin()))
+                let mut ray = Ray::new(*origin, Vector2::new(angle.cos(), angle.sin()));
+                if *offset != 0.0 {
+                    ray.origin = ray.point_at(*offset)
+                }
+                ray
             }
         }
     }
@@ -81,6 +85,7 @@ impl Config {
             lights: vec![LightSource {
                 kind: LightKind::Point {
                     origin: Point2::origin(),
+                    offset: 0.0,
                     t0: -PI,
                     t1: PI,
                 },
@@ -173,6 +178,7 @@ impl Wall {
     pub fn new(kind: WallType) -> Wall {
         Wall {
             kind,
+            hide: false,
             properties: Properties {
                 reflect: 1.0,
                 absorb: 0.0,
@@ -185,6 +191,7 @@ impl Wall {
     pub fn rough(kind: WallType) -> Wall {
         Wall {
             kind,
+            hide: false,
             properties: Properties {
                 reflect: 1.0,
                 absorb: 0.0,
@@ -197,6 +204,7 @@ impl Wall {
     pub fn block(kind: WallType) -> Wall {
         Wall {
             kind,
+            hide: false,
             properties: Properties {
                 reflect: 0.0,
                 absorb: 1.0,
@@ -209,6 +217,7 @@ impl Wall {
     pub fn mirror(kind: WallType) -> Wall {
         Wall {
             kind,
+            hide: false,
             properties: Properties {
                 reflect: 1.0,
                 absorb: 0.0,
@@ -221,6 +230,7 @@ impl Wall {
     pub fn transparent(kind: WallType, refraction: f32) -> Wall {
         Wall {
             kind,
+            hide: false,
             properties: Properties {
                 reflect: 0.0,
                 absorb: 0.0,

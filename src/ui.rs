@@ -15,10 +15,18 @@ pub enum Handle {
     Move(Vector2<float>),
 }
 
+pub enum AddKindName {
+    Light,
+    Circle,
+    Line,
+    Parabola,
+}
+
 #[derive(Clone, Debug)]
 pub enum Selection {
     Wall(usize, Option<(Handle, Point2<float>)>),
     Light(usize, bool),
+    // Adding(AddKindName, Option<Point2<float>>),
     Pan {
         grab: Point2<float>,
         center: Point2<float>,
@@ -263,11 +271,19 @@ extern "C" {
 }
 
 pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
-    bincode::deserialize::<shared::Config>(&encoded).or_else(|_| {
-        bincode::deserialize::<shared::v1::Config>(&encoded)
-            .map(shared::v2::from_v1)
-            .map(shared::from_v2)
-    })
+    bincode::deserialize::<shared::Config>(&encoded)
+        .or_else(|_| bincode::deserialize::<shared::v3::Config>(&encoded).map(shared::from_v3))
+        .or_else(|_| {
+            bincode::deserialize::<shared::v2::Config>(&encoded)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
+        })
+        .or_else(|_| {
+            bincode::deserialize::<shared::v1::Config>(&encoded)
+                .map(shared::v2::from_v1)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
+        })
 }
 
 pub fn get_url_config() -> Option<shared::Config> {
@@ -948,6 +964,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             use_ui(|ui| {
+                state.maybe_save_history();
                 let pos = mouse_pos(&state.config.rendering, &evt);
                 use std::ops::Deref;
                 evt.deref().prevent_default();
