@@ -20,7 +20,7 @@ pub enum Selection {
     Wall(usize, Option<(Handle, Point2<float>)>),
     Light(usize, bool),
     Pan {grab: Point2<float>, center: Point2<float>},
-    Multiple(Vec<usize>, Option<Vec<Vector2<float>>>)
+    Multiple(Vec<usize>, Option<(Vec<Vector2<float>>, Point2<float>)>)
 }
 
 // #[derive(Clone)]
@@ -893,7 +893,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                             let pdiffs = walls.iter().map(|wid|
                                 state.config.walls[*wid].kind.point_base() - pos
                             ).collect();
-                            ui.selection = Some(Selection::Multiple(walls, Some(pdiffs)));
+                            ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
                             hide_wall_ui()?;
                         } else if let Some(Selection::Multiple(walls, _)) = &ui.selection {
                             if walls.contains(&wid) {
@@ -902,7 +902,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                 let pdiffs = walls.iter().map(|wid|
                                     state.config.walls[*wid].kind.point_base() - pos
                                 ).collect();
-                                ui.selection = Some(Selection::Multiple(walls, Some(pdiffs)));
+                                ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
                                 hide_wall_ui()?;
                             } else {
                                 ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
@@ -968,8 +968,11 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     }
                     Some(Selection::Multiple(wids, pdiffs)) => {
                         match pdiffs {
-                            Some(pdiffs) => {
+                            Some((pdiffs, original_point)) => {
                                 // let pos = mouse_pos(&state.config.rendering, &evt);
+                                if evt.meta_key() {
+                                    pos = *original_point + (pos - *original_point) / 10.0;
+                                }
                                 for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
                                     state.config.walls[*wid].kind.set_point_base(pos + pdiff);
                                 }
