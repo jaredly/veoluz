@@ -7,6 +7,7 @@ module Types1 = {
       id: string,
       tags: _Belt_SetString__t,
       children: array(string),
+      parent: option(string),
     };
 };
 let currentVersion = 1;
@@ -55,70 +56,109 @@ module Version1 = {
     record =>
       switch (Js.Json.classify(record)) {
       | JSONObject(dict) =>
-        let inner = attr_children => {
-          let inner = attr_tags => {
-            let inner = attr_id =>
-              Ok(
-                {id: attr_id, tags: attr_tags, children: attr_children}: _Types__scene,
-              );
-            switch (Js.Dict.get(dict, "id")) {
-            | None => Belt.Result.Error(["No attribute 'id'"])
+        let inner = attr_parent => {
+          let inner = attr_children => {
+            let inner = attr_tags => {
+              let inner = attr_id =>
+                Ok(
+                  {
+                    id: attr_id,
+                    tags: attr_tags,
+                    children: attr_children,
+                    parent: attr_parent,
+                  }: _Types__scene,
+                );
+              switch (Js.Dict.get(dict, "id")) {
+              | None => Belt.Result.Error(["No attribute 'id'"])
+              | Some(json) =>
+                switch (
+                  (
+                    string =>
+                      switch (Js.Json.classify(string)) {
+                      | JSONString(string) => Belt.Result.Ok(string)
+                      | _ => Error(["expected a string"])
+                      }
+                  )(
+                    json,
+                  )
+                ) {
+                | Belt.Result.Error(error) =>
+                  Belt.Result.Error(["attribute 'id'", ...error])
+                | Ok(data) => inner(data)
+                }
+              };
+            };
+            switch (Js.Dict.get(dict, "tags")) {
+            | None => Belt.Result.Error(["No attribute 'tags'"])
             | Some(json) =>
-              switch (
-                (
-                  string =>
-                    switch (Js.Json.classify(string)) {
-                    | JSONString(string) => Belt.Result.Ok(string)
-                    | _ => Error(["expected a string"])
-                    }
-                )(
-                  json,
-                )
-              ) {
+              switch (deserialize_Belt_SetString____t(json)) {
               | Belt.Result.Error(error) =>
-                Belt.Result.Error(["attribute 'id'", ...error])
+                Belt.Result.Error(["attribute 'tags'", ...error])
               | Ok(data) => inner(data)
               }
             };
           };
-          switch (Js.Dict.get(dict, "tags")) {
-          | None => Belt.Result.Error(["No attribute 'tags'"])
+          switch (Js.Dict.get(dict, "children")) {
+          | None => Belt.Result.Error(["No attribute 'children'"])
           | Some(json) =>
-            switch (deserialize_Belt_SetString____t(json)) {
+            switch (
+              (
+                (
+                  (transformer, array) =>
+                    switch (Js.Json.classify(array)) {
+                    | JSONArray(items) =>
+                      let rec loop = (i, collected, items) =>
+                        switch (items) {
+                        | [] => Belt.Result.Ok(Belt.List.reverse(collected))
+                        | [one, ...rest] =>
+                          switch (transformer(one)) {
+                          | Belt.Result.Error(error) =>
+                            Belt.Result.Error([
+                              "list element " ++ string_of_int(i),
+                              ...error,
+                            ])
+                          | Ok(value) =>
+                            loop(i + 1, [value, ...collected], rest)
+                          }
+                        };
+                      switch (loop(0, [], Belt.List.fromArray(items))) {
+                      | Belt.Result.Error(error) => Belt.Result.Error(error)
+                      | Ok(value) => Ok(Belt.List.toArray(value))
+                      };
+                    | _ => Belt.Result.Error(["expected an array"])
+                    }
+                )(
+                  string =>
+                  switch (Js.Json.classify(string)) {
+                  | JSONString(string) => Belt.Result.Ok(string)
+                  | _ => Error(["expected a string"])
+                  }
+                )
+              )(
+                json,
+              )
+            ) {
             | Belt.Result.Error(error) =>
-              Belt.Result.Error(["attribute 'tags'", ...error])
+              Belt.Result.Error(["attribute 'children'", ...error])
             | Ok(data) => inner(data)
             }
           };
         };
-        switch (Js.Dict.get(dict, "children")) {
-        | None => Belt.Result.Error(["No attribute 'children'"])
+        switch (Js.Dict.get(dict, "parent")) {
+        | None => inner(None)
         | Some(json) =>
           switch (
             (
               (
-                (transformer, array) =>
-                  switch (Js.Json.classify(array)) {
-                  | JSONArray(items) =>
-                    let rec loop = (i, collected, items) =>
-                      switch (items) {
-                      | [] => Belt.Result.Ok(Belt.List.reverse(collected))
-                      | [one, ...rest] =>
-                        switch (transformer(one)) {
-                        | Belt.Result.Error(error) =>
-                          Belt.Result.Error([
-                            "list element " ++ string_of_int(i),
-                            ...error,
-                          ])
-                        | Ok(value) =>
-                          loop(i + 1, [value, ...collected], rest)
-                        }
-                      };
-                    switch (loop(0, [], Belt.List.fromArray(items))) {
-                    | Belt.Result.Error(error) => Belt.Result.Error(error)
-                    | Ok(value) => Ok(Belt.List.toArray(value))
-                    };
-                  | _ => Belt.Result.Error(["expected an array"])
+                (transformer, option) =>
+                  switch (Js.Json.classify(option)) {
+                  | JSONNull => Belt.Result.Ok(None)
+                  | _ =>
+                    switch (transformer(option)) {
+                    | Belt.Result.Error(error) =>
+                      Belt.Result.Error(["optional value", ...error])
+                    | Ok(value) => Ok(Some(value))
+                    }
                   }
               )(
                 string =>
@@ -132,7 +172,7 @@ module Version1 = {
             )
           ) {
           | Belt.Result.Error(error) =>
-            Belt.Result.Error(["attribute 'children'", ...error])
+            Belt.Result.Error(["attribute 'parent'", ...error])
           | Ok(data) => inner(data)
           }
         };
@@ -168,6 +208,21 @@ module Version1 = {
               )
             )(
               record.children,
+            ),
+          ),
+          (
+            "parent",
+            (
+              (
+                transformer =>
+                  fun
+                  | Some(inner) => transformer(inner)
+                  | None => Js.Json.null
+              )(
+                Js.Json.string,
+              )
+            )(
+              record.parent,
             ),
           ),
         |]),

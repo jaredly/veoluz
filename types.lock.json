@@ -152,6 +152,26 @@
                         ]
                       ]
                     ]
+                  ],
+                  [
+                    "parent",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "option"
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Builtin",
+                            "string"
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
                   ]
                 ]
               ]
