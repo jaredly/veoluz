@@ -41,12 +41,7 @@ impl WallType {
     }
 
     pub fn basic_circle(width: usize, height: usize) -> WallType {
-        WallType::Circle(
-            Ball::new(50.0),
-            Point2::new(0.0, 200.0),
-            -PI,
-            PI,
-        )
+        WallType::Circle(Ball::new(50.0), Point2::new(0.0, 200.0), -PI, PI)
     }
 
     pub fn rand_line(width: usize, height: usize) -> WallType {
@@ -139,19 +134,18 @@ impl WallType {
                 let mut b = wall.b().clone();
                 a.x -= (a.x - x) * 2.0;
                 b.x -= (b.x - x) * 2.0;
-                *wall = Segment::new(
-                    b, a
-                )
+                *wall = Segment::new(b, a)
             }
             WallType::Circle(_ball, center, t0, t1) => {
                 center.x -= (center.x - x) * 2.0;
-                let t1n = crate::arc::angle_norm(-(*t0 + PI/2.0) - PI / 2.0);
-                let t0n = crate::arc::angle_norm(-(*t1 + PI/2.0) - PI / 2.0);
+                let t1n = crate::arc::angle_norm(-(*t0 + PI / 2.0) - PI / 2.0);
+                let t0n = crate::arc::angle_norm(-(*t1 + PI / 2.0) - PI / 2.0);
                 *t0 = t0n;
                 *t1 = t1n;
             }
             WallType::Parabola(parabola) => {
-                parabola.transform.translation.vector.x -= (parabola.transform.translation.vector.x - x) * 2.0;
+                parabola.transform.translation.vector.x -=
+                    (parabola.transform.translation.vector.x - x) * 2.0;
                 let mut angle = parabola.transform.rotation.angle();
                 // angle = crate::arc::angle_norm(-(angle + PI/2.0) - PI / 2.0);
                 angle = crate::arc::angle_norm(-angle);
@@ -162,8 +156,7 @@ impl WallType {
                 let (l, r) = (parabola.left, parabola.right);
                 parabola.left = -r;
                 parabola.right = -l;
-                parabola.transform.rotation =
-                    nalgebra::UnitComplex::from_angle(angle);
+                parabola.transform.rotation = nalgebra::UnitComplex::from_angle(angle);
             }
         }
     }

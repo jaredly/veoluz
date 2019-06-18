@@ -15,11 +15,11 @@ fn rand() -> f32 {
     rand::random::<f32>()
 }
 
-fn xy(point: &Point2<line::float>, (zoom, dx, dy): (float, float, float)) -> (line::float, line::float) {
-    (
-        point.x * zoom + dx,
-        point.y * zoom + dy
-    )
+fn xy(
+    point: &Point2<line::float>,
+    (zoom, dx, dy): (float, float, float),
+) -> (line::float, line::float) {
+    (point.x * zoom + dx, point.y * zoom + dy)
 }
 
 #[inline]
@@ -186,7 +186,7 @@ pub fn run_ray(
     walls: &[Wall],
     boundaries: &[Segment<line::float>],
     brightness_data: &mut [line::uint],
-    transform: (f32, f32, f32)
+    transform: (f32, f32, f32),
 ) -> bool {
     let max_brightness = 100.0;
     match find_collision(walls, &ray) {
@@ -230,25 +230,13 @@ pub fn boundaries(config: &Config) -> Vec<Segment<line::float>> {
     let h = br.y - tl.y;
     vec![
         // left
-        Segment::new(
-            tl,
-            tl + Vector2::new(0.0, h)
-        ),
+        Segment::new(tl, tl + Vector2::new(0.0, h)),
         // right
-        Segment::new(
-            tl + Vector2::new(w, 0.0),
-            br
-        ),
+        Segment::new(tl + Vector2::new(w, 0.0), br),
         // bottom
-        Segment::new(
-            tl + Vector2::new(0.0, h),
-            br
-        ),
+        Segment::new(tl + Vector2::new(0.0, h), br),
         // top
-        Segment::new(
-            tl,
-            tl + Vector2::new(w, 0.0)
-        ),
+        Segment::new(tl, tl + Vector2::new(w, 0.0)),
     ]
 }
 
@@ -280,7 +268,7 @@ pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
                     &walls,
                     &boundaries,
                     &mut brightness_data,
-                    transform
+                    transform,
                 ) {
                     break;
                 }
@@ -320,7 +308,7 @@ pub fn calculate(config: &Config, rays: usize, scale: u8) -> Vec<line::uint> {
                     &walls,
                     &boundaries,
                     &mut brightness_data,
-                    transform
+                    transform,
                 ) {
                     break;
                 }
@@ -376,7 +364,7 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
                 &walls,
                 &boundaries,
                 &mut brightness_data,
-                transform
+                transform,
             ) {
                 break;
             }

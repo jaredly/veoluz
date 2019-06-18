@@ -58,7 +58,10 @@ pub fn process(message: JsValue) -> Result<Response, JsValue> {
     let (mut data, rays) = shared::calculate::timed(&message.config, message.count, 100.0);
     // log!("Creating a bitmap {}x{}, bright size {}", config.width, config.height, data.len());
 
-    Ok(Response { data: Clamped(to_le(&mut data).to_vec()), rays })
+    Ok(Response {
+        data: Clamped(to_le(&mut data).to_vec()),
+        rays,
+    })
 }
 
 fn set_panic_hook() {

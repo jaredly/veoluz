@@ -160,18 +160,12 @@ impl Rendering {
 
     pub fn transform_point(&self, point: &Point2<float>) -> Point2<float> {
         let (zoom, dx, dy) = self.transform();
-        Point2::new(
-            dx + point.x * zoom,
-            dy + point.y * zoom
-        )
+        Point2::new(dx + point.x * zoom, dy + point.y * zoom)
     }
 
     pub fn inverse_transform_point(&self, point: &Point2<float>) -> Point2<float> {
         let (zoom, dx, dy) = self.transform();
-        Point2::new(
-            (point.x - dx) / zoom,
-            (point.y - dy) / zoom,
-        )
+        Point2::new((point.x - dx) / zoom, (point.y - dy) / zoom)
     }
 }
 

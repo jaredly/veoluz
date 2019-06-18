@@ -27,8 +27,11 @@ impl From<shared::Config> for State {
             render_id: 0,
             last_rendered: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
-            image_data: web_sys::ImageData::new_with_sw(config.rendering.width as u32, config.rendering.height as u32)
-                .expect("Can't make an imagedata"),
+            image_data: web_sys::ImageData::new_with_sw(
+                config.rendering.width as u32,
+                config.rendering.height as u32,
+            )
+            .expect("Can't make an imagedata"),
             buffer: vec![0_u32; config.rendering.width * config.rendering.height],
             workers: vec![],
             history: vec![config.clone()],
@@ -73,7 +76,10 @@ impl State {
     pub fn undo(&mut self) -> Result<(), JsValue> {
         log!("Undo {} {}", self.history.len(), self.history_index);
         self.history_index = (self.history_index + 1).min(self.history.len() - 1);
-        if let Some(config) = self.history.get(self.history.len() - self.history_index - 1) {
+        if let Some(config) = self
+            .history
+            .get(self.history.len() - self.history_index - 1)
+        {
             self.config = config.clone();
             self.async_render(false)?;
         }
@@ -83,11 +89,14 @@ impl State {
     pub fn redo(&mut self) -> Result<(), JsValue> {
         if self.history_index == 0 {
             log!("nothing to redo");
-            return Ok(())
+            return Ok(());
         }
         log!("redo");
         self.history_index = (self.history_index - 1).max(0);
-        if let Some(config) = self.history.get(self.history.len() - self.history_index - 1) {
+        if let Some(config) = self
+            .history
+            .get(self.history.len() - self.history_index - 1)
+        {
             self.config = config.clone();
             self.async_render(false)?;
         }
@@ -97,11 +106,21 @@ impl State {
     pub fn maybe_save_history(&mut self) {
         log!("saving history");
         // If the lastest is the same
-        if self.history_index == 0 && self.history.last().map_or(false, |last| *last == self.config) {
+        if self.history_index == 0
+            && self
+                .history
+                .last()
+                .map_or(false, |last| *last == self.config)
+        {
             return;
         }
-        if self.history_index != 0 && self.history.get(self.history.len() - self.history_index - 1).map_or(false, |last| *last == self.config) {
-            return
+        if self.history_index != 0
+            && self
+                .history
+                .get(self.history.len() - self.history_index - 1)
+                .map_or(false, |last| *last == self.config)
+        {
+            return;
         }
 
         log!("ok");
@@ -115,7 +134,7 @@ impl State {
         self.history.push(self.config.clone());
         if self.history.len() > 500 {
             // trim to 500 len
-            self.history = self.history[self.history.len()-500..].to_vec();
+            self.history = self.history[self.history.len() - 500..].to_vec();
         }
         // }
     }
@@ -188,7 +207,7 @@ impl State {
                 // Ignore it probably
                 return Ok(());
             }
-            _ => ()
+            _ => (),
         }
 
         self.last_rendered_config = Some(self.config.clone());

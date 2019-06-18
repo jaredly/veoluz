@@ -55,18 +55,19 @@ pub fn save() -> JsValue {
 }
 
 pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_json::Error> {
-    encoded.into_serde::<shared::Config>()
-    .or_else(|_| {
-        encoded
-            .into_serde::<shared::v2::Config>()
-            .map(shared::from_v2)
-    })
-    .or_else(|_| {
-        encoded
-            .into_serde::<shared::v1::Config>()
-            .map(shared::v2::from_v1)
-            .map(shared::from_v2)
-    })
+    encoded
+        .into_serde::<shared::Config>()
+        .or_else(|_| {
+            encoded
+                .into_serde::<shared::v2::Config>()
+                .map(shared::from_v2)
+        })
+        .or_else(|_| {
+            encoded
+                .into_serde::<shared::v1::Config>()
+                .map(shared::v2::from_v1)
+                .map(shared::from_v2)
+        })
 }
 
 #[wasm_bindgen]
@@ -75,11 +76,20 @@ pub fn restore(config: &JsValue) {
         if let Ok(config) = deserialize_jsvalue(config) {
             state.invalidate_past_renders();
             ui::reset(&config, ui)?;
-            let size_changed = config.rendering.width != state.config.rendering.width || config.rendering.height != state.config.rendering.height;
+            let size_changed = config.rendering.width != state.config.rendering.width
+                || config.rendering.height != state.config.rendering.height;
             state.config = config;
             if size_changed {
-                state.ctx.canvas().unwrap().set_width(state.config.rendering.width as u32);
-                state.ctx.canvas().unwrap().set_height(state.config.rendering.height as u32);
+                state
+                    .ctx
+                    .canvas()
+                    .unwrap()
+                    .set_width(state.config.rendering.width as u32);
+                state
+                    .ctx
+                    .canvas()
+                    .unwrap()
+                    .set_height(state.config.rendering.height as u32);
                 state.reset_buffer();
             }
             state.clear();
