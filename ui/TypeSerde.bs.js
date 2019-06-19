@@ -18,28 +18,70 @@ var deserialize_Belt_SetString____t = TypeHelpers.deserialize_Belt_SetString____
 
 var serialize_Belt_SetString____t = TypeHelpers.serialize_Belt_SetString____t;
 
-function serialize_Types____scene(record) {
-  var array = record[/* children */2];
-  var transformer = function (prim) {
-    return prim;
-  };
+function deserialize_Belt_MapString____t(valueTransformer) {
+  return (function (param) {
+      return TypeHelpers.deserialize_Belt_MapString____t(valueTransformer, param);
+    });
+}
+
+function serialize_Types____tag(record) {
   return Js_dict.fromArray(/* array */[
               /* tuple */[
                 "id",
                 record[/* id */0]
               ],
               /* tuple */[
-                "tags",
-                Curry._1(serialize_Belt_SetString____t, record[/* tags */1])
+                "color",
+                record[/* color */1]
               ],
               /* tuple */[
-                "children",
-                Belt_Array.map(array, transformer)
+                "title",
+                record[/* title */2]
               ]
             ]);
 }
 
-function deserialize_Types____scene(record) {
+function serialize_Belt_MapString____t(valueTransformer) {
+  return (function (param) {
+      return TypeHelpers.serialize_Belt_MapString____t(valueTransformer, param);
+    });
+}
+
+function serialize_Types____scene(record) {
+  var array = record[/* children */4];
+  var transformer = function (prim) {
+    return prim;
+  };
+  var param = record[/* parent */5];
+  return Js_dict.fromArray(/* array */[
+              /* tuple */[
+                "id",
+                record[/* id */0]
+              ],
+              /* tuple */[
+                "modified",
+                record[/* modified */1]
+              ],
+              /* tuple */[
+                "created",
+                record[/* created */2]
+              ],
+              /* tuple */[
+                "tags",
+                Curry._1(serialize_Belt_SetString____t, record[/* tags */3])
+              ],
+              /* tuple */[
+                "children",
+                Belt_Array.map(array, transformer)
+              ],
+              /* tuple */[
+                "parent",
+                param !== undefined ? param : null
+              ]
+            ]);
+}
+
+function deserialize_Types____tag(record) {
   var match = Js_json.classify(record);
   if (typeof match === "number" || match.tag !== 2) {
     return /* Error */Block.__(1, [/* :: */[
@@ -48,73 +90,36 @@ function deserialize_Types____scene(record) {
               ]]);
   } else {
     var dict = match[0];
-    var match$1 = Js_dict.get(dict, "children");
+    var match$1 = Js_dict.get(dict, "title");
     if (match$1 !== undefined) {
-      var transformer = function (string) {
-        var match = Js_json.classify(string);
-        if (typeof match === "number" || match.tag) {
-          return /* Error */Block.__(1, [/* :: */[
-                      "expected a string",
-                      /* [] */0
-                    ]]);
-        } else {
-          return /* Ok */Block.__(0, [match[0]]);
-        }
-      };
       var match$2 = Js_json.classify(Caml_option.valFromOption(match$1));
       var match$3;
-      if (typeof match$2 === "number" || match$2.tag !== 3) {
-        match$3 = /* Error */Block.__(1, [/* :: */[
-              "expected an array",
+      match$3 = typeof match$2 === "number" || match$2.tag ? /* Error */Block.__(1, [/* :: */[
+              "expected a string",
               /* [] */0
-            ]]);
-      } else {
-        var loop = function (_i, _collected, _items) {
-          while(true) {
-            var items = _items;
-            var collected = _collected;
-            var i = _i;
-            if (items) {
-              var match = transformer(items[0]);
-              if (match.tag) {
-                return /* Error */Block.__(1, [/* :: */[
-                            "list element " + String(i),
-                            match[0]
-                          ]]);
-              } else {
-                _items = items[1];
-                _collected = /* :: */[
-                  match[0],
-                  collected
-                ];
-                _i = i + 1 | 0;
-                continue ;
-              }
-            } else {
-              return /* Ok */Block.__(0, [Belt_List.reverse(collected)]);
-            }
-          };
-        };
-        var match$4 = loop(0, /* [] */0, Belt_List.fromArray(match$2[0]));
-        match$3 = match$4.tag ? /* Error */Block.__(1, [match$4[0]]) : /* Ok */Block.__(0, [Belt_List.toArray(match$4[0])]);
-      }
+            ]]) : /* Ok */Block.__(0, [match$2[0]]);
       if (match$3.tag) {
         return /* Error */Block.__(1, [/* :: */[
-                    "attribute 'children'",
+                    "attribute 'title'",
                     match$3[0]
                   ]]);
       } else {
-        var attr_children = match$3[0];
-        var match$5 = Js_dict.get(dict, "tags");
-        if (match$5 !== undefined) {
-          var match$6 = Curry._1(deserialize_Belt_SetString____t, Caml_option.valFromOption(match$5));
+        var attr_title = match$3[0];
+        var match$4 = Js_dict.get(dict, "color");
+        if (match$4 !== undefined) {
+          var match$5 = Js_json.classify(Caml_option.valFromOption(match$4));
+          var match$6;
+          match$6 = typeof match$5 === "number" || match$5.tag ? /* Error */Block.__(1, [/* :: */[
+                  "expected a string",
+                  /* [] */0
+                ]]) : /* Ok */Block.__(0, [match$5[0]]);
           if (match$6.tag) {
             return /* Error */Block.__(1, [/* :: */[
-                        "attribute 'tags'",
+                        "attribute 'color'",
                         match$6[0]
                       ]]);
           } else {
-            var attr_tags = match$6[0];
+            var attr_color = match$6[0];
             var match$7 = Js_dict.get(dict, "id");
             if (match$7 !== undefined) {
               var match$8 = Js_json.classify(Caml_option.valFromOption(match$7));
@@ -132,8 +137,8 @@ function deserialize_Types____scene(record) {
                 var attr_id = match$9[0];
                 return /* Ok */Block.__(0, [/* record */[
                             /* id */attr_id,
-                            /* tags */attr_tags,
-                            /* children */attr_children
+                            /* color */attr_color,
+                            /* title */attr_title
                           ]]);
               }
             } else {
@@ -145,74 +150,304 @@ function deserialize_Types____scene(record) {
           }
         } else {
           return /* Error */Block.__(1, [/* :: */[
-                      "No attribute 'tags'",
+                      "No attribute 'color'",
                       /* [] */0
                     ]]);
         }
       }
     } else {
       return /* Error */Block.__(1, [/* :: */[
-                  "No attribute 'children'",
+                  "No attribute 'title'",
                   /* [] */0
                 ]]);
     }
   }
 }
 
-function deserialize_Types____directory(value) {
-  var match = Js_json.classify(value);
-  if (typeof match === "number" || match.tag !== 3) {
+function deserialize_Types____scene(record) {
+  var match = Js_json.classify(record);
+  if (typeof match === "number" || match.tag !== 2) {
     return /* Error */Block.__(1, [/* :: */[
-                "expected an array",
+                "Expected an object",
                 /* [] */0
               ]]);
   } else {
-    var loop = function (_i, _collected, _items) {
-      while(true) {
-        var items = _items;
-        var collected = _collected;
-        var i = _i;
-        if (items) {
-          var match = deserialize_Types____scene(items[0]);
-          if (match.tag) {
+    var dict = match[0];
+    var inner = function (attr_parent) {
+      var match = Js_dict.get(dict, "children");
+      if (match !== undefined) {
+        var transformer = function (string) {
+          var match = Js_json.classify(string);
+          if (typeof match === "number" || match.tag) {
             return /* Error */Block.__(1, [/* :: */[
-                        "list element " + String(i),
-                        match[0]
+                        "expected a string",
+                        /* [] */0
                       ]]);
           } else {
-            _items = items[1];
-            _collected = /* :: */[
-              match[0],
-              collected
-            ];
-            _i = i + 1 | 0;
-            continue ;
+            return /* Ok */Block.__(0, [match[0]]);
           }
+        };
+        var match$1 = Js_json.classify(Caml_option.valFromOption(match));
+        var match$2;
+        if (typeof match$1 === "number" || match$1.tag !== 3) {
+          match$2 = /* Error */Block.__(1, [/* :: */[
+                "expected an array",
+                /* [] */0
+              ]]);
         } else {
-          return /* Ok */Block.__(0, [Belt_List.reverse(collected)]);
+          var loop = function (_i, _collected, _items) {
+            while(true) {
+              var items = _items;
+              var collected = _collected;
+              var i = _i;
+              if (items) {
+                var match = transformer(items[0]);
+                if (match.tag) {
+                  return /* Error */Block.__(1, [/* :: */[
+                              "list element " + String(i),
+                              match[0]
+                            ]]);
+                } else {
+                  _items = items[1];
+                  _collected = /* :: */[
+                    match[0],
+                    collected
+                  ];
+                  _i = i + 1 | 0;
+                  continue ;
+                }
+              } else {
+                return /* Ok */Block.__(0, [Belt_List.reverse(collected)]);
+              }
+            };
+          };
+          var match$3 = loop(0, /* [] */0, Belt_List.fromArray(match$1[0]));
+          match$2 = match$3.tag ? /* Error */Block.__(1, [match$3[0]]) : /* Ok */Block.__(0, [Belt_List.toArray(match$3[0])]);
+        }
+        if (match$2.tag) {
+          return /* Error */Block.__(1, [/* :: */[
+                      "attribute 'children'",
+                      match$2[0]
+                    ]]);
+        } else {
+          var attr_children = match$2[0];
+          var match$4 = Js_dict.get(dict, "tags");
+          if (match$4 !== undefined) {
+            var match$5 = Curry._1(deserialize_Belt_SetString____t, Caml_option.valFromOption(match$4));
+            if (match$5.tag) {
+              return /* Error */Block.__(1, [/* :: */[
+                          "attribute 'tags'",
+                          match$5[0]
+                        ]]);
+            } else {
+              var attr_tags = match$5[0];
+              var match$6 = Js_dict.get(dict, "created");
+              if (match$6 !== undefined) {
+                var match$7 = Js_json.classify(Caml_option.valFromOption(match$6));
+                var match$8;
+                match$8 = typeof match$7 === "number" || match$7.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
+                        "Expected a float",
+                        /* [] */0
+                      ]]) : /* Ok */Block.__(0, [match$7[0]]);
+                if (match$8.tag) {
+                  return /* Error */Block.__(1, [/* :: */[
+                              "attribute 'created'",
+                              match$8[0]
+                            ]]);
+                } else {
+                  var attr_created = match$8[0];
+                  var match$9 = Js_dict.get(dict, "modified");
+                  if (match$9 !== undefined) {
+                    var match$10 = Js_json.classify(Caml_option.valFromOption(match$9));
+                    var match$11;
+                    match$11 = typeof match$10 === "number" || match$10.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
+                            "Expected a float",
+                            /* [] */0
+                          ]]) : /* Ok */Block.__(0, [match$10[0]]);
+                    if (match$11.tag) {
+                      return /* Error */Block.__(1, [/* :: */[
+                                  "attribute 'modified'",
+                                  match$11[0]
+                                ]]);
+                    } else {
+                      var attr_modified = match$11[0];
+                      var match$12 = Js_dict.get(dict, "id");
+                      if (match$12 !== undefined) {
+                        var match$13 = Js_json.classify(Caml_option.valFromOption(match$12));
+                        var match$14;
+                        match$14 = typeof match$13 === "number" || match$13.tag ? /* Error */Block.__(1, [/* :: */[
+                                "expected a string",
+                                /* [] */0
+                              ]]) : /* Ok */Block.__(0, [match$13[0]]);
+                        if (match$14.tag) {
+                          return /* Error */Block.__(1, [/* :: */[
+                                      "attribute 'id'",
+                                      match$14[0]
+                                    ]]);
+                        } else {
+                          var attr_id = match$14[0];
+                          return /* Ok */Block.__(0, [/* record */[
+                                      /* id */attr_id,
+                                      /* modified */attr_modified,
+                                      /* created */attr_created,
+                                      /* tags */attr_tags,
+                                      /* children */attr_children,
+                                      /* parent */attr_parent
+                                    ]]);
+                        }
+                      } else {
+                        return /* Error */Block.__(1, [/* :: */[
+                                    "No attribute 'id'",
+                                    /* [] */0
+                                  ]]);
+                      }
+                    }
+                  } else {
+                    return /* Error */Block.__(1, [/* :: */[
+                                "No attribute 'modified'",
+                                /* [] */0
+                              ]]);
+                  }
+                }
+              } else {
+                return /* Error */Block.__(1, [/* :: */[
+                            "No attribute 'created'",
+                            /* [] */0
+                          ]]);
+              }
+            }
+          } else {
+            return /* Error */Block.__(1, [/* :: */[
+                        "No attribute 'tags'",
+                        /* [] */0
+                      ]]);
+          }
+        }
+      } else {
+        return /* Error */Block.__(1, [/* :: */[
+                    "No attribute 'children'",
+                    /* [] */0
+                  ]]);
+      }
+    };
+    var match$1 = Js_dict.get(dict, "parent");
+    if (match$1 !== undefined) {
+      var json = Caml_option.valFromOption(match$1);
+      var transformer = function (string) {
+        var match = Js_json.classify(string);
+        if (typeof match === "number" || match.tag) {
+          return /* Error */Block.__(1, [/* :: */[
+                      "expected a string",
+                      /* [] */0
+                    ]]);
+        } else {
+          return /* Ok */Block.__(0, [match[0]]);
         }
       };
-    };
-    var match$1 = loop(0, /* [] */0, Belt_List.fromArray(match[0]));
-    if (match$1.tag) {
-      return /* Error */Block.__(1, [match$1[0]]);
+      var match$2 = Js_json.classify(json);
+      var match$3;
+      var exit = 0;
+      if (typeof match$2 === "number" && match$2 >= 2) {
+        match$3 = /* Ok */Block.__(0, [undefined]);
+      } else {
+        exit = 1;
+      }
+      if (exit === 1) {
+        var match$4 = transformer(json);
+        match$3 = match$4.tag ? /* Error */Block.__(1, [/* :: */[
+                "optional value",
+                match$4[0]
+              ]]) : /* Ok */Block.__(0, [match$4[0]]);
+      }
+      if (match$3.tag) {
+        return /* Error */Block.__(1, [/* :: */[
+                    "attribute 'parent'",
+                    match$3[0]
+                  ]]);
+      } else {
+        return inner(match$3[0]);
+      }
     } else {
-      return /* Ok */Block.__(0, [Belt_List.toArray(match$1[0])]);
+      return inner(undefined);
     }
   }
 }
 
-function serialize_Types____directory(value) {
-  return Belt_Array.map(value, serialize_Types____scene);
+function deserialize_Types____directory(record) {
+  var match = Js_json.classify(record);
+  if (typeof match === "number" || match.tag !== 2) {
+    return /* Error */Block.__(1, [/* :: */[
+                "Expected an object",
+                /* [] */0
+              ]]);
+  } else {
+    var dict = match[0];
+    var match$1 = Js_dict.get(dict, "tags");
+    if (match$1 !== undefined) {
+      var match$2 = TypeHelpers.deserialize_Belt_MapString____t(deserialize_Types____tag, Caml_option.valFromOption(match$1));
+      if (match$2.tag) {
+        return /* Error */Block.__(1, [/* :: */[
+                    "attribute 'tags'",
+                    match$2[0]
+                  ]]);
+      } else {
+        var attr_tags = match$2[0];
+        var match$3 = Js_dict.get(dict, "scenes");
+        if (match$3 !== undefined) {
+          var match$4 = TypeHelpers.deserialize_Belt_MapString____t(deserialize_Types____scene, Caml_option.valFromOption(match$3));
+          if (match$4.tag) {
+            return /* Error */Block.__(1, [/* :: */[
+                        "attribute 'scenes'",
+                        match$4[0]
+                      ]]);
+          } else {
+            return /* Ok */Block.__(0, [/* record */[
+                        /* scenes */match$4[0],
+                        /* tags */attr_tags
+                      ]]);
+          }
+        } else {
+          return /* Error */Block.__(1, [/* :: */[
+                      "No attribute 'scenes'",
+                      /* [] */0
+                    ]]);
+        }
+      }
+    } else {
+      return /* Error */Block.__(1, [/* :: */[
+                  "No attribute 'tags'",
+                  /* [] */0
+                ]]);
+    }
+  }
+}
+
+function serialize_Types____directory(record) {
+  var param = record[/* scenes */0];
+  var param$1 = record[/* tags */1];
+  return Js_dict.fromArray(/* array */[
+              /* tuple */[
+                "scenes",
+                TypeHelpers.serialize_Belt_MapString____t(serialize_Types____scene, param)
+              ],
+              /* tuple */[
+                "tags",
+                TypeHelpers.serialize_Belt_MapString____t(serialize_Types____tag, param$1)
+              ]
+            ]);
 }
 
 var Version1 = /* module */[
+  /* deserialize_Belt_MapString____t */deserialize_Belt_MapString____t,
   /* deserialize_Belt_SetString____t */deserialize_Belt_SetString____t,
   /* deserialize_Types____directory */deserialize_Types____directory,
   /* deserialize_Types____scene */deserialize_Types____scene,
+  /* deserialize_Types____tag */deserialize_Types____tag,
+  /* serialize_Belt_MapString____t */serialize_Belt_MapString____t,
   /* serialize_Belt_SetString____t */serialize_Belt_SetString____t,
   /* serialize_Types____directory */serialize_Types____directory,
-  /* serialize_Types____scene */serialize_Types____scene
+  /* serialize_Types____scene */serialize_Types____scene,
+  /* serialize_Types____tag */serialize_Types____tag
 ];
 
 function parseVersion(json) {

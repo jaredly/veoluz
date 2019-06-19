@@ -17,6 +17,51 @@
       "typeMap": [
         [
           [
+            "Belt_MapString",
+            [],
+            "t"
+          ],
+          [
+            [
+              [
+                {
+                  "txt": "ocaml.doc",
+                  "loc": {
+                    "loc_start": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_end": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_ghost": true
+                  }
+                },
+                [
+                  "PStr",
+                  "let _ = \" The type of maps from type [key] to type ['value]. \""
+                ]
+              ]
+            ],
+            {
+              "name": "t",
+              "variables": [
+                [
+                  "Variable",
+                  "value"
+                ]
+              ],
+              "body": ["Abstract"]
+            }
+          ]
+        ],
+        [
+          [
             "Belt_SetString",
             [],
             "t"
@@ -67,25 +112,62 @@
               "name": "directory",
               "variables": [],
               "body": [
-                "Expr",
+                "Record",
                 [
-                  "Reference",
                   [
-                    "Builtin",
-                    "array"
-                  ],
-                  [
+                    "scenes",
                     [
                       "Reference",
                       [
                         "Public",
                         [
-                          "Types",
+                          "Belt_MapString",
                           [],
-                          "scene"
+                          "t"
                         ]
                       ],
-                      []
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Public",
+                            [
+                              "Types",
+                              [],
+                              "scene"
+                            ]
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "tags",
+                    [
+                      "Reference",
+                      [
+                        "Public",
+                        [
+                          "Belt_MapString",
+                          [],
+                          "t"
+                        ]
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Public",
+                            [
+                              "Types",
+                              [],
+                              "tag"
+                            ]
+                          ],
+                          []
+                        ]
+                      ]
                     ]
                   ]
                 ]
@@ -114,6 +196,28 @@
                       [
                         "Builtin",
                         "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "modified",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "float"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "created",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "float"
                       ],
                       []
                     ]
@@ -171,6 +275,58 @@
                           []
                         ]
                       ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          ]
+        ],
+        [
+          [
+            "Types",
+            [],
+            "tag"
+          ],
+          [
+            [],
+            {
+              "name": "tag",
+              "variables": [],
+              "body": [
+                "Record",
+                [
+                  [
+                    "id",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "color",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "title",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
                     ]
                   ]
                 ]

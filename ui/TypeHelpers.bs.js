@@ -2,8 +2,11 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
+var Curry = require("bs-platform/lib/js/curry.js");
+var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var Js_json = require("bs-platform/lib/js/js_json.js");
 var Belt_Array = require("bs-platform/lib/js/belt_Array.js");
+var Belt_MapString = require("bs-platform/lib/js/belt_MapString.js");
 var Belt_SetString = require("bs-platform/lib/js/belt_SetString.js");
 
 function deserialize_Belt_SetString____t(json) {
@@ -32,6 +35,40 @@ function deserialize_Belt_SetString____t(json) {
 
 var serialize_Belt_SetString____t = Belt_SetString.toArray;
 
+function deserialize_Belt_MapString____t(converter, json) {
+  var match = Js_json.classify(json);
+  if (typeof match === "number" || match.tag !== 2) {
+    return /* Error */Block.__(1, [/* :: */[
+                "Expected an object",
+                /* [] */0
+              ]]);
+  } else {
+    return Belt_Array.reduce(Js_dict.entries(match[0]), /* Ok */Block.__(0, [Belt_MapString.empty]), (function (map, param) {
+                  if (map.tag) {
+                    return map;
+                  } else {
+                    var match = Curry._1(converter, param[1]);
+                    if (match.tag) {
+                      return /* Error */Block.__(1, [match[0]]);
+                    } else {
+                      return /* Ok */Block.__(0, [Belt_MapString.set(map[0], param[0], match[0])]);
+                    }
+                  }
+                }));
+  }
+}
+
+function serialize_Belt_MapString____t(converter, map) {
+  return Js_dict.fromArray(Belt_Array.map(Belt_MapString.toArray(map), (function (param) {
+                    return /* tuple */[
+                            param[0],
+                            Curry._1(converter, param[1])
+                          ];
+                  })));
+}
+
 exports.deserialize_Belt_SetString____t = deserialize_Belt_SetString____t;
 exports.serialize_Belt_SetString____t = serialize_Belt_SetString____t;
+exports.deserialize_Belt_MapString____t = deserialize_Belt_MapString____t;
+exports.serialize_Belt_MapString____t = serialize_Belt_MapString____t;
 /* No side effect */
