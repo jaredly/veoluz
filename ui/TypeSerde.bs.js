@@ -24,63 +24,6 @@ function deserialize_Belt_MapString____t(valueTransformer) {
     });
 }
 
-function serialize_Types____tag(record) {
-  return Js_dict.fromArray(/* array */[
-              /* tuple */[
-                "id",
-                record[/* id */0]
-              ],
-              /* tuple */[
-                "color",
-                record[/* color */1]
-              ],
-              /* tuple */[
-                "title",
-                record[/* title */2]
-              ]
-            ]);
-}
-
-function serialize_Belt_MapString____t(valueTransformer) {
-  return (function (param) {
-      return TypeHelpers.serialize_Belt_MapString____t(valueTransformer, param);
-    });
-}
-
-function serialize_Types____scene(record) {
-  var array = record[/* children */4];
-  var transformer = function (prim) {
-    return prim;
-  };
-  var param = record[/* parent */5];
-  return Js_dict.fromArray(/* array */[
-              /* tuple */[
-                "id",
-                record[/* id */0]
-              ],
-              /* tuple */[
-                "modified",
-                record[/* modified */1]
-              ],
-              /* tuple */[
-                "created",
-                record[/* created */2]
-              ],
-              /* tuple */[
-                "tags",
-                Curry._1(serialize_Belt_SetString____t, record[/* tags */3])
-              ],
-              /* tuple */[
-                "children",
-                Belt_Array.map(array, transformer)
-              ],
-              /* tuple */[
-                "parent",
-                param !== undefined ? param : null
-              ]
-            ]);
-}
-
 function deserialize_Types____tag(record) {
   var match = Js_json.classify(record);
   if (typeof match === "number" || match.tag !== 2) {
@@ -241,79 +184,122 @@ function deserialize_Types____scene(record) {
                         ]]);
             } else {
               var attr_tags = match$5[0];
-              var match$6 = Js_dict.get(dict, "created");
+              var inner$1 = function (attr_title) {
+                var match = Js_dict.get(dict, "created");
+                if (match !== undefined) {
+                  var match$1 = Js_json.classify(Caml_option.valFromOption(match));
+                  var match$2;
+                  match$2 = typeof match$1 === "number" || match$1.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
+                          "Expected a float",
+                          /* [] */0
+                        ]]) : /* Ok */Block.__(0, [match$1[0]]);
+                  if (match$2.tag) {
+                    return /* Error */Block.__(1, [/* :: */[
+                                "attribute 'created'",
+                                match$2[0]
+                              ]]);
+                  } else {
+                    var attr_created = match$2[0];
+                    var match$3 = Js_dict.get(dict, "modified");
+                    if (match$3 !== undefined) {
+                      var match$4 = Js_json.classify(Caml_option.valFromOption(match$3));
+                      var match$5;
+                      match$5 = typeof match$4 === "number" || match$4.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
+                              "Expected a float",
+                              /* [] */0
+                            ]]) : /* Ok */Block.__(0, [match$4[0]]);
+                      if (match$5.tag) {
+                        return /* Error */Block.__(1, [/* :: */[
+                                    "attribute 'modified'",
+                                    match$5[0]
+                                  ]]);
+                      } else {
+                        var attr_modified = match$5[0];
+                        var match$6 = Js_dict.get(dict, "id");
+                        if (match$6 !== undefined) {
+                          var match$7 = Js_json.classify(Caml_option.valFromOption(match$6));
+                          var match$8;
+                          match$8 = typeof match$7 === "number" || match$7.tag ? /* Error */Block.__(1, [/* :: */[
+                                  "expected a string",
+                                  /* [] */0
+                                ]]) : /* Ok */Block.__(0, [match$7[0]]);
+                          if (match$8.tag) {
+                            return /* Error */Block.__(1, [/* :: */[
+                                        "attribute 'id'",
+                                        match$8[0]
+                                      ]]);
+                          } else {
+                            var attr_id = match$8[0];
+                            return /* Ok */Block.__(0, [/* record */[
+                                        /* id */attr_id,
+                                        /* modified */attr_modified,
+                                        /* created */attr_created,
+                                        /* title */attr_title,
+                                        /* tags */attr_tags,
+                                        /* children */attr_children,
+                                        /* parent */attr_parent
+                                      ]]);
+                          }
+                        } else {
+                          return /* Error */Block.__(1, [/* :: */[
+                                      "No attribute 'id'",
+                                      /* [] */0
+                                    ]]);
+                        }
+                      }
+                    } else {
+                      return /* Error */Block.__(1, [/* :: */[
+                                  "No attribute 'modified'",
+                                  /* [] */0
+                                ]]);
+                    }
+                  }
+                } else {
+                  return /* Error */Block.__(1, [/* :: */[
+                              "No attribute 'created'",
+                              /* [] */0
+                            ]]);
+                }
+              };
+              var match$6 = Js_dict.get(dict, "title");
               if (match$6 !== undefined) {
-                var match$7 = Js_json.classify(Caml_option.valFromOption(match$6));
+                var json = Caml_option.valFromOption(match$6);
+                var transformer$1 = function (string) {
+                  var match = Js_json.classify(string);
+                  if (typeof match === "number" || match.tag) {
+                    return /* Error */Block.__(1, [/* :: */[
+                                "expected a string",
+                                /* [] */0
+                              ]]);
+                  } else {
+                    return /* Ok */Block.__(0, [match[0]]);
+                  }
+                };
+                var match$7 = Js_json.classify(json);
                 var match$8;
-                match$8 = typeof match$7 === "number" || match$7.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
-                        "Expected a float",
-                        /* [] */0
-                      ]]) : /* Ok */Block.__(0, [match$7[0]]);
+                var exit = 0;
+                if (typeof match$7 === "number" && match$7 >= 2) {
+                  match$8 = /* Ok */Block.__(0, [undefined]);
+                } else {
+                  exit = 1;
+                }
+                if (exit === 1) {
+                  var match$9 = transformer$1(json);
+                  match$8 = match$9.tag ? /* Error */Block.__(1, [/* :: */[
+                          "optional value",
+                          match$9[0]
+                        ]]) : /* Ok */Block.__(0, [match$9[0]]);
+                }
                 if (match$8.tag) {
                   return /* Error */Block.__(1, [/* :: */[
-                              "attribute 'created'",
+                              "attribute 'title'",
                               match$8[0]
                             ]]);
                 } else {
-                  var attr_created = match$8[0];
-                  var match$9 = Js_dict.get(dict, "modified");
-                  if (match$9 !== undefined) {
-                    var match$10 = Js_json.classify(Caml_option.valFromOption(match$9));
-                    var match$11;
-                    match$11 = typeof match$10 === "number" || match$10.tag !== 1 ? /* Error */Block.__(1, [/* :: */[
-                            "Expected a float",
-                            /* [] */0
-                          ]]) : /* Ok */Block.__(0, [match$10[0]]);
-                    if (match$11.tag) {
-                      return /* Error */Block.__(1, [/* :: */[
-                                  "attribute 'modified'",
-                                  match$11[0]
-                                ]]);
-                    } else {
-                      var attr_modified = match$11[0];
-                      var match$12 = Js_dict.get(dict, "id");
-                      if (match$12 !== undefined) {
-                        var match$13 = Js_json.classify(Caml_option.valFromOption(match$12));
-                        var match$14;
-                        match$14 = typeof match$13 === "number" || match$13.tag ? /* Error */Block.__(1, [/* :: */[
-                                "expected a string",
-                                /* [] */0
-                              ]]) : /* Ok */Block.__(0, [match$13[0]]);
-                        if (match$14.tag) {
-                          return /* Error */Block.__(1, [/* :: */[
-                                      "attribute 'id'",
-                                      match$14[0]
-                                    ]]);
-                        } else {
-                          var attr_id = match$14[0];
-                          return /* Ok */Block.__(0, [/* record */[
-                                      /* id */attr_id,
-                                      /* modified */attr_modified,
-                                      /* created */attr_created,
-                                      /* tags */attr_tags,
-                                      /* children */attr_children,
-                                      /* parent */attr_parent
-                                    ]]);
-                        }
-                      } else {
-                        return /* Error */Block.__(1, [/* :: */[
-                                    "No attribute 'id'",
-                                    /* [] */0
-                                  ]]);
-                      }
-                    }
-                  } else {
-                    return /* Error */Block.__(1, [/* :: */[
-                                "No attribute 'modified'",
-                                /* [] */0
-                              ]]);
-                  }
+                  return inner$1(match$8[0]);
                 }
               } else {
-                return /* Error */Block.__(1, [/* :: */[
-                            "No attribute 'created'",
-                            /* [] */0
-                          ]]);
+                return inner$1(undefined);
               }
             }
           } else {
@@ -371,6 +357,68 @@ function deserialize_Types____scene(record) {
       return inner(undefined);
     }
   }
+}
+
+function serialize_Types____tag(record) {
+  return Js_dict.fromArray(/* array */[
+              /* tuple */[
+                "id",
+                record[/* id */0]
+              ],
+              /* tuple */[
+                "color",
+                record[/* color */1]
+              ],
+              /* tuple */[
+                "title",
+                record[/* title */2]
+              ]
+            ]);
+}
+
+function serialize_Belt_MapString____t(valueTransformer) {
+  return (function (param) {
+      return TypeHelpers.serialize_Belt_MapString____t(valueTransformer, param);
+    });
+}
+
+function serialize_Types____scene(record) {
+  var param = record[/* title */3];
+  var array = record[/* children */5];
+  var transformer = function (prim) {
+    return prim;
+  };
+  var param$1 = record[/* parent */6];
+  return Js_dict.fromArray(/* array */[
+              /* tuple */[
+                "id",
+                record[/* id */0]
+              ],
+              /* tuple */[
+                "modified",
+                record[/* modified */1]
+              ],
+              /* tuple */[
+                "created",
+                record[/* created */2]
+              ],
+              /* tuple */[
+                "title",
+                param !== undefined ? param : null
+              ],
+              /* tuple */[
+                "tags",
+                Curry._1(serialize_Belt_SetString____t, record[/* tags */4])
+              ],
+              /* tuple */[
+                "children",
+                Belt_Array.map(array, transformer)
+              ],
+              /* tuple */[
+                "parent",
+                param$1 !== undefined ? param$1 : null
+              ]
+            ]);
 }
 
 function deserialize_Types____directory(record) {

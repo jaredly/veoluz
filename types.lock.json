@@ -223,6 +223,26 @@
                     ]
                   ],
                   [
+                    "title",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "option"
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Builtin",
+                            "string"
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
                     "tags",
                     [
                       "Reference",

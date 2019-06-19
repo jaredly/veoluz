@@ -1,8 +1,7 @@
-
 let x = 10;
 
 [@bs.module "localforage"]
-external getItem: string => Js.Promise.t('a) = "";
+external getItem: string => Js.Promise.t(Js.nullable('a)) = "";
 
 [@bs.module "localforage"]
 external setItem: (string, 'a) => Js.Promise.t(unit) = "";
@@ -10,29 +9,129 @@ external setItem: (string, 'a) => Js.Promise.t(unit) = "";
 [@bs.module "localforage"]
 external keys: unit => Js.Promise.t(array(string)) = "";
 
-module App = {
+module Async = {
+  let let_ = (v, fn) => Js.Promise.then_(fn, v);
+  let resolve = Js.Promise.resolve;
+};
 
+open Types;
+
+let sceneFromKey = key =>
+  switch (Js.String.split(":", key)) {
+  | [|created, id, "image"|] => {
+      tags: Belt.Set.String.empty,
+      id: created ++ ":" ++ id,
+      title: None,
+      created: float_of_string(created),
+      modified: float_of_string(created),
+      children: [||],
+      parent: None,
+    }
+  | m =>
+    Js.log(m);
+    failwith("Bad key " ++ key);
+  };
+
+let getSceneInfo = () => {
+  let%Async sceneRaw = getItem("scenes");
+  switch (sceneRaw->Js.toOption) {
+  | Some(sceneRaw) =>
+    switch (TypeSerde.deserializeDirectory(sceneRaw)) {
+    | Error(err) =>
+      failwith("Invalid scene data: " ++ String.concat(" : ", err))
+    | Ok(v) => Async.resolve(v)
+    }
+  | None =>
+    let%Async keys = keys();
+    Async.resolve({
+      scenes:
+        keys
+        ->Belt.Array.keep(m => Js.String2.endsWith(m, ":image"))
+        ->Belt.Array.map(key => {
+            let scene = sceneFromKey(key);
+            (scene.id, scene);
+          })
+        ->Belt.Map.String.fromArray,
+      tags: Belt.Map.String.empty,
+    });
+  };
+  // let scenesRaw =
+};
+
+type blob;
+[@bs.val] [@bs.scope "URL"] external createObjectURL: blob => string = "";
+
+module Scene = {
+  [@react.component]
+  let make = (~scene: scene) => {
+    let key = scene.id ++ ":image";
+    let getter =
+      React.useCallback1(() => getItem(key), [|key|]);
+    let imageBlob = Hooks.useLoading(getter);
+    let url =
+      React.useMemo1(
+        () =>
+          switch (imageBlob) {
+          | None => None
+          | Some(blob) => switch (Js.toOption(blob)) {
+            | Some(blob) => Some(createObjectURL(blob))
+            | None => Some("invalid")
+          }
+          },
+        [|imageBlob|],
+      );
+    switch (url) {
+    | None => <div> {React.string("Loading...")} </div>
+    | Some(url) =>
+      <div className=Css.(style([
+        display(`flex),
+        flexDirection(`row),
+        padding(px(4))
+      ]))>
+        <div 
+          style=ReactDOMRe.Style.make(
+            ~backgroundImage="url(" ++ url ++ ")",
+            ()
+          )
+          className=Css.(style([
+            width(px(50)),
+            backgroundColor(black),
+            height(px(50)),
+            backgroundSize(`cover),
+            `declaration(("background-position", "center"))
+            // backgroundPosition(`center, `center)
+          ]))
+        />
+        {scene.children->Belt.Array.length === 0 ? React.null : <div>
+          {scene.children->Belt.Array.map(key => <div>{React.string(key)}</div>)->React.array}
+        </div>}
+      </div>
+    };
+  };
+};
+
+module App = {
   let getKeys = () => keys();
 
   [@react.component]
   let make = (~config: Rust.config) => {
-    let keys = Hooks.useLoading(getKeys);
+    let keys = Hooks.useLoading(getSceneInfo);
 
-    switch keys {
-      | None => <div>{React.string("Loading")}</div>
-      | Some(keys) => <div>
+    switch (keys) {
+    | None => <div> {React.string("Loading")} </div>
+    | Some({scenes, tags}) =>
+      <div>
         {React.array(
-          keys->Belt.Array.map(key => {
-            <div>
-              {React.string(key)}
-            </div>
-          })
-        )}
+           scenes
+           ->Belt.Map.String.toArray
+           ->Belt.Array.map(((key, scene)) => <div>
+           <Scene scene />
+           </div>),
+         )}
       </div>
-    }
-
-  }
-}
+    };
+  };
+};
 
 Rust.withModule(wasm => {
   wasm##run();

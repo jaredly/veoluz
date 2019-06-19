@@ -12,6 +12,7 @@ module Types1 = {
       id: string,
       modified: float,
       created: float,
+      title: option(string),
       tags: _Belt_SetString__t,
       children: array(string),
       parent: option(string),
@@ -80,41 +81,63 @@ module Version1 = {
         let inner = attr_parent => {
           let inner = attr_children => {
             let inner = attr_tags => {
-              let inner = attr_created => {
-                let inner = attr_modified => {
-                  let inner = attr_id =>
-                    Ok(
-                      {
-                        id: attr_id,
-                        modified: attr_modified,
-                        created: attr_created,
-                        tags: attr_tags,
-                        children: attr_children,
-                        parent: attr_parent,
-                      }: _Types__scene,
-                    );
-                  switch (Js.Dict.get(dict, "id")) {
-                  | None => Belt.Result.Error(["No attribute 'id'"])
+              let inner = attr_title => {
+                let inner = attr_created => {
+                  let inner = attr_modified => {
+                    let inner = attr_id =>
+                      Ok(
+                        {
+                          id: attr_id,
+                          modified: attr_modified,
+                          created: attr_created,
+                          title: attr_title,
+                          tags: attr_tags,
+                          children: attr_children,
+                          parent: attr_parent,
+                        }: _Types__scene,
+                      );
+                    switch (Js.Dict.get(dict, "id")) {
+                    | None => Belt.Result.Error(["No attribute 'id'"])
+                    | Some(json) =>
+                      switch (
+                        (
+                          string =>
+                            switch (Js.Json.classify(string)) {
+                            | JSONString(string) => Belt.Result.Ok(string)
+                            | _ => Error(["expected a string"])
+                            }
+                        )(
+                          json,
+                        )
+                      ) {
+                      | Belt.Result.Error(error) =>
+                        Belt.Result.Error(["attribute 'id'", ...error])
+                      | Ok(data) => inner(data)
+                      }
+                    };
+                  };
+                  switch (Js.Dict.get(dict, "modified")) {
+                  | None => Belt.Result.Error(["No attribute 'modified'"])
                   | Some(json) =>
                     switch (
                       (
-                        string =>
-                          switch (Js.Json.classify(string)) {
-                          | JSONString(string) => Belt.Result.Ok(string)
-                          | _ => Error(["expected a string"])
+                        number =>
+                          switch (Js.Json.classify(number)) {
+                          | JSONNumber(number) => Belt.Result.Ok(number)
+                          | _ => Error(["Expected a float"])
                           }
                       )(
                         json,
                       )
                     ) {
                     | Belt.Result.Error(error) =>
-                      Belt.Result.Error(["attribute 'id'", ...error])
+                      Belt.Result.Error(["attribute 'modified'", ...error])
                     | Ok(data) => inner(data)
                     }
                   };
                 };
-                switch (Js.Dict.get(dict, "modified")) {
-                | None => Belt.Result.Error(["No attribute 'modified'"])
+                switch (Js.Dict.get(dict, "created")) {
+                | None => Belt.Result.Error(["No attribute 'created'"])
                 | Some(json) =>
                   switch (
                     (
@@ -128,27 +151,40 @@ module Version1 = {
                     )
                   ) {
                   | Belt.Result.Error(error) =>
-                    Belt.Result.Error(["attribute 'modified'", ...error])
+                    Belt.Result.Error(["attribute 'created'", ...error])
                   | Ok(data) => inner(data)
                   }
                 };
               };
-              switch (Js.Dict.get(dict, "created")) {
-              | None => Belt.Result.Error(["No attribute 'created'"])
+              switch (Js.Dict.get(dict, "title")) {
+              | None => inner(None)
               | Some(json) =>
                 switch (
                   (
-                    number =>
-                      switch (Js.Json.classify(number)) {
-                      | JSONNumber(number) => Belt.Result.Ok(number)
-                      | _ => Error(["Expected a float"])
+                    (
+                      (transformer, option) =>
+                        switch (Js.Json.classify(option)) {
+                        | JSONNull => Belt.Result.Ok(None)
+                        | _ =>
+                          switch (transformer(option)) {
+                          | Belt.Result.Error(error) =>
+                            Belt.Result.Error(["optional value", ...error])
+                          | Ok(value) => Ok(Some(value))
+                          }
+                        }
+                    )(
+                      string =>
+                      switch (Js.Json.classify(string)) {
+                      | JSONString(string) => Belt.Result.Ok(string)
+                      | _ => Error(["expected a string"])
                       }
+                    )
                   )(
                     json,
                   )
                 ) {
                 | Belt.Result.Error(error) =>
-                  Belt.Result.Error(["attribute 'created'", ...error])
+                  Belt.Result.Error(["attribute 'title'", ...error])
                 | Ok(data) => inner(data)
                 }
               };
@@ -346,6 +382,21 @@ module Version1 = {
           ("id", Js.Json.string(record.id)),
           ("modified", Js.Json.number(record.modified)),
           ("created", Js.Json.number(record.created)),
+          (
+            "title",
+            (
+              (
+                transformer =>
+                  fun
+                  | Some(inner) => transformer(inner)
+                  | None => Js.Json.null
+              )(
+                Js.Json.string,
+              )
+            )(
+              record.title,
+            ),
+          ),
           ("tags", serialize_Belt_SetString____t(record.tags)),
           (
             "children",

@@ -70,21 +70,21 @@ const makeSceneNode = (wasm, id, blob) => {
 }
 
 const setup = async (wasm) => {
-    const saved_scenes = (await localForage.keys()).filter(name => name.endsWith(':image')).sort();
-    saved_scenes.forEach(id => {
-        makeSceneNode(wasm, id, localForage.getItem(id))
-    })
-    const canvas = document.getElementById('drawing')
-    document.getElementById('save').onclick = log(async () => {
-        const config = wasm.save();
-        const id = Date.now() + ':' + rid();
-        const blob = await new Promise(res => canvas.toBlob(res));
-        saved_scenes.push(id + ':image')
-        makeSceneNode(wasm, id + ':image', Promise.resolve(blob))
-        await localForage.setItem(id, config);
-        await localForage.setItem(id + ':image', blob);
-        console.log('saved!')
-    })
+    // const saved_scenes = (await localForage.keys()).filter(name => name.endsWith(':image')).sort();
+    // saved_scenes.forEach(id => {
+    //     makeSceneNode(wasm, id, localForage.getItem(id))
+    // })
+    // const canvas = document.getElementById('drawing')
+    // document.getElementById('save').onclick = log(async () => {
+    //     const config = wasm.save();
+    //     const id = Date.now() + ':' + rid();
+    //     const blob = await new Promise(res => canvas.toBlob(res));
+    //     saved_scenes.push(id + ':image')
+    //     makeSceneNode(wasm, id + ':image', Promise.resolve(blob))
+    //     await localForage.setItem(id, config);
+    //     await localForage.setItem(id + ':image', blob);
+    //     console.log('saved!')
+    // })
 }
 
 import('./pkg/zenphoton')

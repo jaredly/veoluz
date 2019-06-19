@@ -3,6 +3,7 @@ type scene = {
   id: string,
   modified: float,
   created: float,
+  title: option(string),
   tags: Belt.Set.String.t,
   children: array(string),
   parent: option(string),

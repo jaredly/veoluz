@@ -15,6 +15,7 @@
   "dependencies": {
     "bs-css": "^8.0.4",
     "bs-platform": "^5.0.4",
+    "let-anything": "^1.0.3",
     "localforage": "^1.7.3",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
