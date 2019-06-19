@@ -13,6 +13,7 @@ mod draw;
 mod scenes;
 mod state;
 mod ui;
+mod old_ui;
 
 fn parse_worker_message(
     evt: web_sys::MessageEvent,
