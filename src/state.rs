@@ -125,7 +125,6 @@ impl State {
             return;
         }
 
-        log!("ok");
         // snip undone stuff
         if self.history_index != 0 {
             self.history = self.history[0..self.history.len() - self.history_index].to_vec();

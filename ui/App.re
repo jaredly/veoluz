@@ -12,6 +12,18 @@ external keys: unit => Js.Promise.t(array(string)) = "";
 module Async = {
   let let_ = (v, fn) => Js.Promise.then_(fn, v);
   let resolve = Js.Promise.resolve;
+  module Consume = {
+    let let_ = (v, fn) => {
+      Js.Promise.then_(
+        v => {
+          let () = fn(v);
+          Js.Promise.resolve();
+        },
+        v,
+      )
+      ->ignore;
+    };
+  };
 };
 
 open Types;
@@ -63,90 +75,115 @@ type blob;
 
 module Scene = {
   [@react.component]
-  let make = (~scene: scene) => {
+  let make = (~scene: scene, ~onSelect) => {
     let key = scene.id ++ ":image";
-    let getter =
-      React.useCallback1(() => getItem(key), [|key|]);
+    let getter = React.useCallback1(() => getItem(key), [|key|]);
     let imageBlob = Hooks.useLoading(getter);
     let url =
       React.useMemo1(
         () =>
           switch (imageBlob) {
           | None => None
-          | Some(blob) => switch (Js.toOption(blob)) {
+          | Some(blob) =>
+            switch (Js.toOption(blob)) {
             | Some(blob) => Some(createObjectURL(blob))
             | None => Some("invalid")
-          }
+            }
           },
         [|imageBlob|],
       );
     switch (url) {
     | None => <div> {React.string("Loading...")} </div>
     | Some(url) =>
-      <div className=Css.(style([
-        display(`flex),
-        flexDirection(`row),
-        padding(px(4))
-      ]))>
-        <div 
-          style=ReactDOMRe.Style.make(
+      <div
+        className=Css.(
+          style([display(`flex), flexDirection(`row), padding(px(4))])
+        )>
+        <div
+          style={ReactDOMRe.Style.make(
             ~backgroundImage="url(" ++ url ++ ")",
-            ()
+            (),
+          )}
+          onClick={_evt => {
+            let%Async.Consume config = getItem(scene.id);
+            switch (Js.toOption(config)) {
+              | None => ()
+              | Some(config) => onSelect(config)
+            }
+          }}
+          className=Css.(
+            style([
+              width(px(50)),
+              backgroundColor(black),
+              height(px(50)),
+              backgroundSize(`cover),
+              `declaration(("background-position", "center")),
+              // backgroundPosition(`center, `center)
+            ])
           )
-          className=Css.(style([
-            width(px(50)),
-            backgroundColor(black),
-            height(px(50)),
-            backgroundSize(`cover),
-            `declaration(("background-position", "center"))
-            // backgroundPosition(`center, `center)
-          ]))
         />
-        {scene.children->Belt.Array.length === 0 ? React.null : <div>
-          {scene.children->Belt.Array.map(key => <div>{React.string(key)}</div>)->React.array}
-        </div>}
+        {scene.children->Belt.Array.length === 0
+           ? React.null
+           : <div>
+               {scene.children
+                ->Belt.Array.map(key => <div> {React.string(key)} </div>)
+                ->React.array}
+             </div>}
       </div>
     };
   };
 };
 
-module Opt =  {
-  let force = m => switch m {
+module Opt = {
+  let force = m =>
+    switch (m) {
     | None => failwith("unwrapping option")
     | Some(m) => m
-  }
-}
+    };
+};
 
 module ScenePicker = {
-
   [@react.component]
-  let make = (~scenes, ~tags) => {
-    <div>
+  let make = (~scenes, ~tags, ~onSelect) => {
+    <div
+      className=Css.(
+        style([
+          display(`flex),
+          flexDirection(`row),
+          maxHeight(px(300)),
+          maxWidth(px(800)),
+          overflow(`auto),
+          flexWrap(`wrap),
+        ])
+      )>
       {React.array(
-          scenes
-          ->Belt.Map.String.toArray
-          ->Belt.Array.map(((_key, scene)) => <div>
-          <Scene scene />
-          </div>),
-        )}
-    </div>
-  }
+         scenes
+         ->Belt.Map.String.toArray
+         ->Belt.Array.map(((_key, scene)) =>
+             <div> <Scene scene onSelect /> </div>
+           ),
+       )}
+    </div>;
+  };
 };
 
 module ConfigEditor = {
   [@react.component]
   let make = (~config, ~update) => {
     let (tmpConfig, setTmpConfig) = Hooks.useState(config);
-    React.useEffect1(() => {
-      if (config != tmpConfig) {
-        setTmpConfig(config)
-      };
-      None
-    }, [|config|]);
+    React.useEffect1(
+      () => {
+        if (config != tmpConfig) {
+          setTmpConfig(config);
+        };
+        None;
+      },
+      [|config|],
+    );
 
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
       {React.string(Js.Json.stringifyAny(tmpConfig)->Opt.force)}
-    </div>
+    </div>;
   };
 };
 
@@ -157,12 +194,10 @@ module App = {
   let make = (~wasm) => {
     let keys = Hooks.useLoading(getSceneInfo);
     let (config, onChange) = Hooks.useState(wasm##initial());
-    Js.log("Rendering app here");
 
     React.useEffect0(() => {
       wasm##setup(config, onChange);
-      // wasm.run(onChange);
-      None
+      None;
     });
 
     switch (keys) {
@@ -170,15 +205,18 @@ module App = {
     | Some({scenes, tags}) =>
       <div>
         <ConfigEditor config update={config => wasm##restore(config)} />
-        <ScenePicker scenes tags />
+        <ScenePicker scenes tags onSelect={config => wasm##restore(config)} />
       </div>
     };
   };
 };
 
-Rust.withModule(wasm => {
+Rust.withModule(wasm =>
   // wasm##run();
   // let config = wasm##save();
-  ReactDOMRe.renderToElementWithId(<App wasm />, "reason-root");
-  // Js.log2("Config we got", config);
-});
+  ReactDOMRe.renderToElementWithId(
+    <App wasm />,
+    "reason-root",
+    // Js.log2("Config we got", config);
+  )
+);

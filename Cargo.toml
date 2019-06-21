@@ -30,6 +30,8 @@ bincode = "*"
 serde_json = "1.0"
 miniz_oxide = "*"
 
+colorsys = "*"
+
 rand = { version = "*", features = ["stdweb"] }
 # log = "0.4"
 # web_logger = "0.1"

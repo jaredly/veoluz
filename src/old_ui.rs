@@ -461,7 +461,7 @@ pub fn show_wall_ui(_idx: usize, wall: &Wall) -> Result<(), JsValue> {
 
 pub fn reset_config(config: &shared::Config) -> Result<(), JsValue> {
     match config.rendering.coloration {
-        shared::Coloration::HueRange { .. } => unimplemented!(),
+        shared::Coloration::HueRange { .. } => (),
         shared::Coloration::Rgb {
             highlight,
             background,

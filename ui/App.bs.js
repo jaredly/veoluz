@@ -26,9 +26,20 @@ function resolve(prim) {
   return Promise.resolve(prim);
 }
 
+function let_$1(v, fn) {
+  v.then((function (v) {
+          Curry._1(fn, v);
+          return Promise.resolve(/* () */0);
+        }));
+  return /* () */0;
+}
+
+var Consume = /* module */[/* let_ */let_$1];
+
 var Async = /* module */[
   /* let_ */let_,
-  /* resolve */resolve
+  /* resolve */resolve,
+  /* Consume */Consume
 ];
 
 function sceneFromKey(key) {
@@ -93,6 +104,7 @@ function getSceneInfo(param) {
 
 function App$Scene(Props) {
   var scene = Props.scene;
+  var onSelect = Props.onSelect;
   var key = scene[/* id */0] + ":image";
   var getter = React.useCallback((function (param) {
           return Localforage.getItem(key);
@@ -147,7 +159,16 @@ function App$Scene(Props) {
                         ]),
                     style: {
                       backgroundImage: "url(" + (url + ")")
-                    }
+                    },
+                    onClick: (function (_evt) {
+                        return let_$1(Localforage.getItem(scene[/* id */0]), (function (config) {
+                                      if (config == null) {
+                                        return /* () */0;
+                                      } else {
+                                        return Curry._1(onSelect, config);
+                                      }
+                                    }));
+                      })
                   }), match ? null : React.createElement("div", undefined, Belt_Array.map(scene[/* children */5], (function (key) {
                             return React.createElement("div", undefined, key);
                           }))));
@@ -171,9 +192,31 @@ var Opt = /* module */[/* force */force];
 function App$ScenePicker(Props) {
   var scenes = Props.scenes;
   Props.tags;
-  return React.createElement("div", undefined, Belt_Array.map(Belt_MapString.toArray(scenes), (function (param) {
+  var onSelect = Props.onSelect;
+  return React.createElement("div", {
+              className: Css.style(/* :: */[
+                    Css.display(/* flex */-1010954439),
+                    /* :: */[
+                      Css.flexDirection(/* row */5693978),
+                      /* :: */[
+                        Css.maxHeight(Css.px(300)),
+                        /* :: */[
+                          Css.maxWidth(Css.px(800)),
+                          /* :: */[
+                            Css.overflow(/* auto */-1065951377),
+                            /* :: */[
+                              Css.flexWrap(/* wrap */-822134326),
+                              /* [] */0
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ])
+            }, Belt_Array.map(Belt_MapString.toArray(scenes), (function (param) {
                     return React.createElement("div", undefined, React.createElement(App$Scene, {
-                                    scene: param[1]
+                                    scene: param[1],
+                                    onSelect: onSelect
                                   }));
                   })));
 }
@@ -215,7 +258,6 @@ function App$App(Props) {
   var match = Hooks.useState(wasm.initial());
   var onChange = match[1];
   var config = match[0];
-  console.log("Rendering app here");
   React.useEffect((function () {
           wasm.setup(config, onChange);
           return undefined;
@@ -229,7 +271,10 @@ function App$App(Props) {
                       })
                   }), React.createElement(App$ScenePicker, {
                     scenes: match$1[/* scenes */0],
-                    tags: match$1[/* tags */1]
+                    tags: match$1[/* tags */1],
+                    onSelect: (function (config) {
+                        return wasm.restore(config);
+                      })
                   }));
   } else {
     return React.createElement("div", undefined, "Loading");

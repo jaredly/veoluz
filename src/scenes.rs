@@ -85,8 +85,8 @@ pub fn parabola_test() -> shared::Config {
 pub fn apple() -> shared::Config {
     let width = 1024;
     let height = 576;
-    let cx = (width / 2) as line::float;
-    let cy = (height / 2) as line::float;
+    let cx = 0.0;
+    let cy = 0.0;
 
     let mut walls = vec![
 

@@ -121,10 +121,10 @@ pub fn initial_config() -> shared::Config {
         None => {
             let width = 1024;
             let height = 576;
-            shared::Config::new(vec![], width, height)
+            // shared::Config::new(vec![], width, height)
             // scenes::playground()
             // scenes::parabola_test()
-            // scenes::apple()
+            scenes::apple()
             // scenes::refraction_test()
             // scenes::circle_row()
             // scenes::refract2()

@@ -81,19 +81,44 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
 
     // let front = (255.0, 255.0, 255.0);
     // let back = (0.0, 50.0, 0.0);
-    let (front, back) = match config.rendering.coloration {
-        Coloration::HueRange { .. } => unimplemented!(),
+    let color: Box<Fn(f32, &mut [u8], usize)> = match config.rendering.coloration {
         Coloration::Rgb {
             highlight,
             background,
-        } => (
-            (highlight.0 as f32, highlight.1 as f32, highlight.2 as f32),
-            (
-                background.0 as f32,
-                background.1 as f32,
-                background.2 as f32,
-            ),
-        ),
+        } => {
+            // (
+            //     (highlight.0 as f32, highlight.1 as f32, highlight.2 as f32),
+            //     (
+            //         background.0 as f32,
+            //         background.1 as f32,
+            //         background.2 as f32,
+            //     ),
+            // );
+            let back = background;
+            let front = highlight;
+            Box::new(move |exposed, data: &mut [u8], index| {
+                data[index] = (front.0 as f32 * exposed + back.0 as f32 * (1.0 - exposed)) as u8;
+                data[index + 1] = (front.1 as f32 * exposed + back.1 as f32 * (1.0 - exposed)) as u8;
+                data[index + 2] = (front.2 as f32 * exposed + back.2 as f32 * (1.0 - exposed)) as u8;
+            })
+        },
+        Coloration::HueRange { 
+            start,
+            end,
+            saturation,
+            lightness
+         } => {
+             let range = (end - start) as f64;
+             let start = start as f64;
+             Box::new(move |exposed, data: &mut [u8], index| {
+                 let hue = start + range * exposed as f64;
+                 let hsl = colorsys::Hsl::new(hue, saturation as f64, lightness as f64, None);
+                 let rgb: colorsys::Rgb = hsl.into();
+                data[index] = rgb.get_red() as u8;
+                data[index + 1] = rgb.get_green() as u8;
+                data[index + 2] = rgb.get_blue() as u8;
+             })
+         }
     };
     // let front = (131.0, 43.0, 93.0);
     // let front = (255.0, 200.0, 230.0);
@@ -108,12 +133,10 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
             let index = (x + y * width) * 4;
             let brightness = brightness_data[x + y * width];
             let exposed = expose(top, brightness) / 255.0;
-            data[index] = (front.0 * exposed + back.0 * (1.0 - exposed)) as u8;
-            data[index + 1] = (front.1 * exposed + back.1 * (1.0 - exposed)) as u8;
-            data[index + 2] = (front.2 * exposed + back.2 * (1.0 - exposed)) as u8;
-            // data[index] = 255 - exposed;
-            // data[index + 1] = 255 - exposed;
-            // data[index + 2] = 255 - exposed;
+            color(exposed, &mut data, index);
+            // data[index] = (front.0 * exposed + back.0 * (1.0 - exposed)) as u8;
+            // data[index + 1] = (front.1 * exposed + back.1 * (1.0 - exposed)) as u8;
+            // data[index + 2] = (front.2 * exposed + back.2 * (1.0 - exposed)) as u8;
             data[index + 3] = 255;
         }
     }

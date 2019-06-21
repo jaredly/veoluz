@@ -174,6 +174,12 @@ impl Coloration {
             background: (0, 0, 0),
             highlight: (255, 255, 255),
         }
+        // Coloration::HueRange {
+        //     start: 100.0,
+        //     end: 200.0,
+        //     saturation: 100.0,
+        //     lightness: 50.0,
+        // }
     }
 }
 
