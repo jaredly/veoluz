@@ -64,6 +64,8 @@ type config = {.
 };
 
 type wasm = {.
+  "initial": [@bs.meth] unit => config,
+  "setup": [@bs.meth] (config, config => unit) => unit,
   "run": [@bs.meth] unit => unit,
   "save": [@bs.meth] unit => config,
   "restore": [@bs.meth] config => unit,

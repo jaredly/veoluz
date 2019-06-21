@@ -10,10 +10,10 @@ use wasm_bindgen::JsCast;
 #[macro_use]
 mod utils;
 mod draw;
+mod old_ui;
 mod scenes;
 mod state;
 mod ui;
-mod old_ui;
 
 fn parse_worker_message(
     evt: web_sys::MessageEvent,
@@ -51,7 +51,7 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 }
 
 // #{wasm_bindgen}
-// pub fn 
+// pub fn
 
 #[wasm_bindgen]
 pub fn save() -> JsValue {
@@ -81,56 +81,89 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
         })
 }
 
-#[wasm_bindgen]
-pub fn restore(config: &JsValue) {
+fn reset_config(config: shared::Config) {
     ui::try_state_ui(|state, ui| {
-        if let Ok(config) = deserialize_jsvalue(config) {
-            state.invalidate_past_renders();
-            ui::reset(&config, ui)?;
-            let size_changed = config.rendering.width != state.config.rendering.width
-                || config.rendering.height != state.config.rendering.height;
-            state.config = config;
-            if size_changed {
-                state
-                    .ctx
-                    .canvas()
-                    .unwrap()
-                    .set_width(state.config.rendering.width as u32);
-                state
-                    .ctx
-                    .canvas()
-                    .unwrap()
-                    .set_height(state.config.rendering.height as u32);
-                state.reset_buffer();
-            }
-            state.clear();
-            state.maybe_save_history();
-            state.async_render(false)
-        } else {
-            Ok(())
+        state.invalidate_past_renders();
+        ui::reset(&config, ui)?;
+        let size_changed = config.rendering.width != state.config.rendering.width
+            || config.rendering.height != state.config.rendering.height;
+        state.config = config;
+        if size_changed {
+            state
+                .ctx
+                .canvas()
+                .unwrap()
+                .set_width(state.config.rendering.width as u32);
+            state
+                .ctx
+                .canvas()
+                .unwrap()
+                .set_height(state.config.rendering.height as u32);
+            state.reset_buffer();
         }
+        state.clear();
+        state.maybe_save_history();
+        state.async_render(false)
     })
 }
 
 #[wasm_bindgen]
-pub fn run() -> Result<(), JsValue> {
-    console_error_panic_hook::set_once();
-    // let config = scenes::circle_row();
-    // let config = scenes::refract2();
-    let width = 1024;
-    let height = 576;
-    let config = shared::Config::new(vec![], width, height);
-    // let config = scenes::playground();
-    // let config = scenes::parabola_test();
-    // let config = scenes::apple();
-    // let config = scenes::refraction_test();
+pub fn restore(config: &JsValue) {
+    if let Ok(config) = deserialize_jsvalue(config) {
+        reset_config(config)
+    } else {
+        println!("Bad config")
+    }
+}
 
-    let config = match ui::get_url_config() {
-        None => config,
+pub fn initial_config() -> shared::Config {
+    match ui::get_url_config() {
+        None => {
+            let width = 1024;
+            let height = 576;
+            shared::Config::new(vec![], width, height)
+            // scenes::playground()
+            // scenes::parabola_test()
+            // scenes::apple()
+            // scenes::refraction_test()
+            // scenes::circle_row()
+            // scenes::refract2()
+        }
         Some(config) => config,
-    };
+    }
+}
 
-    state::setState(config.into());
+#[wasm_bindgen]
+pub fn initial() -> JsValue {
+    JsValue::from_serde(&initial_config()).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn setup(config: &JsValue, on_change: &js_sys::Function) {
+    if let Ok(config) = deserialize_jsvalue(config) {
+        if state::has_state() {
+            reset_config(config);
+            state::with(|state| {
+                state.on_change = on_change.to_owned();
+            })
+        } else {
+            state::setState(state::State::new(config, on_change.to_owned()));
+            state::try_with(|state| {
+                state.add_worker(make_worker(0)?);
+                state.async_render(false)?;
+                Ok(())
+            });
+        }
+    } else {
+        panic!("Invalid config provided")
+    }
+}
+
+#[wasm_bindgen]
+pub fn run(on_change: &js_sys::Function) -> Result<(), JsValue> {
+    console_error_panic_hook::set_once();
+
+    state::setState(state::State::new(initial_config(), on_change.to_owned()));
 
     state::try_with(|state| {
         state.add_worker(make_worker(0)?);

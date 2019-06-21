@@ -12,6 +12,7 @@ pub struct State {
     pub history_index: usize,
     pub last_rendered_config: Option<shared::Config>,
     pub buffer: Vec<u32>,
+    pub on_change: js_sys::Function,
     pub workers: Vec<(web_sys::Worker, bool, Option<shared::messaging::Message>)>,
 }
 
@@ -21,8 +22,8 @@ pub struct State {
 // but given that wasm doesn't yet have threads, it's probably fine.
 unsafe impl Send for State {}
 
-impl From<shared::Config> for State {
-    fn from(config: shared::Config) -> Self {
+impl State {
+    pub fn new(config: shared::Config, on_change: js_sys::Function) -> Self {
         State {
             render_id: 0,
             last_rendered: 0,
@@ -37,6 +38,7 @@ impl From<shared::Config> for State {
             history: vec![config.clone()],
             history_index: 0,
             last_rendered_config: None,
+            on_change,
             config,
         }
     }
@@ -207,7 +209,10 @@ impl State {
                 // Ignore it probably
                 return Ok(());
             }
-            _ => (),
+            _ => {
+                println!("Render new config");
+                let _res = self.on_change.call1(&JsValue::null(), &JsValue::from_serde(&self.config).unwrap());
+            },
         }
 
         self.last_rendered_config = Some(self.config.clone());
@@ -244,6 +249,13 @@ pub fn withOptState<F: FnOnce(&mut Option<State>)>(f: F) {
 
 pub fn setState(state: State) {
     withOptState(|wrapper| *wrapper = Some(state))
+}
+
+pub fn has_state() -> bool {
+    match STATE.lock().unwrap().as_mut() {
+        Some(_) => true,
+        None => false
+    }
 }
 
 pub fn with<R, F: FnOnce(&mut State) -> R>(f: F) -> R {

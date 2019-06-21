@@ -7,6 +7,7 @@ var Curry = require("bs-platform/lib/js/curry.js");
 var Hooks = require("./Hooks.bs.js");
 var React = require("react");
 var $$String = require("bs-platform/lib/js/string.js");
+var Caml_obj = require("bs-platform/lib/js/caml_obj.js");
 var TypeSerde = require("./TypeSerde.bs.js");
 var Belt_Array = require("bs-platform/lib/js/belt_Array.js");
 var Pervasives = require("bs-platform/lib/js/pervasives.js");
@@ -167,19 +168,69 @@ function force(m) {
 
 var Opt = /* module */[/* force */force];
 
+function App$ScenePicker(Props) {
+  var scenes = Props.scenes;
+  Props.tags;
+  return React.createElement("div", undefined, Belt_Array.map(Belt_MapString.toArray(scenes), (function (param) {
+                    return React.createElement("div", undefined, React.createElement(App$Scene, {
+                                    scene: param[1]
+                                  }));
+                  })));
+}
+
+var ScenePicker = /* module */[/* make */App$ScenePicker];
+
+function App$ConfigEditor(Props) {
+  var config = Props.config;
+  Props.update;
+  var match = Hooks.useState(config);
+  var setTmpConfig = match[1];
+  var tmpConfig = match[0];
+  React.useEffect((function () {
+          if (Caml_obj.caml_notequal(config, tmpConfig)) {
+            Curry._1(setTmpConfig, config);
+          }
+          return undefined;
+        }), /* array */[config]);
+  return React.createElement("div", {
+              className: Css.style(/* :: */[
+                    Css.fontFamily("monospace"),
+                    /* :: */[
+                      Css.whiteSpace(/* pre */5595171),
+                      /* [] */0
+                    ]
+                  ])
+            }, force(Caml_option.undefined_to_opt(JSON.stringify(tmpConfig))));
+}
+
+var ConfigEditor = /* module */[/* make */App$ConfigEditor];
+
 function getKeys(param) {
   return Localforage.keys();
 }
 
 function App$App(Props) {
-  var config = Props.config;
+  var wasm = Props.wasm;
   var keys = Hooks.useLoading(getSceneInfo);
+  var match = Hooks.useState(wasm.initial());
+  var onChange = match[1];
+  var config = match[0];
+  console.log("Rendering app here");
+  React.useEffect((function () {
+          wasm.setup(config, onChange);
+          return undefined;
+        }), ([]));
   if (keys !== undefined) {
-    return React.createElement("div", undefined, force(Caml_option.undefined_to_opt(JSON.stringify(config))), Belt_Array.map(Belt_MapString.toArray(keys[/* scenes */0]), (function (param) {
-                      return React.createElement("div", undefined, React.createElement(App$Scene, {
-                                      scene: param[1]
-                                    }));
-                    })));
+    var match$1 = keys;
+    return React.createElement("div", undefined, React.createElement(App$ConfigEditor, {
+                    config: config,
+                    update: (function (config) {
+                        return wasm.restore(config);
+                      })
+                  }), React.createElement(App$ScenePicker, {
+                    scenes: match$1[/* scenes */0],
+                    tags: match$1[/* tags */1]
+                  }));
   } else {
     return React.createElement("div", undefined, "Loading");
   }
@@ -191,13 +242,9 @@ var App = /* module */[
 ];
 
 Rust.withModule((function (wasm) {
-        wasm.run();
-        var config = wasm.save();
-        ReactDOMRe.renderToElementWithId(React.createElement(App$App, {
-                  config: config
-                }), "reason-root");
-        console.log("Config we got", config);
-        return /* () */0;
+        return ReactDOMRe.renderToElementWithId(React.createElement(App$App, {
+                        wasm: wasm
+                      }), "reason-root");
       }));
 
 var x = 10;
@@ -208,5 +255,7 @@ exports.sceneFromKey = sceneFromKey;
 exports.getSceneInfo = getSceneInfo;
 exports.Scene = Scene;
 exports.Opt = Opt;
+exports.ScenePicker = ScenePicker;
+exports.ConfigEditor = ConfigEditor;
 exports.App = App;
 /*  Not a pure module */

@@ -117,33 +117,68 @@ module Opt =  {
   }
 }
 
+module ScenePicker = {
+
+  [@react.component]
+  let make = (~scenes, ~tags) => {
+    <div>
+      {React.array(
+          scenes
+          ->Belt.Map.String.toArray
+          ->Belt.Array.map(((_key, scene)) => <div>
+          <Scene scene />
+          </div>),
+        )}
+    </div>
+  }
+};
+
+module ConfigEditor = {
+  [@react.component]
+  let make = (~config, ~update) => {
+    let (tmpConfig, setTmpConfig) = Hooks.useState(config);
+    React.useEffect1(() => {
+      if (config != tmpConfig) {
+        setTmpConfig(config)
+      };
+      None
+    }, [|config|]);
+
+    <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
+      {React.string(Js.Json.stringifyAny(tmpConfig)->Opt.force)}
+    </div>
+  };
+};
+
 module App = {
   let getKeys = () => keys();
 
   [@react.component]
-  let make = (~config: Rust.config) => {
+  let make = (~wasm) => {
     let keys = Hooks.useLoading(getSceneInfo);
+    let (config, onChange) = Hooks.useState(wasm##initial());
+    Js.log("Rendering app here");
+
+    React.useEffect0(() => {
+      wasm##setup(config, onChange);
+      // wasm.run(onChange);
+      None
+    });
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
     | Some({scenes, tags}) =>
       <div>
-        {React.string(Js.Json.stringifyAny(config)->Opt.force)}
-        {React.array(
-           scenes
-           ->Belt.Map.String.toArray
-           ->Belt.Array.map(((_key, scene)) => <div>
-           <Scene scene />
-           </div>),
-         )}
+        <ConfigEditor config update={config => wasm##restore(config)} />
+        <ScenePicker scenes tags />
       </div>
     };
   };
 };
 
 Rust.withModule(wasm => {
-  wasm##run();
-  let config = wasm##save();
-  ReactDOMRe.renderToElementWithId(<App config />, "reason-root");
-  Js.log2("Config we got", config);
+  // wasm##run();
+  // let config = wasm##save();
+  ReactDOMRe.renderToElementWithId(<App wasm />, "reason-root");
+  // Js.log2("Config we got", config);
 });
