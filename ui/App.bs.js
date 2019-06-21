@@ -157,15 +157,25 @@ function App$Scene(Props) {
 
 var Scene = /* module */[/* make */App$Scene];
 
+function force(m) {
+  if (m !== undefined) {
+    return Caml_option.valFromOption(m);
+  } else {
+    return Pervasives.failwith("unwrapping option");
+  }
+}
+
+var Opt = /* module */[/* force */force];
+
 function getKeys(param) {
   return Localforage.keys();
 }
 
 function App$App(Props) {
-  Props.config;
+  var config = Props.config;
   var keys = Hooks.useLoading(getSceneInfo);
   if (keys !== undefined) {
-    return React.createElement("div", undefined, Belt_Array.map(Belt_MapString.toArray(keys[/* scenes */0]), (function (param) {
+    return React.createElement("div", undefined, force(Caml_option.undefined_to_opt(JSON.stringify(config))), Belt_Array.map(Belt_MapString.toArray(keys[/* scenes */0]), (function (param) {
                       return React.createElement("div", undefined, React.createElement(App$Scene, {
                                       scene: param[1]
                                     }));
@@ -197,5 +207,6 @@ exports.Async = Async;
 exports.sceneFromKey = sceneFromKey;
 exports.getSceneInfo = getSceneInfo;
 exports.Scene = Scene;
+exports.Opt = Opt;
 exports.App = App;
 /*  Not a pure module */

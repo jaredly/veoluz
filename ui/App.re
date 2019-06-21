@@ -110,6 +110,13 @@ module Scene = {
   };
 };
 
+module Opt =  {
+  let force = m => switch m {
+    | None => failwith("unwrapping option")
+    | Some(m) => m
+  }
+}
+
 module App = {
   let getKeys = () => keys();
 
@@ -121,10 +128,11 @@ module App = {
     | None => <div> {React.string("Loading")} </div>
     | Some({scenes, tags}) =>
       <div>
+        {React.string(Js.Json.stringifyAny(config)->Opt.force)}
         {React.array(
            scenes
            ->Belt.Map.String.toArray
-           ->Belt.Array.map(((key, scene)) => <div>
+           ->Belt.Array.map(((_key, scene)) => <div>
            <Scene scene />
            </div>),
          )}
