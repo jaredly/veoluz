@@ -3,6 +3,17 @@ let useState = initial => {
   React.useReducer((_, action) => action, initial);
 };
 
+let useOnChange = (value, onChange) => {
+  let lastValue = React.useRef(value);
+  React.useEffect2(() => {
+    if (lastValue->React.Ref.current !== value) {
+      lastValue->React.Ref.setCurrent(value);
+      onChange(value)
+    };
+    None
+  }, (value, lastValue->React.Ref.current));
+};
+
 let useUpdatingState = initial => {
   let (current, setState) = useState(initial);
   React.useEffect1(

@@ -116,6 +116,29 @@ pub fn restore(config: &JsValue) {
     }
 }
 
+#[wasm_bindgen]
+pub fn parse_url_config(hash: &str) -> JsValue {
+    ui::parse_url_config(hash).map_or(JsValue::null(), |config| {
+        JsValue::from_serde(&config).unwrap()
+    })
+}
+
+#[wasm_bindgen]
+pub fn serialize_url_config(config: &JsValue) -> String {
+    config
+        .into_serde::<shared::Config>()
+        .map(|config| {
+            let encoded = bincode::serialize(&config).unwrap();
+            let zipped = miniz_oxide::deflate::compress_to_vec(&encoded, 10);
+            log!("Sharing {} vs {}", encoded.len(), zipped.len());
+
+            let b64 = base64::encode(&zipped);
+            b64
+        })
+        .ok()
+        .unwrap_or("".into())
+}
+
 pub fn initial_config() -> shared::Config {
     match ui::get_url_config() {
         None => {

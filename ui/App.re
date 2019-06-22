@@ -12,11 +12,9 @@ external keys: unit => Js.Promise.t(array(string)) = "";
 type blob;
 type canvas;
 
-[@bs.send]
-external toBlob: (canvas, blob => unit) => unit = "";
+[@bs.send] external toBlob: (canvas, blob => unit) => unit = "";
 type element;
-[@bs.val]
-[@bs.scope "document"]
+[@bs.val] [@bs.scope "document"]
 external getElementById: string => element = "";
 external asCanvas: element => canvas = "%identity";
 
@@ -83,14 +81,14 @@ let getSceneInfo = () => {
 
 let saveSceneInfo = directory => {
   let json = TypeSerde.serializeDirectory(directory);
-  setItem("scenes", json)
+  setItem("scenes", json);
 };
 
 [@bs.val] [@bs.scope "URL"] external createObjectURL: blob => string = "";
 
 module Scene = {
   [@react.component]
-  let make = (~scene: scene, ~onSelect) => {
+  let make = (~scene: scene, ~selected, ~onSelect) => {
     let key = scene.id ++ ":image";
     let getter = React.useCallback1(() => getItem(key), [|key|]);
     let imageBlob = Hooks.useLoading(getter);
@@ -112,7 +110,15 @@ module Scene = {
     | Some(url) =>
       <div
         className=Css.(
-          style([display(`flex), flexDirection(`row), padding(px(4))])
+          style([
+            display(`flex),
+            flexDirection(`row),
+            padding(px(4)),
+          ] @ (
+            selected ? [
+              backgroundColor(hex("5af"))
+            ] : []
+          ))
         )>
         <div
           style={ReactDOMRe.Style.make(
@@ -122,9 +128,9 @@ module Scene = {
           onClick={_evt => {
             let%Async.Consume config = getItem(scene.id);
             switch (Js.toOption(config)) {
-              | None => ()
-              | Some(config) => onSelect(config)
-            }
+            | None => ()
+            | Some(config) => onSelect(scene.id, config)
+            };
           }}
           className=Css.(
             style([
@@ -159,7 +165,7 @@ module Opt = {
 
 module ScenePicker = {
   [@react.component]
-  let make = (~directory, ~onSelect) => {
+  let make = (~directory, ~current, ~onSelect) => {
     <div
       className=Css.(
         style([
@@ -176,9 +182,8 @@ module ScenePicker = {
          ->Belt.Map.String.toArray
          ->Belt.List.fromArray
          ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
-         ->Belt.List.map(((key, scene)) =>
-             <Scene scene onSelect key />
-           )->Belt.List.toArray,
+         ->Belt.List.map(((key, scene)) => <Scene selected={current == Some(key)} scene onSelect key />)
+         ->Belt.List.toArray,
        )}
     </div>;
   };
@@ -190,49 +195,89 @@ module ConfigEditor = {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
-      <div>
-        {React.string(Js.Json.stringifyAny(tmpConfig)->Opt.force)}
-      </div>
-      <button onClick={(_) => onSaveScene()}>
+      <div> {React.string(Js.Json.stringifyAny(tmpConfig)->Opt.force)} </div>
+      <button onClick={_ => onSaveScene()}>
         {React.string("Save Sceen")}
       </button>
     </div>;
   };
 };
 
-let genId = () => Js.Math.random()->Js.Float.toStringWithRadix(~radix=36)->Js.String2.sliceToEnd(~from=2);
+let genId = () =>
+  Js.Math.random()
+  ->Js.Float.toStringWithRadix(~radix=36)
+  ->Js.String2.sliceToEnd(~from=2);
 let genId = () => genId() ++ genId();
 
+let newScene = () => {
+  let id = genId();
+  let created = Js.Date.now();
+  let fullId = created->Js.Float.toString ++ ":" ++ id;
+  {
+    id: fullId,
+    modified: created,
+    created,
+    title: None,
+    tags: Belt.Set.String.empty,
+    children: [||],
+    parent: None,
+  };
+};
+
 module Inner = {
+  type state = {
+    directory,
+    current: option(string),
+  };
+
   [@react.component]
   let make = (~wasm, ~directory) => {
     let (config, onChange) = Hooks.useState(wasm##initial());
-    let (directory, setDirectory) = Hooks.useState(directory);
 
-    // React.useEffect
+    let (state, dispatch) =
+      React.useReducer(
+        (state, action) =>
+          switch (action) {
+          | `Save((scene: scene)) => {
+              directory: {
+                ...state.directory,
+                scenes:
+                  state.directory.scenes
+                  ->Belt.Map.String.set(scene.id, scene),
+              },
+              current: Some(scene.id),
+            }
+          | `Select(id) => {
+            ...state,
+            current: Some(id)
+          }
+          },
+        {directory, current: None},
+      );
 
-    let onSaveScene = React.useCallback1(() => {
-      let id = genId();
-      let created = Js.Date.now();
-      let canvas = getElementById("drawing")->asCanvas;
-      canvas->toBlob(blob => {
-        let fullId = created->Js.Float.toString ++ ":" ++ id;
-        let%Async.Consume () = setItem(fullId ++ ":image", blob);
-        let%Async.Consume () = setItem(fullId, config);
-        let scenes = directory.scenes->Belt.Map.String.set(fullId, {
-          id: fullId,
-          modified: created,
-          created,
-          title: None,
-          tags: Belt.Set.String.empty,
-          children: [||],
-          parent: None,
-        });
-        let directory = {...directory, scenes};
-        setDirectory(directory);
+    Hooks.useOnChange(
+      state.directory,
+      directory => {
+        Js.log("Directory changed -- saving");
         let%Async.Consume () = saveSceneInfo(directory);
-      })
-    }, [|config|]);
+        ();
+      },
+    );
+
+    let onSaveScene =
+      React.useCallback1(
+        () => {
+          let scene = newScene();
+          let canvas = getElementById("drawing")->asCanvas;
+          canvas->toBlob(blob => {
+            let%Async.Consume () = setItem(scene.id ++ ":image", blob);
+            let%Async.Consume () = setItem(scene.id, config);
+            dispatch(`Save(scene));
+            ();
+          });
+        },
+        [|config|],
+      );
 
     React.useEffect0(() => {
       wasm##setup(config, onChange);
@@ -240,11 +285,18 @@ module Inner = {
     });
 
     <div>
-      <ConfigEditor config onSaveScene update={config => wasm##restore(config)} />
-      <ScenePicker directory onSelect={config => wasm##restore(config)} />
-    </div>
+      <ConfigEditor
+        config
+        onSaveScene
+        update={config => wasm##restore(config)}
+      />
+      <ScenePicker directory=state.directory current=state.current onSelect={(id, config) => {
+        wasm##restore(config);
+        dispatch(`Select(id))
+      }} />
+    </div>;
   };
-}
+};
 
 module App = {
   let getKeys = () => keys();
@@ -260,12 +312,13 @@ module App = {
   };
 };
 
-Rust.withModule(wasm =>
+Rust.withModule(wasm
   // wasm##run();
   // let config = wasm##save();
-  ReactDOMRe.renderToElementWithId(
-    <App wasm />,
-    "reason-root",
-    // Js.log2("Config we got", config);
-  )
-);
+  =>
+    ReactDOMRe.renderToElementWithId(
+      <App wasm />,
+      "reason-root",
+      // Js.log2("Config we got", config);
+    )
+  );

@@ -290,16 +290,20 @@ pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Er
         })
 }
 
+pub fn parse_url_config(hash: &str) -> Option<shared::Config> {
+    base64::decode(&hash)
+        .ok()
+        .and_then(|zipped| miniz_oxide::inflate::decompress_to_vec(&zipped).ok())
+        .and_then(|encoded| deserialize_bincode(&encoded).ok())
+}
+
 pub fn get_url_config() -> Option<shared::Config> {
     let hash = location.hash();
     if hash.len() == 0 {
         return None;
     }
     let hash: String = hash[1..].into();
-    base64::decode(&hash)
-        .ok()
-        .and_then(|zipped| miniz_oxide::inflate::decompress_to_vec(&zipped).ok())
-        .and_then(|encoded| deserialize_bincode(&encoded).ok())
+    parse_url_config(&hash)
 }
 
 pub fn get_button(id: &str) -> Result<web_sys::HtmlButtonElement, JsValue> {
