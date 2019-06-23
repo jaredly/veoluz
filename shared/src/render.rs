@@ -67,6 +67,34 @@ fn exposer<'a>(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
 //     (brightness as line::float / top * 4000.0).min(255.0) as u8
 // }
 
+pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usize) -> Vec<u32> {
+    let width = config.rendering.width as usize;
+    let height = config.rendering.height as usize;
+
+    let mut bins = vec![0; bin_count];
+
+    let mut top = 0;
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[x + y * width]);
+        }
+    }
+    
+    let expose = exposer(&config.rendering.exposure);
+
+    let top = top as line::float;
+    for x in 0..width {
+        for y in 0..height {
+            let index = (x + y * width) * 4;
+            let brightness = brightness_data[x + y * width];
+            let exposed = expose(top, brightness) / 255.0 * (bin_count - 1) as f32;
+            bins[exposed as usize] += 1;
+        }
+    }
+
+    bins
+}
+
 pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
     // let _timer = Timer::new("Colorize");
     let width = config.rendering.width * scale as usize;

@@ -27,6 +27,7 @@ import("../crate/pkg").then(module => {
     let buffer = res.data().buffer;
     let total_rays = rays;
     postMessage({id: data.id, buffer: buffer}, [buffer])
+    // console.log('responded')
 
     loopUntil(() => {
       let res = module.process(data)
@@ -34,6 +35,7 @@ import("../crate/pkg").then(module => {
       total_rays += rays;
       let buffer = res.data().buffer;
       postMessage({id: data.id, buffer: buffer}, [buffer])
+      // console.log('responded++')
       return total_rays >= data.count
     })
     // res = module.process(data)

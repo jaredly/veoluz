@@ -201,7 +201,7 @@ module ConfigEditor = {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
-      <div> {React.string(Js.Json.stringifyAny(tmpConfig)->Opt.force)} </div>
+      // <div> {React.string(Js.Json.stringifyWithSpace(Obj.magic(tmpConfig), 2))} </div>
       <button onClick={_ => onSaveScene()}>
         {React.string("Save Sceen")}
       </button>
@@ -236,6 +236,41 @@ Behavior:
 - on hash change that I initiate, 
 - to detect hashchanges I don't initiate, should use a ref probably. Update the ref then set the hash
   */
+
+let hashIt: string => string = [%bs.raw {|
+function(input) {
+    var hash = 0;
+    if (input.length == 0) {
+        return hash;
+    }
+    for (var i = 0; i < input.length; i++) {
+        var char = input.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
+}
+|}];
+
+let anyHash = data => {
+  hashIt(Js.Json.stringifyAny(data)->Opt.force)
+}
+
+let debounced = (fn, time) => {
+  let timer = ref(None);
+  arg => {
+    switch (timer^) {
+      | None => ()
+      | Some(timer) => {
+        Js.Global.clearTimeout(timer)
+      }
+    }
+
+    timer := Some(Js.Global.setTimeout(() => {
+      fn(arg)
+    }, time))
+  }
+};
 
 module Inner = {
   type state = {
@@ -299,12 +334,12 @@ module Inner = {
       dispatch(`Parent(parentState))
     });
 
-    Js.log3("Inner render", state, parentState);
-
-    let configRef = Hooks.useOnChange(state.config, config => {
-      Js.log("Restoring");
+    let configRef = Hooks.useOnChange(~log=true, state.config, config => {
+      // Js.log3("Restoring -- different", anyHash(config), [|config|]);
       wasm##restore(config);
     });
+
+    // Js.log4("Inner render", anyHash(state.config), anyHash(configRef->React.Ref.current), (state.config, configRef->React.Ref.current));
 
     Hooks.useOnChange(
       state.directory,
@@ -338,11 +373,17 @@ module Inner = {
       );
 
     React.useEffect0(() => {
-      Js.log2("Setting up here", state.config);
-      wasm##setup(state.config, config => {
-        // Prevent a render loop
+      // Js.log3("Setting up here", anyHash(state.config), state.config);
+      let update = debounced(config => {
         configRef->React.Ref.setCurrent(config);
         dispatch(`Update(config))
+      }, 200);
+      wasm##setup(state.config, config => {
+        // Prevent a render loop
+        // Js.log("Setting current from wasm (TODO debounce)");
+        // configRef->React.Ref.setCurrent(config);
+        // dispatch(`Update(config))
+        update(config)
       });
       None;
     });
@@ -352,13 +393,14 @@ module Inner = {
         config={state.config}
         onSaveScene
         update={config => {
-          // wasm##restore(config);
+          wasm##restore(config);
           dispatch(`Update(config))
         }}
       />
       <ScenePicker directory=state.directory current=state.current
       onSelect={(id, config) => {
-        Js.log("Resetting");
+        Js.log3("Resetting", anyHash(config), config);
+        configRef->React.Ref.setCurrent(config);
         wasm##restore(config);
         dispatch(`Select(id))
       }} />

@@ -40,6 +40,7 @@ pub struct UiState {
     pub selection: Option<Selection>,
     pub show_lasers: bool,
     pub mouse_over: bool,
+    pub show_hist: bool,
     pub hovered: Option<(usize, Handle)>,
     pub last_mouse_pos: Point2<float>,
 }
@@ -48,6 +49,7 @@ lazy_static! {
     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
         selection: None,
         show_lasers: false,
+        show_hist: false,
         mouse_over: false,
         hovered: None,
         last_mouse_pos: Point2::new(0.0, 0.0)
@@ -405,10 +407,31 @@ pub fn setup_input<F: FnMut(f32, bool) + 'static>(
     Ok(())
 }
 
+pub fn draw_histogram(state: &crate::state::State) {
+    // let _ = shared::Timer::new("histogram");
+    let bin_count = 200;
+    let histogram = shared::render::histogram(&state.config, &state.buffer, bin_count);
+    let height = state.config.rendering.height as f64 / 3.0;
+    let w = state.config.rendering.width as f64 / bin_count as f64;
+    let max = *histogram.iter().max().unwrap() as f64;
+    state.ctx.set_fill_style(&"#f00".into());
+    for (i, count) in histogram.iter().enumerate() {
+        let count = *count;
+        if count < 10 {
+            continue;
+        }
+        let h = (count as f64 / max).sqrt() * height;
+        state.ctx.fill_rect(i as f64 * w, state.config.rendering.height as f64 - h, w, h);
+    }
+}
+
 pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
     draw_image(state)?;
     if ui.mouse_over {
         draw_walls(state, ui, ui.hovered.clone())?;
+    }
+    if ui.show_hist {
+        draw_histogram(state);
     }
     Ok(())
 }

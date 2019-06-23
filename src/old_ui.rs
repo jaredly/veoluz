@@ -255,14 +255,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     );
 
     setup_input("expose-low", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             state.config.rendering.exposure.min = value as f32;
             if value as f32 > state.config.rendering.exposure.max - 0.01 {
                 state.config.rendering.exposure.max = value as f32 + 0.01;
                 get_input("expose-high")?
                     .set_value_as_number(state.config.rendering.exposure.max as f64);
             }
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -271,14 +271,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("expose-high", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             state.config.rendering.exposure.max = value as f32;
             if (value as f32) < state.config.rendering.exposure.min + 0.01 {
                 state.config.rendering.exposure.min = value as f32 - 0.01;
                 get_input("expose-low")?
                     .set_value_as_number(state.config.rendering.exposure.min as f64);
             }
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -287,14 +287,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("b-r", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { background, .. } => {
                     background.0 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -303,14 +303,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("b-g", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { background, .. } => {
                     background.1 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -319,14 +319,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("b-b", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { background, .. } => {
                     background.2 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -335,14 +335,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("f-r", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { highlight, .. } => {
                     highlight.0 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -351,14 +351,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("f-g", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { highlight, .. } => {
                     highlight.1 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -367,14 +367,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("f-b", |value, finished| {
-        try_state_ui(|state, _ui| {
+        try_state_ui(|state, ui| {
             match &mut state.config.rendering.coloration {
                 shared::Coloration::HueRange { .. } => (),
                 shared::Coloration::Rgb { highlight, .. } => {
                     highlight.2 = value as u8;
                 }
             };
-            state.reexpose()?;
+            state.reexpose(ui)?;
             if (finished) {
                 state.maybe_save_history();
             }
@@ -387,9 +387,9 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, _ui| {
+            try_state_ui(|state, ui| {
                 state.config.rendering.exposure.curve = shared::Curve::FourthRoot;
-                state.reexpose()?;
+                state.reexpose(ui)?;
                 state.maybe_save_history();
                 Ok(())
             })
@@ -401,9 +401,9 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, _ui| {
+            try_state_ui(|state, ui| {
                 state.config.rendering.exposure.curve = shared::Curve::SquareRoot;
-                state.reexpose()?;
+                state.reexpose(ui)?;
                 state.maybe_save_history();
                 Ok(())
             })
@@ -415,9 +415,9 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, _ui| {
+            try_state_ui(|state, ui| {
                 state.config.rendering.exposure.curve = shared::Curve::Linear;
-                state.reexpose()?;
+                state.reexpose(ui)?;
                 state.maybe_save_history();
                 Ok(())
             })

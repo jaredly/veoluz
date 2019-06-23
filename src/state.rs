@@ -147,6 +147,18 @@ impl State {
         array: js_sys::Uint32Array,
     ) -> Result<(), JsValue> {
         if id < self.last_rendered {
+            let (worker, busy, queued) = &mut self.workers[worker];
+            match queued {
+                None => {
+                    // log!("Finished a thread");
+                    *busy = false
+                },
+                Some(message) => {
+                    // log!("Sending a new config to render");
+                    worker.post_message(&JsValue::from_serde(message).unwrap())?;
+                    *queued = None
+                }
+            }
             // this is old data, disregard
             return Ok(());
         }
@@ -163,12 +175,19 @@ impl State {
 
         self.image_data = make_image_data(&self.config, &self.buffer)?;
 
-        self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+        crate::ui::use_ui(|ui| {
+            crate::ui::draw(ui, &self)
+        });
+        // self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
 
         let (worker, busy, queued) = &mut self.workers[worker];
         match queued {
-            None => *busy = false,
+            None => {
+                // log!("Finished a thread");
+                *busy = false
+            },
             Some(message) => {
+                // log!("Sending a new config to render");
                 worker.post_message(&JsValue::from_serde(message).unwrap())?;
                 *queued = None
             }
@@ -194,10 +213,13 @@ impl State {
         )
     }
 
-    pub fn reexpose(&mut self) -> Result<(), JsValue> {
+    pub fn reexpose(&mut self, ui: &crate::ui::UiState) -> Result<(), JsValue> {
         self.image_data = make_image_data(&self.config, &self.buffer)?;
 
-        self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+        // self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
+        // crate::ui::use_ui(|ui| {
+        crate::ui::draw(ui, &self);
+        // });
 
         Ok(())
     }
@@ -229,9 +251,11 @@ impl State {
 
         for (worker, busy, queued) in self.workers.iter_mut() {
             if *busy {
+                // log!("Queueing up for a worker");
                 *queued = Some(message.clone())
             } else {
                 *busy = true;
+                // log!("Sending a new config to render");
                 worker.post_message(&JsValue::from_serde(&message).unwrap())?;
             }
         }
