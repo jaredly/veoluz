@@ -49,7 +49,7 @@ lazy_static! {
     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
         selection: None,
         show_lasers: false,
-        show_hist: false,
+        show_hist: true,
         mouse_over: false,
         hovered: None,
         last_mouse_pos: Point2::new(0.0, 0.0)
@@ -409,10 +409,15 @@ pub fn setup_input<F: FnMut(f32, bool) + 'static>(
 
 pub fn draw_histogram(state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
-    let bin_count = 200;
+    let dx = state.config.rendering.exposure.max as f64 - state.config.rendering.exposure.min as f64;
+    let full_width = state.config.rendering.width as f64;
+    let x0 = full_width * state.config.rendering.exposure.min as f64;
+    let x1 = full_width * state.config.rendering.exposure.max as f64;
+    let bin_count = (200.0 * dx) as usize;
+    let w = (x1 - x0) / bin_count as f64;
     let histogram = shared::render::histogram(&state.config, &state.buffer, bin_count);
     let height = state.config.rendering.height as f64 / 3.0;
-    let w = state.config.rendering.width as f64 / bin_count as f64;
+    // let w = full_width / bin_count as f64;
     let max = *histogram.iter().max().unwrap() as f64;
     state.ctx.set_fill_style(&"#f00".into());
     for (i, count) in histogram.iter().enumerate() {
@@ -421,7 +426,7 @@ pub fn draw_histogram(state: &crate::state::State) {
             continue;
         }
         let h = (count as f64 / max).sqrt() * height;
-        state.ctx.fill_rect(i as f64 * w, state.config.rendering.height as f64 - h, w, h);
+        state.ctx.fill_rect(x0 + i as f64 * w, state.config.rendering.height as f64 - h, w, h);
     }
 }
 
