@@ -85,7 +85,6 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
     let top = top as line::float;
     for x in 0..width {
         for y in 0..height {
-            let index = (x + y * width) * 4;
             let brightness = brightness_data[x + y * width];
             let exposed = expose(top, brightness) / 255.0 * (bin_count - 1) as f32;
             bins[exposed as usize] += 1;

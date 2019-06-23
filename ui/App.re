@@ -195,12 +195,140 @@ module ScenePicker = {
   };
 };
 
+let evtPos = evt => (
+        evt->ReactEvent.Mouse.clientX,
+        evt->ReactEvent.Mouse.clientY,
+      );
+
+let useDraggable = (~onMove) => {
+  let (pressed, setPressed) = Hooks.useState(None);
+  React.useEffect3(() => {
+    switch pressed {
+      | None => None
+      | Some((x, y)) =>
+        let mousemove = (evt) => onMove(evtPos(evt));
+        let mouseup = (evt) => {
+          // onRelease(evtPos(evt));
+          setPressed(None);
+        };
+        Web.window->Web.addEventListener("mousemove", mousemove, true);
+        Web.window->Web.addEventListener("mouseup", mouseup, true);
+        Some(() => {
+          Web.window->Web.removeEventListener("mousemove", mousemove, true);
+          Web.window->Web.removeEventListener("mouseup", mouseup, true);
+        })
+    }
+  }, (pressed, onMove, ()));
+
+  (pressed, (evt) => {
+    let pos = evtPos(evt);
+    setPressed(Some(pos));
+    // onPress(pos);
+  })
+};
+
+module Draggable = {
+  [@react.component]
+  let make = (~render, ~onMove) => {
+    let (pressed, setPressed) = Hooks.useState(None);
+    let moveRef = React.useRef(onMove);
+    moveRef->React.Ref.setCurrent(onMove);
+    React.useEffect3(() => {
+      switch pressed {
+        | None => None
+        | Some((x, y)) =>
+          let mousemove = (evt) => React.Ref.current(moveRef)(evtPos(evt));
+          let mouseup = (evt) => {
+            // onRelease(evtPos(evt));
+            setPressed(None);
+          };
+          Web.window->Web.addEventListener("mousemove", mousemove, true);
+          Web.window->Web.addEventListener("mouseup", mouseup, true);
+          Some(() => {
+            Web.window->Web.removeEventListener("mousemove", mousemove, true);
+            Web.window->Web.removeEventListener("mouseup", mouseup, true);
+          })
+      }
+    }, (pressed, onMove, ()));
+
+    render(~onMouseDown=(evt) => {
+      let pos = evtPos(evt);
+      setPressed(Some(pos));
+      // onPress(pos);
+    })
+  }
+};
+
 module ConfigEditor = {
   [@react.component]
-  let make = (~config, ~update, ~onSaveScene) => {
+  let make = (~config: Rust.config, ~update, ~onSaveScene) => {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
+    let (dragLeft, onLeft) = useDraggable(
+      ~onMove=((x, y)) => {
+        // open Rust;
+        // config->mapRendering(rendering => rendering->mapExposure(exposure => exposure->setMin(min)->setMax(max)))
+        // and maybe a ppx for
+        // [%map_deep config["rendering"]["exposure"](exposure => exposure->setMin(min)->setMax(max))]
+
+        // let config = [%js.deep config["rendering"]["exposure"].map(exposure => exposure["min"].replace(1.0)["max"].replace(5.0))]
+        let config = [%js.deep config["rendering"]["exposure"]["max"].replace(float_of_int(x) /. 1000.0)]
+        // let transform =
+        //     (item: {.. "rendering": {.. "exposure": 'a} as 'b} as 'c, fn: 'a => 'a)
+        //     : 'c =>
+        //     // (item, fn) =>
+        //     {
+        //   Js.Obj.assign(Js.Obj.empty(), item)
+        //   ->Js.Obj.assign({
+        //       "rendering":
+        //         Js.Obj.assign(Js.Obj.empty(), item##rendering)
+        //         ->Js.Obj.assign({"exposure": fn(item##rendering##exposure)}),
+        //     });
+        // };
+        // [%js.deep config["rendering"]["exposure"].map(exposure => exposure["min"].replace(min)["max"].replace(max))]
+        // let m = transform(config, exposure => exposure);
+        // let m = transform(config, exposure => {
+        //   let z = Js.Obj.assign(Js.Obj.empty(), exposure)->Js.Obj.assign({"min": 10.0});
+        //   Js.Obj.assign(Js.Obj.empty(), z)->Js.Obj.assign({"max": 10.0});
+        // });
+        // let m = config##rendering##exposure;
+        // [%js.deep config["rendering"]["exposure"].replace(awesome)]
+
+        // [%set_deep config["rendering"]["exposure"] := awesome]
+        // Js.Obj.assign(
+        //   Js.Obj.empty(),
+        //   config
+        // )
+        update(config)
+      }
+    );
+
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
+      <div style=ReactDOMRe.Style.make(
+        ~width=Js.Int.toString(config##rendering##width) ++ "px",
+        ~position="relative",
+        ~height="20px",
+        ~backgroundColor="#afa",
+        ()
+      )>
+        <div
+          style=ReactDOMRe.Style.make(
+            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##max) ++ "px",
+            ()
+          )
+          onMouseDown=onLeft
+          className=Css.(style([
+            width(px(10)),
+            height(px(10)),
+            cursor(`ewResize),
+            position(`absolute),
+            backgroundColor(red)
+          ]))
+          onClick={evt => {
+            Js.log("Click lower handle")
+          }}
+        />
+      </div>
       // <div> {React.string(Js.Json.stringifyWithSpace(Obj.magic(tmpConfig), 2))} </div>
       <button onClick={_ => onSaveScene()}>
         {React.string("Save Sceen")}
@@ -393,6 +521,7 @@ module Inner = {
         config={state.config}
         onSaveScene
         update={config => {
+          configRef->React.Ref.setCurrent(config);
           wasm##restore(config);
           dispatch(`Update(config))
         }}

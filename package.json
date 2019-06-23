@@ -13,6 +13,7 @@
     "webpack-dev-server": "^3.1.0"
   },
   "dependencies": {
+    "js_deep_ppx": "file:../../../tools/js_deep",
     "bs-css": "^8.0.4",
     "bs-platform": "^5.0.4",
     "let-anything": "^1.0.3",
