@@ -246,7 +246,7 @@ module Inner = {
 
 
   [@react.component]
-  let make = (~wasm: Rust.wasm, ~directory, ~state, ~permalink, ~updateId) => {
+  let make = (~wasm: Rust.wasm, ~directory, ~state as parentState, ~permalink, ~updateId) => {
 
     // let hash = Hooks.useHash();
     // let (hashId, hashConfig) = React.useMemo1(() => {
@@ -260,12 +260,20 @@ module Inner = {
     //   }
     // }, [|hash|]);
 
-    let ((selectedId, config), onChange) = Hooks.useUpdatingState(state);
+    // let ((selectedId, config), onChange) = Hooks.useUpdatingState(state);
+    // Js.log3("Inner render", config, snd(state));
+    // Js.log2("State from parent", parentState);
 
     let (state, dispatch) =
       React.useReducer(
         (state, action) =>
           switch (action) {
+          | `Parent((parentId, parentConfig)) =>
+            {
+              ...state,
+              current: parentId,
+              config: parentConfig
+            }
           | `Save((scene: scene)) => {
               ...state,
               directory: {
@@ -284,10 +292,17 @@ module Inner = {
               current: Some(id)
             }
           },
-        {directory, current: fst(state), config: snd(state)},
+        {directory, current: fst(parentState), config: snd(parentState)},
       );
 
+    let _ = Hooks.useOnChange(parentState, parentState => {
+      dispatch(`Parent(parentState))
+    });
+
+    Js.log3("Inner render", state, parentState);
+
     let configRef = Hooks.useOnChange(state.config, config => {
+      Js.log("Restoring");
       wasm##restore(config);
     });
 
@@ -314,27 +329,36 @@ module Inner = {
           let canvas = getElementById("drawing")->asCanvas;
           canvas->toBlob(blob => {
             let%Async.Consume () = setItem(scene.id ++ ":image", blob);
-            let%Async.Consume () = setItem(scene.id, config);
+            let%Async.Consume () = setItem(scene.id, state.config);
             dispatch(`Save(scene));
             ();
           });
         },
-        [|config|],
+        [|state.config|],
       );
 
     React.useEffect0(() => {
-      wasm##setup(config, config => dispatch(`Update(config)));
+      Js.log2("Setting up here", state.config);
+      wasm##setup(state.config, config => {
+        // Prevent a render loop
+        configRef->React.Ref.setCurrent(config);
+        dispatch(`Update(config))
+      });
       None;
     });
 
     <div>
       <ConfigEditor
-        config
+        config={state.config}
         onSaveScene
-        update={config => wasm##restore(config)}
+        update={config => {
+          // wasm##restore(config);
+          dispatch(`Update(config))
+        }}
       />
       <ScenePicker directory=state.directory current=state.current
       onSelect={(id, config) => {
+        Js.log("Resetting");
         wasm##restore(config);
         dispatch(`Select(id))
       }} />
@@ -389,7 +413,12 @@ module Router = {
         loadHash(~hash, ~wasm, ~setInitialState)
       };
       None
-    }, (hash, prevHash->React.Ref.current))
+    }, (hash, prevHash->React.Ref.current));
+
+    // React.useEffect(() => {
+    //   wasm##setup(snd(initialState));
+    //   None
+    // });
 
     // let (id, config) = initialState;
     render(
