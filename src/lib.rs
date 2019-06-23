@@ -139,19 +139,22 @@ pub fn serialize_url_config(config: &JsValue) -> String {
         .unwrap_or("".into())
 }
 
+#[wasm_bindgen]
+pub fn blank_config() -> JsValue {
+    let width = 1024;
+    let height = 576;
+    JsValue::from_serde(&shared::Config::new(vec![], width, height)).unwrap()
+    // scenes::playground()
+    // scenes::parabola_test()
+    // scenes::apple()
+    // scenes::refraction_test()
+    // scenes::circle_row()
+    // scenes::refract2()
+}
+
 pub fn initial_config() -> shared::Config {
     match ui::get_url_config() {
-        None => {
-            let width = 1024;
-            let height = 576;
-            // shared::Config::new(vec![], width, height)
-            // scenes::playground()
-            // scenes::parabola_test()
-            scenes::apple()
-            // scenes::refraction_test()
-            // scenes::circle_row()
-            // scenes::refract2()
-        }
+        None => scenes::apple(),
         Some(config) => config,
     }
 }

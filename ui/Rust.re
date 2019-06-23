@@ -95,6 +95,8 @@ type wasm = {
   "run": [@bs.meth] (unit => unit),
   "save": [@bs.meth] (unit => config),
   "restore": [@bs.meth] (config => unit),
+  "blank_config": [@bs.meth] (unit => config),
+  "parse_url_config": [@bs.meth] (string => Js.nullable(config))
 };
 
 let wasm: Js.Promise.t(wasm) = [%bs.raw {|import('../pkg/zenphoton')|}];

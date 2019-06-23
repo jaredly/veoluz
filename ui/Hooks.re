@@ -3,6 +3,20 @@ let useState = initial => {
   React.useReducer((_, action) => action, initial);
 };
 
+let useStateGetter = getter => {
+  let (state, awesome) = React.useState(getter());
+  React.useRef(None);
+};
+
+let useHash = () => {
+  let (hash, setHash) = useState(Web.Location.hash());
+  React.useEffect0(() => Some(Web.Location.addHashListener(setHash)));
+  hash;
+};
+
+// (unit, state) => (state, (state, state) => unit)
+// (unit, state) => (state, (state) => (state => unit))
+
 let useOnChange = (value, onChange) => {
   let lastValue = React.useRef(value);
   React.useEffect2(() => {
@@ -12,6 +26,7 @@ let useOnChange = (value, onChange) => {
     };
     None
   }, (value, lastValue->React.Ref.current));
+  lastValue
 };
 
 let useUpdatingState = initial => {

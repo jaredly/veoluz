@@ -9,6 +9,12 @@ external setItem: (string, 'a) => Js.Promise.t(unit) = "";
 [@bs.module "localforage"]
 external keys: unit => Js.Promise.t(array(string)) = "";
 
+type location;
+[@bs.val] external location: location = "";
+
+[@bs.set]
+external setHash: (location, string) => unit = "hash";
+
 type blob;
 type canvas;
 
@@ -224,21 +230,44 @@ let newScene = () => {
   };
 };
 
+/**
+Behavior:
+- on first load, get the data from the hash, might be async
+- on hash change that I initiate, 
+- to detect hashchanges I don't initiate, should use a ref probably. Update the ref then set the hash
+  */
+
 module Inner = {
   type state = {
     directory,
     current: option(string),
+    config: Rust.config,
   };
 
+
   [@react.component]
-  let make = (~wasm, ~directory) => {
-    let (config, onChange) = Hooks.useState(wasm##initial());
+  let make = (~wasm: Rust.wasm, ~directory, ~state, ~permalink, ~updateId) => {
+
+    // let hash = Hooks.useHash();
+    // let (hashId, hashConfig) = React.useMemo1(() => {
+    //   if (Js.String2.startsWith(hash, "#id=")) {
+    //     let id = Js.String2.sliceToEnd(hash, ~from=4);
+    //     (Some(id), getItem(id))
+    //   } else if (String.length(hash) > 1) {
+    //     (None, Js.Promise.resolve(wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))))
+    //   } else {
+    //     (None, Js.Promise.resolve(wasm##blank_config()))
+    //   }
+    // }, [|hash|]);
+
+    let ((selectedId, config), onChange) = Hooks.useUpdatingState(state);
 
     let (state, dispatch) =
       React.useReducer(
         (state, action) =>
           switch (action) {
           | `Save((scene: scene)) => {
+              ...state,
               directory: {
                 ...state.directory,
                 scenes:
@@ -247,13 +276,20 @@ module Inner = {
               },
               current: Some(scene.id),
             }
-          | `Select(id) => {
-            ...state,
-            current: Some(id)
-          }
+          | `Update(config) => {...state, config}
+          | `Select(id) =>
+            updateId(id);
+            {
+              ...state,
+              current: Some(id)
+            }
           },
-        {directory, current: None},
+        {directory, current: fst(state), config: snd(state)},
       );
+
+    let configRef = Hooks.useOnChange(state.config, config => {
+      wasm##restore(config);
+    });
 
     Hooks.useOnChange(
       state.directory,
@@ -262,7 +298,14 @@ module Inner = {
         let%Async.Consume () = saveSceneInfo(directory);
         ();
       },
-    );
+    )->ignore;
+
+    Hooks.useOnChange(state.current, current => switch current {
+      | None => ()
+      | Some(id) => {
+        updateId(id)
+      }
+    })->ignore;
 
     let onSaveScene =
       React.useCallback1(
@@ -280,7 +323,7 @@ module Inner = {
       );
 
     React.useEffect0(() => {
-      wasm##setup(config, onChange);
+      wasm##setup(config, config => dispatch(`Update(config)));
       None;
     });
 
@@ -290,7 +333,8 @@ module Inner = {
         onSaveScene
         update={config => wasm##restore(config)}
       />
-      <ScenePicker directory=state.directory current=state.current onSelect={(id, config) => {
+      <ScenePicker directory=state.directory current=state.current
+      onSelect={(id, config) => {
         wasm##restore(config);
         dispatch(`Select(id))
       }} />
@@ -298,16 +342,91 @@ module Inner = {
   };
 };
 
+module Router = {
+  // So the issue i'm having is that the hash isn't necessarily a 1:1
+  // The scene ID should be a reflection of state, but the permalink shouldn't necessarily.
+  // e.g. if the hash updates to a permalink, I want to imperatively update the config,
+  // and probably reset the "id" to None
+  // but if the hash updates to an ID, then I want to set the ID to that & load up the config.
+  let loadHash = (~hash, ~wasm: Rust.wasm, ~setInitialState) => {
+    if (Js.String2.startsWith(hash, "#id=")) {
+      let id = Js.String2.sliceToEnd(hash, ~from=4);
+      let%Async.Consume config = getItem(id);
+      switch (config->Js.toOption) {
+        | None => ()
+        | Some(config) => setInitialState((Some(id), config))
+      }
+      // setInitialConfig(config);
+      // setId(id);
+      // (Some(id), getItem(id))
+    } else if (String.length(hash) > 1) {
+      let config = wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))->Js.toOption;
+      switch config {
+        | None => ()
+        | Some(config) => setInitialState((None, config))
+      }
+      // setInitialConfig(config);
+      // clearId();
+      // (None, Js.Promise.resolve())
+    } else {
+      // ermm maybe not a reset? idk.
+      setInitialState((None, wasm##blank_config()))
+      // (None, Js.Promise.resolve(wasm##blank_config()))
+    }
+  };
+
+  [@react.component]
+  let make = (~wasm: Rust.wasm, ~blank, ~render) => {
+    // let directory = Hooks.useLoading(getSceneInfo);
+
+    let (initialState, setInitialState) = Hooks.useState((None, blank))
+
+    let prevHash = React.useRef(None);
+    let hash = Hooks.useHash();
+    React.useEffect2(() => {
+      if (prevHash->React.Ref.current != Some(hash)) {
+        prevHash->React.Ref.setCurrent(Some(hash));
+        loadHash(~hash, ~wasm, ~setInitialState)
+      };
+      None
+    }, (hash, prevHash->React.Ref.current))
+
+    // let (id, config) = initialState;
+    render(
+      ~state=initialState,
+      ~permalink=hash => {
+        prevHash->React.Ref.setCurrent(Some(hash));
+        Web.Location.setHash(hash);
+      },
+      ~updateId=id => {
+        let hash = "id=" ++ id;
+        prevHash->React.Ref.setCurrent(Some(hash));
+        Web.Location.setHash(hash);
+      }
+      // ~loadId=id => {
+      //   Web.Location.setHash("id=" ++ id);
+      // }
+    )
+  };
+};
+
 module App = {
   let getKeys = () => keys();
 
   [@react.component]
-  let make = (~wasm) => {
+  let make = (~wasm: Rust.wasm) => {
     let keys = Hooks.useLoading(getSceneInfo);
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
-    | Some(directory) => <Inner wasm directory />
+    | Some(directory) =>
+      <Router
+        wasm
+        blank={wasm##blank_config()}
+        render={(~state, ~permalink, ~updateId) => {
+          <Inner wasm directory state permalink updateId />
+        }}
+      />
     };
   };
 };
