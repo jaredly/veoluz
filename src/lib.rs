@@ -81,10 +81,12 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
         })
 }
 
-fn reset_config(config: shared::Config) {
+fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
     ui::try_state_ui(|state, ui| {
-        state.invalidate_past_renders();
-        ui::reset(&config, ui)?;
+        if reset {
+            state.invalidate_past_renders();
+            ui::reset(&config, ui)?;
+        }
         let size_changed = config.rendering.width != state.config.rendering.width
             || config.rendering.height != state.config.rendering.height;
         state.config = config;
@@ -101,16 +103,29 @@ fn reset_config(config: shared::Config) {
                 .set_height(state.config.rendering.height as u32);
             state.reset_buffer();
         }
-        state.clear();
-        state.maybe_save_history();
+        if reset {
+            state.clear();
+        }
+        if reset || checkpoint {
+            state.maybe_save_history();
+        }
         state.async_render(false)
     })
 }
 
 #[wasm_bindgen]
+pub fn update(config: &JsValue, checkpoint: bool) {
+    if let Ok(config) = deserialize_jsvalue(config) {
+        update_config(config, false, checkpoint)
+    } else {
+        println!("Bad config")
+    }
+}
+
+#[wasm_bindgen]
 pub fn restore(config: &JsValue) {
     if let Ok(config) = deserialize_jsvalue(config) {
-        reset_config(config)
+        update_config(config, true, true)
     } else {
         println!("Bad config")
     }
@@ -168,7 +183,7 @@ pub fn initial() -> JsValue {
 pub fn setup(config: &JsValue, on_change: &js_sys::Function) {
     if let Ok(config) = deserialize_jsvalue(config) {
         if state::has_state() {
-            reset_config(config);
+            update_config(config, true, true);
             state::with(|state| {
                 state.on_change = on_change.to_owned();
             })

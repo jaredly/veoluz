@@ -167,6 +167,12 @@ module Opt = {
     | None => failwith("unwrapping option")
     | Some(m) => m
     };
+  module Consume = {
+    let let_ = (v, fn) => switch v {
+      | None => ()
+      | Some(m) => fn(m)
+    }
+  }
 };
 
 module ScenePicker = {
@@ -259,52 +265,45 @@ module Draggable = {
   }
 };
 
+let handle = () => {
+
+};
+
 module ConfigEditor = {
   [@react.component]
   let make = (~config: Rust.config, ~update, ~onSaveScene) => {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
-    let (dragLeft, onLeft) = useDraggable(
+    let containerRef = React.useRef(Js.Nullable.null);
+
+    let (_, onMin) = useDraggable(
       ~onMove=((x, y)) => {
-        // open Rust;
-        // config->mapRendering(rendering => rendering->mapExposure(exposure => exposure->setMin(min)->setMax(max)))
-        // and maybe a ppx for
-        // [%map_deep config["rendering"]["exposure"](exposure => exposure->setMin(min)->setMax(max))]
+        let%Opt.Consume container = containerRef->React.Ref.current->Js.toOption;
+        let box = Web.getBoundingClientRect(container);
+        let x = float_of_int(x) -. box##left;
+        let y = float_of_int(y) -. box##top;
+        let xPercent = x /. (box##width);
+        let config = [%js.deep config["rendering"]["exposure"]["min"].replace(xPercent)]
+        update(config, false)
+      }
+    );
 
-        // let config = [%js.deep config["rendering"]["exposure"].map(exposure => exposure["min"].replace(1.0)["max"].replace(5.0))]
-        let config = [%js.deep config["rendering"]["exposure"]["max"].replace(float_of_int(x) /. 1000.0)]
-        // let transform =
-        //     (item: {.. "rendering": {.. "exposure": 'a} as 'b} as 'c, fn: 'a => 'a)
-        //     : 'c =>
-        //     // (item, fn) =>
-        //     {
-        //   Js.Obj.assign(Js.Obj.empty(), item)
-        //   ->Js.Obj.assign({
-        //       "rendering":
-        //         Js.Obj.assign(Js.Obj.empty(), item##rendering)
-        //         ->Js.Obj.assign({"exposure": fn(item##rendering##exposure)}),
-        //     });
-        // };
-        // [%js.deep config["rendering"]["exposure"].map(exposure => exposure["min"].replace(min)["max"].replace(max))]
-        // let m = transform(config, exposure => exposure);
-        // let m = transform(config, exposure => {
-        //   let z = Js.Obj.assign(Js.Obj.empty(), exposure)->Js.Obj.assign({"min": 10.0});
-        //   Js.Obj.assign(Js.Obj.empty(), z)->Js.Obj.assign({"max": 10.0});
-        // });
-        // let m = config##rendering##exposure;
-        // [%js.deep config["rendering"]["exposure"].replace(awesome)]
-
-        // [%set_deep config["rendering"]["exposure"] := awesome]
-        // Js.Obj.assign(
-        //   Js.Obj.empty(),
-        //   config
-        // )
-        update(config)
+    let (_, onMax) = useDraggable(
+      ~onMove=((x, y)) => {
+        let%Opt.Consume container = containerRef->React.Ref.current->Js.toOption;
+        let box = Web.getBoundingClientRect(container);
+        let x = float_of_int(x) -. box##left;
+        let y = float_of_int(y) -. box##top;
+        let xPercent = x /. (box##width);
+        let config = [%js.deep config["rendering"]["exposure"]["max"].replace(xPercent)]
+        update(config, false)
       }
     );
 
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
-      <div style=ReactDOMRe.Style.make(
+      <div
+        ref=ReactDOMRe.Ref.domRef(containerRef)
+      style=ReactDOMRe.Style.make(
         ~width=Js.Int.toString(config##rendering##width) ++ "px",
         ~position="relative",
         ~height="20px",
@@ -313,10 +312,10 @@ module ConfigEditor = {
       )>
         <div
           style=ReactDOMRe.Style.make(
-            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##max) ++ "px",
+            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##min) ++ "px",
             ()
           )
-          onMouseDown=onLeft
+          onMouseDown=onMin
           className=Css.(style([
             width(px(10)),
             height(px(10)),
@@ -324,9 +323,20 @@ module ConfigEditor = {
             position(`absolute),
             backgroundColor(red)
           ]))
-          onClick={evt => {
-            Js.log("Click lower handle")
-          }}
+        />
+        <div
+          style=ReactDOMRe.Style.make(
+            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##max) ++ "px",
+            ()
+          )
+          onMouseDown=onMax
+          className=Css.(style([
+            width(px(10)),
+            height(px(10)),
+            cursor(`ewResize),
+            position(`absolute),
+            backgroundColor(red)
+          ]))
         />
       </div>
       // <div> {React.string(Js.Json.stringifyWithSpace(Obj.magic(tmpConfig), 2))} </div>
@@ -400,6 +410,61 @@ let debounced = (fn, time) => {
   }
 };
 
+module Router = {
+  let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) => {
+    if (Js.String2.startsWith(hash, "#id=")) {
+      let id = Js.String2.sliceToEnd(hash, ~from=4);
+      let%Async.Consume config = getItem(id);
+      switch (config->Js.toOption) {
+        | None => ()
+        | Some(config) => onLoad((Some(id), config))
+      }
+    } else if (String.length(hash) > 1) {
+      let config = wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))->Js.toOption;
+      switch config {
+        | None => ()
+        | Some(config) => onLoad((None, config))
+      }
+    } else {
+      // ermm maybe not a reset? idk.
+      onLoad((None, wasm##blank_config()))
+    }
+  };
+
+    let updateId = (set, id) => {
+      let hash = "id=" ++ id;
+      set(hash);
+      Web.Location.setHash(hash);
+    };
+    let permalink = (set, hash) => {
+      set(hash);
+      Web.Location.setHash(hash);
+    };
+
+  let useRouter = (~wasm: Rust.wasm, ~onLoad) => {
+    let prevHash = React.useRef(None);
+    let hash = Hooks.useHash();
+    React.useEffect2(() => {
+      if (prevHash->React.Ref.current != Some(hash)) {
+        prevHash->React.Ref.setCurrent(Some(hash));
+        loadHash(~hash, ~wasm, ~onLoad)
+      };
+      None
+    }, (hash, prevHash->React.Ref.current));
+
+    React.useCallback((newHash) => prevHash->React.Ref.setCurrent(Some(newHash)))
+    // updateId = id => {
+    //   let hash = "id=" ++ id;
+    //   prevHash->React.Ref.setCurrent(Some(hash));
+    //   Web.Location.setHash(hash);
+    // }
+    // ~permalink=hash => {
+    //   prevHash->React.Ref.setCurrent(Some(hash));
+    //   Web.Location.setHash(hash);
+    // },
+  };
+};
+
 module Inner = {
   type state = {
     directory,
@@ -409,29 +474,15 @@ module Inner = {
 
 
   [@react.component]
-  let make = (~wasm: Rust.wasm, ~directory, ~state as parentState, ~permalink, ~updateId) => {
+  let make = (~wasm: Rust.wasm, ~directory, ~blank) => {
 
-    // let hash = Hooks.useHash();
-    // let (hashId, hashConfig) = React.useMemo1(() => {
-    //   if (Js.String2.startsWith(hash, "#id=")) {
-    //     let id = Js.String2.sliceToEnd(hash, ~from=4);
-    //     (Some(id), getItem(id))
-    //   } else if (String.length(hash) > 1) {
-    //     (None, Js.Promise.resolve(wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))))
-    //   } else {
-    //     (None, Js.Promise.resolve(wasm##blank_config()))
-    //   }
-    // }, [|hash|]);
-
-    // let ((selectedId, config), onChange) = Hooks.useUpdatingState(state);
-    // Js.log3("Inner render", config, snd(state));
-    // Js.log2("State from parent", parentState);
+    let router = ref((_ignored) => ());
 
     let (state, dispatch) =
       React.useReducer(
         (state, action) =>
           switch (action) {
-          | `Parent((parentId, parentConfig)) =>
+          | `Route(parentId, parentConfig) =>
             {
               ...state,
               current: parentId,
@@ -449,25 +500,20 @@ module Inner = {
             }
           | `Update(config) => {...state, config}
           | `Select(id) =>
-            updateId(id);
+            router^ -> Router.updateId(id);
+            // updateId(id);
             {
               ...state,
               current: Some(id)
             }
           },
-        {directory, current: fst(parentState), config: snd(parentState)},
+        {directory, current: None, config: blank},
       );
 
-    let _ = Hooks.useOnChange(parentState, parentState => {
-      dispatch(`Parent(parentState))
-    });
-
-    let configRef = Hooks.useOnChange(~log=true, state.config, config => {
-      // Js.log3("Restoring -- different", anyHash(config), [|config|]);
+    router := Router.useRouter(~wasm, ~onLoad=((id, config)) => {
       wasm##restore(config);
+      dispatch(`Route(id, config))
     });
-
-    // Js.log4("Inner render", anyHash(state.config), anyHash(configRef->React.Ref.current), (state.config, configRef->React.Ref.current));
 
     Hooks.useOnChange(
       state.directory,
@@ -477,13 +523,6 @@ module Inner = {
         ();
       },
     )->ignore;
-
-    Hooks.useOnChange(state.current, current => switch current {
-      | None => ()
-      | Some(id) => {
-        updateId(id)
-      }
-    })->ignore;
 
     let onSaveScene =
       React.useCallback1(
@@ -503,7 +542,7 @@ module Inner = {
     React.useEffect0(() => {
       // Js.log3("Setting up here", anyHash(state.config), state.config);
       let update = debounced(config => {
-        configRef->React.Ref.setCurrent(config);
+        // configRef->React.Ref.setCurrent(config);
         dispatch(`Update(config))
       }, 200);
       wasm##setup(state.config, config => {
@@ -520,93 +559,21 @@ module Inner = {
       <ConfigEditor
         config={state.config}
         onSaveScene
-        update={config => {
-          configRef->React.Ref.setCurrent(config);
-          wasm##restore(config);
+        update={(config, checkpoint) => {
+          // configRef->React.Ref.setCurrent(config);
+          wasm##update(config, checkpoint);
           dispatch(`Update(config))
         }}
       />
       <ScenePicker directory=state.directory current=state.current
       onSelect={(id, config) => {
         Js.log3("Resetting", anyHash(config), config);
-        configRef->React.Ref.setCurrent(config);
+        // configRef->React.Ref.setCurrent(config);
         wasm##restore(config);
+        router^ ->Router.updateId(id);
         dispatch(`Select(id))
       }} />
     </div>;
-  };
-};
-
-module Router = {
-  // So the issue i'm having is that the hash isn't necessarily a 1:1
-  // The scene ID should be a reflection of state, but the permalink shouldn't necessarily.
-  // e.g. if the hash updates to a permalink, I want to imperatively update the config,
-  // and probably reset the "id" to None
-  // but if the hash updates to an ID, then I want to set the ID to that & load up the config.
-  let loadHash = (~hash, ~wasm: Rust.wasm, ~setInitialState) => {
-    if (Js.String2.startsWith(hash, "#id=")) {
-      let id = Js.String2.sliceToEnd(hash, ~from=4);
-      let%Async.Consume config = getItem(id);
-      switch (config->Js.toOption) {
-        | None => ()
-        | Some(config) => setInitialState((Some(id), config))
-      }
-      // setInitialConfig(config);
-      // setId(id);
-      // (Some(id), getItem(id))
-    } else if (String.length(hash) > 1) {
-      let config = wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))->Js.toOption;
-      switch config {
-        | None => ()
-        | Some(config) => setInitialState((None, config))
-      }
-      // setInitialConfig(config);
-      // clearId();
-      // (None, Js.Promise.resolve())
-    } else {
-      // ermm maybe not a reset? idk.
-      setInitialState((None, wasm##blank_config()))
-      // (None, Js.Promise.resolve(wasm##blank_config()))
-    }
-  };
-
-  [@react.component]
-  let make = (~wasm: Rust.wasm, ~blank, ~render) => {
-    // let directory = Hooks.useLoading(getSceneInfo);
-
-    let (initialState, setInitialState) = Hooks.useState((None, blank))
-
-    let prevHash = React.useRef(None);
-    let hash = Hooks.useHash();
-    React.useEffect2(() => {
-      if (prevHash->React.Ref.current != Some(hash)) {
-        prevHash->React.Ref.setCurrent(Some(hash));
-        loadHash(~hash, ~wasm, ~setInitialState)
-      };
-      None
-    }, (hash, prevHash->React.Ref.current));
-
-    // React.useEffect(() => {
-    //   wasm##setup(snd(initialState));
-    //   None
-    // });
-
-    // let (id, config) = initialState;
-    render(
-      ~state=initialState,
-      ~permalink=hash => {
-        prevHash->React.Ref.setCurrent(Some(hash));
-        Web.Location.setHash(hash);
-      },
-      ~updateId=id => {
-        let hash = "id=" ++ id;
-        prevHash->React.Ref.setCurrent(Some(hash));
-        Web.Location.setHash(hash);
-      }
-      // ~loadId=id => {
-      //   Web.Location.setHash("id=" ++ id);
-      // }
-    )
   };
 };
 
@@ -620,13 +587,7 @@ module App = {
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
     | Some(directory) =>
-      <Router
-        wasm
-        blank={wasm##blank_config()}
-        render={(~state, ~permalink, ~updateId) => {
-          <Inner wasm directory state permalink updateId />
-        }}
-      />
+      <Inner wasm directory blank={wasm##blank_config()} />
     };
   };
 };
