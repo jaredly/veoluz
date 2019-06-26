@@ -538,10 +538,34 @@ module Inner = {
         {directory, current: None, config: blank},
       );
 
+    React.useEffect0(() => {
+      // Js.log3("Setting up here", anyHash(state.config), state.config);
+      let update =
+        debounced(
+          config =>
+            // configRef->React.Ref.setCurrent(config);
+            dispatch(
+              `Update(config),
+            ),
+          200,
+        );
+      wasm##setup(state.config, config =>
+        // Prevent a render loop
+        // Js.log("Setting current from wasm (TODO debounce)");
+        // configRef->React.Ref.setCurrent(config);
+        // dispatch(`Update(config))
+        update(
+          config,
+        )
+      );
+      None;
+    });
+
     router :=
       Router.useRouter(
         ~wasm,
         ~onLoad=((id, config)) => {
+          // Js.log("Router log");
           wasm##restore(config);
           dispatch(`Route((id, config)));
         },
@@ -571,29 +595,6 @@ module Inner = {
         },
         [|state.config|],
       );
-
-    React.useEffect0(() => {
-      // Js.log3("Setting up here", anyHash(state.config), state.config);
-      let update =
-        debounced(
-          config =>
-            // configRef->React.Ref.setCurrent(config);
-            dispatch(
-              `Update(config),
-            ),
-          200,
-        );
-      wasm##setup(state.config, config =>
-        // Prevent a render loop
-        // Js.log("Setting current from wasm (TODO debounce)");
-        // configRef->React.Ref.setCurrent(config);
-        // dispatch(`Update(config))
-        update(
-          config,
-        )
-      );
-      None;
-    });
 
     <div>
       <ConfigEditor
