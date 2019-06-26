@@ -53,7 +53,7 @@ type config = {
     }),
   "transform": {
     .
-    "rotatonal_symmetry": int,
+    "rotational_symmetry": int,
     "reflection": bool,
   },
   "rendering": {

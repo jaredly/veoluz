@@ -194,37 +194,37 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
-    setup_checkbox("reflection", |value| {
-        try_state_ui(|state, _ui| {
-            state.config.transform.reflection = value;
-            state.async_render(false)?;
-            state.maybe_save_history();
-            Ok(())
-        })
-    })?;
+    // setup_checkbox("reflection", |value| {
+    //     try_state_ui(|state, _ui| {
+    //         state.config.transform.reflection = value;
+    //         state.async_render(false)?;
+    //         state.maybe_save_history();
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("rotation", |value, finished| {
-        try_state_ui(|state, _ui| {
-            state.config.transform.rotational_symmetry = value as u8;
-            state.async_render(!finished)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("rotation", |value, finished| {
+    //     try_state_ui(|state, _ui| {
+    //         state.config.transform.rotational_symmetry = value as u8;
+    //         state.async_render(!finished)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("zoom", |value, finished| {
-        try_state_ui(|state, _ui| {
-            state.config.rendering.zoom = value as f32;
-            set_text("zoom-text", format!("{}", value))?;
-            state.async_render(!finished)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("zoom", |value, finished| {
+    //     try_state_ui(|state, _ui| {
+    //         state.config.rendering.zoom = value as f32;
+    //         set_text("zoom-text", format!("{}", value))?;
+    //         state.async_render(!finished)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
     listen!(
         get_button("resize")?,
@@ -254,37 +254,37 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         }
     );
 
-    setup_input("expose-low", |value, finished| {
-        try_state_ui(|state, ui| {
-            state.config.rendering.exposure.min = value as f32;
-            if value as f32 > state.config.rendering.exposure.max - 0.01 {
-                state.config.rendering.exposure.max = value as f32 + 0.01;
-                get_input("expose-high")?
-                    .set_value_as_number(state.config.rendering.exposure.max as f64);
-            }
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("expose-low", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         state.config.rendering.exposure.min = value as f32;
+    //         if value as f32 > state.config.rendering.exposure.max - 0.01 {
+    //             state.config.rendering.exposure.max = value as f32 + 0.01;
+    //             get_input("expose-high")?
+    //                 .set_value_as_number(state.config.rendering.exposure.max as f64);
+    //         }
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("expose-high", |value, finished| {
-        try_state_ui(|state, ui| {
-            state.config.rendering.exposure.max = value as f32;
-            if (value as f32) < state.config.rendering.exposure.min + 0.01 {
-                state.config.rendering.exposure.min = value as f32 - 0.01;
-                get_input("expose-low")?
-                    .set_value_as_number(state.config.rendering.exposure.min as f64);
-            }
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("expose-high", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         state.config.rendering.exposure.max = value as f32;
+    //         if (value as f32) < state.config.rendering.exposure.min + 0.01 {
+    //             state.config.rendering.exposure.min = value as f32 - 0.01;
+    //             get_input("expose-low")?
+    //                 .set_value_as_number(state.config.rendering.exposure.min as f64);
+    //         }
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
     setup_input("b-r", |value, finished| {
         try_state_ui(|state, ui| {
@@ -382,47 +382,47 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         })
     })?;
 
-    listen!(
-        get_button("expose-fourth")?,
-        "click",
-        web_sys::MouseEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                state.config.rendering.exposure.curve = shared::Curve::FourthRoot;
-                state.reexpose(ui)?;
-                state.maybe_save_history();
-                Ok(())
-            })
-        }
-    );
+    // listen!(
+    //     get_button("expose-fourth")?,
+    //     "click",
+    //     web_sys::MouseEvent,
+    //     move |_evt| {
+    //         try_state_ui(|state, ui| {
+    //             state.config.rendering.exposure.curve = shared::Curve::FourthRoot;
+    //             state.reexpose(ui)?;
+    //             state.maybe_save_history();
+    //             Ok(())
+    //         })
+    //     }
+    // );
 
-    listen!(
-        get_button("expose-square")?,
-        "click",
-        web_sys::MouseEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                state.config.rendering.exposure.curve = shared::Curve::SquareRoot;
-                state.reexpose(ui)?;
-                state.maybe_save_history();
-                Ok(())
-            })
-        }
-    );
+    // listen!(
+    //     get_button("expose-square")?,
+    //     "click",
+    //     web_sys::MouseEvent,
+    //     move |_evt| {
+    //         try_state_ui(|state, ui| {
+    //             state.config.rendering.exposure.curve = shared::Curve::SquareRoot;
+    //             state.reexpose(ui)?;
+    //             state.maybe_save_history();
+    //             Ok(())
+    //         })
+    //     }
+    // );
 
-    listen!(
-        get_button("expose-linear")?,
-        "click",
-        web_sys::MouseEvent,
-        move |_evt| {
-            try_state_ui(|state, ui| {
-                state.config.rendering.exposure.curve = shared::Curve::Linear;
-                state.reexpose(ui)?;
-                state.maybe_save_history();
-                Ok(())
-            })
-        }
-    );
+    // listen!(
+    //     get_button("expose-linear")?,
+    //     "click",
+    //     web_sys::MouseEvent,
+    //     move |_evt| {
+    //         try_state_ui(|state, ui| {
+    //             state.config.rendering.exposure.curve = shared::Curve::Linear;
+    //             state.reexpose(ui)?;
+    //             state.maybe_save_history();
+    //             Ok(())
+    //         })
+    //     }
+    // );
 
     listen!(
         get_button("undo")?,
@@ -474,13 +474,13 @@ pub fn reset_config(config: &shared::Config) -> Result<(), JsValue> {
             get_input("b-b")?.set_value_as_number(background.2 as f64);
         }
     };
-    get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
-    get_input("reflection")?.set_checked(config.transform.reflection);
-    get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);
+    // get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
+    // get_input("reflection")?.set_checked(config.transform.reflection);
+    // get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);
     get_input("width")?.set_value_as_number(config.rendering.width as f64);
     get_input("height")?.set_value_as_number(config.rendering.height as f64);
-    set_text("zoom-text", format!("{}", config.rendering.zoom))?;
-    get_input("expose-low")?.set_value_as_number(config.rendering.exposure.min as f64);
-    get_input("expose-high")?.set_value_as_number(config.rendering.exposure.max as f64);
+    // set_text("zoom-text", format!("{}", config.rendering.zoom))?;
+    // get_input("expose-low")?.set_value_as_number(config.rendering.exposure.min as f64);
+    // get_input("expose-high")?.set_value_as_number(config.rendering.exposure.max as f64);
     Ok(())
 }
