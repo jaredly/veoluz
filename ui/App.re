@@ -12,8 +12,7 @@ external keys: unit => Js.Promise.t(array(string)) = "";
 type location;
 [@bs.val] external location: location = "";
 
-[@bs.set]
-external setHash: (location, string) => unit = "hash";
+[@bs.set] external setHash: (location, string) => unit = "hash";
 
 type blob;
 type canvas;
@@ -116,15 +115,10 @@ module Scene = {
     | Some(url) =>
       <div
         className=Css.(
-          style([
-            display(`flex),
-            flexDirection(`row),
-            padding(px(4)),
-          ] @ (
-            selected ? [
-              backgroundColor(hex("5af"))
-            ] : []
-          ))
+          style(
+            [display(`flex), flexDirection(`row), padding(px(4))]
+            @ (selected ? [backgroundColor(hex("5af"))] : []),
+          )
         )>
         <div
           style={ReactDOMRe.Style.make(
@@ -168,11 +162,12 @@ module Opt = {
     | Some(m) => m
     };
   module Consume = {
-    let let_ = (v, fn) => switch v {
+    let let_ = (v, fn) =>
+      switch (v) {
       | None => ()
       | Some(m) => fn(m)
-    }
-  }
+      };
+  };
 };
 
 module ScenePicker = {
@@ -194,7 +189,9 @@ module ScenePicker = {
          ->Belt.Map.String.toArray
          ->Belt.List.fromArray
          ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
-         ->Belt.List.map(((key, scene)) => <Scene selected={current == Some(key)} scene onSelect key />)
+         ->Belt.List.map(((key, scene)) =>
+             <Scene selected={current == Some(key)} scene onSelect key />
+           )
          ->Belt.List.toArray,
        )}
     </div>;
@@ -202,35 +199,42 @@ module ScenePicker = {
 };
 
 let evtPos = evt => (
-        evt->ReactEvent.Mouse.clientX,
-        evt->ReactEvent.Mouse.clientY,
-      );
+  evt->ReactEvent.Mouse.clientX,
+  evt->ReactEvent.Mouse.clientY,
+);
 
 let useDraggable = (~onMove) => {
   let (pressed, setPressed) = Hooks.useState(None);
-  React.useEffect3(() => {
-    switch pressed {
+  React.useEffect3(
+    () =>
+      switch (pressed) {
       | None => None
       | Some((x, y)) =>
-        let mousemove = (evt) => onMove(evtPos(evt));
-        let mouseup = (evt) => {
+        let mousemove = evt => onMove(evtPos(evt));
+        let mouseup = evt => {
           // onRelease(evtPos(evt));
           setPressed(None);
         };
         Web.window->Web.addEventListener("mousemove", mousemove, true);
         Web.window->Web.addEventListener("mouseup", mouseup, true);
-        Some(() => {
-          Web.window->Web.removeEventListener("mousemove", mousemove, true);
-          Web.window->Web.removeEventListener("mouseup", mouseup, true);
-        })
-    }
-  }, (pressed, onMove, ()));
+        Some(
+          () => {
+            Web.window->Web.removeEventListener("mousemove", mousemove, true);
+            Web.window->Web.removeEventListener("mouseup", mouseup, true);
+          },
+        );
+      },
+    (pressed, onMove, ()),
+  );
 
-  (pressed, (evt) => {
-    let pos = evtPos(evt);
-    setPressed(Some(pos));
-    // onPress(pos);
-  })
+  (
+    pressed,
+    evt => {
+      let pos = evtPos(evt);
+      setPressed(Some(pos));
+      // onPress(pos);
+    },
+  );
 };
 
 module Draggable = {
@@ -239,35 +243,41 @@ module Draggable = {
     let (pressed, setPressed) = Hooks.useState(None);
     let moveRef = React.useRef(onMove);
     moveRef->React.Ref.setCurrent(onMove);
-    React.useEffect3(() => {
-      switch pressed {
+    React.useEffect3(
+      () =>
+        switch (pressed) {
         | None => None
         | Some((x, y)) =>
-          let mousemove = (evt) => React.Ref.current(moveRef)(evtPos(evt));
-          let mouseup = (evt) => {
+          let mousemove = evt => React.Ref.current(moveRef, evtPos(evt));
+          let mouseup = evt => {
             // onRelease(evtPos(evt));
             setPressed(None);
           };
           Web.window->Web.addEventListener("mousemove", mousemove, true);
           Web.window->Web.addEventListener("mouseup", mouseup, true);
-          Some(() => {
-            Web.window->Web.removeEventListener("mousemove", mousemove, true);
-            Web.window->Web.removeEventListener("mouseup", mouseup, true);
-          })
-      }
-    }, (pressed, onMove, ()));
+          Some(
+            () => {
+              Web.window->Web.removeEventListener(
+                "mousemove",
+                mousemove,
+                true,
+              );
+              Web.window->Web.removeEventListener("mouseup", mouseup, true);
+            },
+          );
+        },
+      (pressed, onMove, ()),
+    );
 
-    render(~onMouseDown=(evt) => {
+    render(~onMouseDown=evt => {
       let pos = evtPos(evt);
       setPressed(Some(pos));
       // onPress(pos);
-    })
-  }
+    });
+  };
 };
 
-let handle = () => {
-
-};
+let handle = () => {};
 
 module ConfigEditor = {
   [@react.component]
@@ -276,67 +286,87 @@ module ConfigEditor = {
 
     let containerRef = React.useRef(Js.Nullable.null);
 
-    let (_, onMin) = useDraggable(
-      ~onMove=((x, y)) => {
-        let%Opt.Consume container = containerRef->React.Ref.current->Js.toOption;
+    let (_, onMin) =
+      useDraggable(~onMove=((x, y)) => {
+        let%Opt.Consume container =
+          containerRef->React.Ref.current->Js.toOption;
         let box = Web.getBoundingClientRect(container);
         let x = float_of_int(x) -. box##left;
         let y = float_of_int(y) -. box##top;
-        let xPercent = x /. (box##width);
-        let config = [%js.deep config["rendering"]["exposure"]["min"].replace(xPercent)]
-        update(config, false)
-      }
-    );
+        let xPercent = x /. box##width;
+        let config = [%js.deep
+          config["rendering"]["exposure"]["min"].replace(xPercent)
+        ];
+        update(config, false);
+      });
 
-    let (_, onMax) = useDraggable(
-      ~onMove=((x, y)) => {
-        let%Opt.Consume container = containerRef->React.Ref.current->Js.toOption;
+    let (_, onMax) =
+      useDraggable(~onMove=((x, y)) => {
+        let%Opt.Consume container =
+          containerRef->React.Ref.current->Js.toOption;
         let box = Web.getBoundingClientRect(container);
         let x = float_of_int(x) -. box##left;
         let y = float_of_int(y) -. box##top;
-        let xPercent = x /. (box##width);
-        let config = [%js.deep config["rendering"]["exposure"]["max"].replace(xPercent)]
-        update(config, false)
-      }
-    );
+        let xPercent = x /. box##width;
+        let config = [%js.deep
+          config["rendering"]["exposure"]["max"].replace(xPercent)
+        ];
+        update(config, false);
+      });
 
     <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
       <div
-        ref=ReactDOMRe.Ref.domRef(containerRef)
-      style=ReactDOMRe.Style.make(
-        ~width=Js.Int.toString(config##rendering##width) ++ "px",
-        ~position="relative",
-        ~height="20px",
-        ~backgroundColor="#afa",
-        ()
-      )>
+        ref={ReactDOMRe.Ref.domRef(containerRef)}
+        style={ReactDOMRe.Style.make(
+          ~width=Js.Int.toString(config##rendering##width) ++ "px",
+          ~position="relative",
+          ~height="20px",
+          ~backgroundColor="#afa",
+          (),
+        )}>
         <div
-          style=ReactDOMRe.Style.make(
-            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##min) ++ "px",
-            ()
-          )
+          style={ReactDOMRe.Style.make(
+            ~left=
+              Js.Float.toString(
+                float_of_int(config##rendering##width)
+                *.
+                config##rendering##exposure##min,
+              )
+              ++ "px",
+            (),
+          )}
           onMouseDown=onMin
-          className=Css.(style([
-            width(px(10)),
-            height(px(10)),
-            cursor(`ewResize),
-            position(`absolute),
-            backgroundColor(red)
-          ]))
+          className=Css.(
+            style([
+              width(px(10)),
+              height(px(10)),
+              cursor(`ewResize),
+              position(`absolute),
+              backgroundColor(red),
+            ])
+          )
         />
         <div
-          style=ReactDOMRe.Style.make(
-            ~left=Js.Float.toString(float_of_int(config##rendering##width) *. config##rendering##exposure##max) ++ "px",
-            ()
-          )
+          style={ReactDOMRe.Style.make(
+            ~left=
+              Js.Float.toString(
+                float_of_int(config##rendering##width)
+                *.
+                config##rendering##exposure##max,
+              )
+              ++ "px",
+            (),
+          )}
           onMouseDown=onMax
-          className=Css.(style([
-            width(px(10)),
-            height(px(10)),
-            cursor(`ewResize),
-            position(`absolute),
-            backgroundColor(red)
-          ]))
+          className=Css.(
+            style([
+              width(px(10)),
+              height(px(10)),
+              cursor(`ewResize),
+              position(`absolute),
+              backgroundColor(red),
+            ])
+          )
         />
       </div>
       // <div> {React.string(Js.Json.stringifyWithSpace(Obj.magic(tmpConfig), 2))} </div>
@@ -371,11 +401,12 @@ let newScene = () => {
 /**
 Behavior:
 - on first load, get the data from the hash, might be async
-- on hash change that I initiate, 
+- on hash change that I initiate,
 - to detect hashchanges I don't initiate, should use a ref probably. Update the ref then set the hash
   */
 
-let hashIt: string => string = [%bs.raw {|
+let hashIt: string => string = [%bs.raw
+  {|
 function(input) {
     var hash = 0;
     if (input.length == 0) {
@@ -388,71 +419,74 @@ function(input) {
     }
     return hash;
 }
-|}];
+|}
+];
 
 let anyHash = data => {
-  hashIt(Js.Json.stringifyAny(data)->Opt.force)
-}
+  hashIt(Js.Json.stringifyAny(data)->Opt.force);
+};
 
 let debounced = (fn, time) => {
   let timer = ref(None);
   arg => {
     switch (timer^) {
-      | None => ()
-      | Some(timer) => {
-        Js.Global.clearTimeout(timer)
-      }
-    }
+    | None => ()
+    | Some(timer) => Js.Global.clearTimeout(timer)
+    };
 
-    timer := Some(Js.Global.setTimeout(() => {
-      fn(arg)
-    }, time))
-  }
+    timer := Some(Js.Global.setTimeout(() => fn(arg), time));
+  };
 };
 
 module Router = {
-  let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) => {
+  let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) =>
     if (Js.String2.startsWith(hash, "#id=")) {
       let id = Js.String2.sliceToEnd(hash, ~from=4);
       let%Async.Consume config = getItem(id);
       switch (config->Js.toOption) {
-        | None => ()
-        | Some(config) => onLoad((Some(id), config))
-      }
+      | None => ()
+      | Some(config) => onLoad((Some(id), config))
+      };
     } else if (String.length(hash) > 1) {
-      let config = wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))->Js.toOption;
-      switch config {
-        | None => ()
-        | Some(config) => onLoad((None, config))
-      }
+      let config =
+        wasm##parse_url_config(hash->Js.String2.sliceToEnd(~from=1))
+        ->Js.toOption;
+      switch (config) {
+      | None => ()
+      | Some(config) => onLoad((None, config))
+      };
     } else {
       // ermm maybe not a reset? idk.
-      onLoad((None, wasm##blank_config()))
-    }
-  };
+      onLoad((None, wasm##blank_config()));
+    };
 
-    let updateId = (set, id) => {
-      let hash = "id=" ++ id;
-      set(hash);
-      Web.Location.setHash(hash);
-    };
-    let permalink = (set, hash) => {
-      set(hash);
-      Web.Location.setHash(hash);
-    };
+  let updateId = (set, id) => {
+    let hash = "id=" ++ id;
+    set(hash);
+    Web.Location.setHash(hash);
+  };
+  let permalink = (set, hash) => {
+    set(hash);
+    Web.Location.setHash(hash);
+  };
 
   let useRouter = (~wasm: Rust.wasm, ~onLoad) => {
     let prevHash = React.useRef(None);
     let hash = Hooks.useHash();
-    React.useEffect2(() => {
-      if (prevHash->React.Ref.current != Some(hash)) {
-        prevHash->React.Ref.setCurrent(Some(hash));
-        loadHash(~hash, ~wasm, ~onLoad)
-      };
-      None
-    }, (hash, prevHash->React.Ref.current));
+    React.useEffect2(
+      () => {
+        if (prevHash->React.Ref.current != Some(hash)) {
+          prevHash->React.Ref.setCurrent(Some(hash));
+          loadHash(~hash, ~wasm, ~onLoad);
+        };
+        None;
+      },
+      (hash, prevHash->React.Ref.current),
+    );
 
-    React.useCallback((newHash) => prevHash->React.Ref.setCurrent(Some(newHash)))
+    React.useCallback(newHash =>
+      prevHash->React.Ref.setCurrent(Some(newHash))
+    );
     // updateId = id => {
     //   let hash = "id=" ++ id;
     //   prevHash->React.Ref.setCurrent(Some(hash));
@@ -472,21 +506,18 @@ module Inner = {
     config: Rust.config,
   };
 
-
   [@react.component]
   let make = (~wasm: Rust.wasm, ~directory, ~blank) => {
-
-    let router = ref((_ignored) => ());
+    let router = ref(_ignored => ());
 
     let (state, dispatch) =
       React.useReducer(
         (state, action) =>
           switch (action) {
-          | `Route(parentId, parentConfig) =>
-            {
+          | `Route(parentId, parentConfig) => {
               ...state,
               current: parentId,
-              config: parentConfig
+              config: parentConfig,
             }
           | `Save((scene: scene)) => {
               ...state,
@@ -500,20 +531,21 @@ module Inner = {
             }
           | `Update(config) => {...state, config}
           | `Select(id) =>
-            router^ -> Router.updateId(id);
+            (router^)->Router.updateId(id);
             // updateId(id);
-            {
-              ...state,
-              current: Some(id)
-            }
+            {...state, current: Some(id)};
           },
         {directory, current: None, config: blank},
       );
 
-    router := Router.useRouter(~wasm, ~onLoad=((id, config)) => {
-      wasm##restore(config);
-      dispatch(`Route(id, config))
-    });
+    router :=
+      Router.useRouter(
+        ~wasm,
+        ~onLoad=((id, config)) => {
+          wasm##restore(config);
+          dispatch(`Route((id, config)));
+        },
+      );
 
     Hooks.useOnChange(
       state.directory,
@@ -522,7 +554,8 @@ module Inner = {
         let%Async.Consume () = saveSceneInfo(directory);
         ();
       },
-    )->ignore;
+    )
+    ->ignore;
 
     let onSaveScene =
       React.useCallback1(
@@ -541,17 +574,24 @@ module Inner = {
 
     React.useEffect0(() => {
       // Js.log3("Setting up here", anyHash(state.config), state.config);
-      let update = debounced(config => {
-        // configRef->React.Ref.setCurrent(config);
-        dispatch(`Update(config))
-      }, 200);
-      wasm##setup(state.config, config => {
+      let update =
+        debounced(
+          config =>
+            // configRef->React.Ref.setCurrent(config);
+            dispatch(
+              `Update(config),
+            ),
+          200,
+        );
+      wasm##setup(state.config, config =>
         // Prevent a render loop
         // Js.log("Setting current from wasm (TODO debounce)");
         // configRef->React.Ref.setCurrent(config);
         // dispatch(`Update(config))
-        update(config)
-      });
+        update(
+          config,
+        )
+      );
       None;
     });
 
@@ -562,17 +602,20 @@ module Inner = {
         update={(config, checkpoint) => {
           // configRef->React.Ref.setCurrent(config);
           wasm##update(config, checkpoint);
-          dispatch(`Update(config))
+          dispatch(`Update(config));
         }}
       />
-      <ScenePicker directory=state.directory current=state.current
-      onSelect={(id, config) => {
-        Js.log3("Resetting", anyHash(config), config);
-        // configRef->React.Ref.setCurrent(config);
-        wasm##restore(config);
-        router^ ->Router.updateId(id);
-        dispatch(`Select(id))
-      }} />
+      <ScenePicker
+        directory={state.directory}
+        current={state.current}
+        onSelect={(id, config) => {
+          Js.log3("Resetting", anyHash(config), config);
+          // configRef->React.Ref.setCurrent(config);
+          wasm##restore(config);
+          (router^)->Router.updateId(id);
+          dispatch(`Select(id));
+        }}
+      />
     </div>;
   };
 };
@@ -586,8 +629,7 @@ module App = {
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
-    | Some(directory) =>
-      <Inner wasm directory blank={wasm##blank_config()} />
+    | Some(directory) => <Inner wasm directory blank={wasm##blank_config()} />
     };
   };
 };
