@@ -205,79 +205,48 @@ let evtPos = evt => (
 
 let useDraggable = (~onMove) => {
   let (pressed, setPressed) = Hooks.useState(None);
+  let moveRef = React.useRef(onMove);
+  moveRef->React.Ref.setCurrent(onMove);
+
   React.useEffect3(
     () =>
       switch (pressed) {
       | None => None
       | Some((x, y)) =>
-        let mousemove = evt => onMove(evtPos(evt));
+        let onMove = moveRef->React.Ref.current;
+        let mousemove = evt => {
+          evt->ReactEvent.Mouse.preventDefault;
+          onMove(evtPos(evt))
+        };
         let mouseup = evt => {
-          // onRelease(evtPos(evt));
+          evt->ReactEvent.Mouse.preventDefault;
+          Js.log("Mouseup, remove")
           setPressed(None);
         };
         Web.window->Web.addEventListener("mousemove", mousemove, true);
         Web.window->Web.addEventListener("mouseup", mouseup, true);
         Some(
           () => {
-            Web.window->Web.removeEventListener("mousemove", mousemove, true);
-            Web.window->Web.removeEventListener("mouseup", mouseup, true);
+            Js.log("releasing");
+          Web.window->Web.removeEventListener("mousemove", mousemove, true);
+          Web.window->Web.removeEventListener("mouseup", mouseup, true);
           },
         );
+        // None
       },
-    (pressed, onMove, ()),
+    (pressed, (), ()),
   );
 
   (
     pressed,
     evt => {
+      evt->ReactEvent.Mouse.preventDefault;
       let pos = evtPos(evt);
       setPressed(Some(pos));
       // onPress(pos);
     },
   );
 };
-
-module Draggable = {
-  [@react.component]
-  let make = (~render, ~onMove) => {
-    let (pressed, setPressed) = Hooks.useState(None);
-    let moveRef = React.useRef(onMove);
-    moveRef->React.Ref.setCurrent(onMove);
-    React.useEffect3(
-      () =>
-        switch (pressed) {
-        | None => None
-        | Some((x, y)) =>
-          let mousemove = evt => React.Ref.current(moveRef, evtPos(evt));
-          let mouseup = evt => {
-            // onRelease(evtPos(evt));
-            setPressed(None);
-          };
-          Web.window->Web.addEventListener("mousemove", mousemove, true);
-          Web.window->Web.addEventListener("mouseup", mouseup, true);
-          Some(
-            () => {
-              Web.window->Web.removeEventListener(
-                "mousemove",
-                mousemove,
-                true,
-              );
-              Web.window->Web.removeEventListener("mouseup", mouseup, true);
-            },
-          );
-        },
-      (pressed, onMove, ()),
-    );
-
-    render(~onMouseDown=evt => {
-      let pos = evtPos(evt);
-      setPressed(Some(pos));
-      // onPress(pos);
-    });
-  };
-};
-
-// let handle = () => {};
 
 module ExposureControl = {
   [@react.component]
@@ -690,6 +659,16 @@ module Inner = {
       );
 
     <div>
+      <div className=Css.(style([
+        display(`flex),
+        flexDirection(`row),
+        flexWrap(`wrap),
+      ]))>
+        <canvas id="drawing" width="600" height="600" />
+        <div>
+          {React.string("Right side")}
+        </div>
+      </div>
       <ConfigEditor
         config={state.config}
         onSaveScene

@@ -175,9 +175,9 @@ impl State {
 
         self.image_data = make_image_data(&self.config, &self.buffer)?;
 
-        crate::ui::use_ui(|ui| {
-            crate::ui::draw(ui, &self)
-        });
+        // crate::ui::use_ui(|ui| {
+        //     crate::ui::draw(ui, &self)
+        // });
         // self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
 
         let (worker, busy, queued) = &mut self.workers[worker];
