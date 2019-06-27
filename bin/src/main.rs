@@ -23,17 +23,18 @@ fn run(config: shared::Config, outfile: String, count: usize) {
 
     // writer.write_image_data(&pixels).unwrap(); // Save
 
-    let pixels = shared::grayscale(&config, &brightness_data);
+    // let pixels = shared::grayscale(&config, &brightness_data);
+    let pixels = shared::colorize(&config, &brightness_data);
 
     if outfile.ends_with(".tiff") {
         let fout = &mut BufWriter::new(File::create(outfile).unwrap());
         image::tiff::TiffEncoder::new(fout).encode(
             &pixels,
-        config.rendering.width as u32, config.rendering.height as u32, image::Gray(8)
+        config.rendering.width as u32, config.rendering.height as u32, image::RGBA(8)
         ).unwrap();
     } else {
         // Save the buffer as "image.png"
-        image::save_buffer(outfile, &pixels, config.rendering.width as u32, config.rendering.height as u32, image::Gray(8)).unwrap()
+        image::save_buffer(outfile, &pixels, config.rendering.width as u32, config.rendering.height as u32, image::RGBA(8)).unwrap()
     }
 }
 
