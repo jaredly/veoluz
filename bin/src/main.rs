@@ -1,7 +1,7 @@
 
-fn run(config: shared::Config, outfile: String, count: usize, scale: u8) {
+fn run(config: shared::Config, outfile: String, count: usize) {
     println!("Calculate");
-    let brightness_data = shared::calculate(&config, count, scale);
+    let brightness_data = shared::calculate(&config, count);
     println!("Colorize");
     // let pixels = shared::black_colorize(&config, &brightness_data, scale);
 
@@ -23,18 +23,37 @@ fn run(config: shared::Config, outfile: String, count: usize, scale: u8) {
 
     // writer.write_image_data(&pixels).unwrap(); // Save
 
-    let pixels = shared::grayscale(&config, &brightness_data, scale);
+    let pixels = shared::grayscale(&config, &brightness_data);
 
     if outfile.ends_with(".tiff") {
         let fout = &mut BufWriter::new(File::create(outfile).unwrap());
         image::tiff::TiffEncoder::new(fout).encode(
             &pixels,
-        config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)
+        config.rendering.width as u32, config.rendering.height as u32, image::Gray(8)
         ).unwrap();
     } else {
         // Save the buffer as "image.png"
-        image::save_buffer(outfile, &pixels, config.width as u32 * scale as u32, config.height as u32 * scale as u32, image::Gray(8)).unwrap()
+        image::save_buffer(outfile, &pixels, config.rendering.width as u32, config.rendering.height as u32, image::Gray(8)).unwrap()
     }
+}
+
+pub fn deserialize(encoded: &str) -> Result<shared::Config, serde_json::Error> {
+    serde_json::from_str::<shared::Config>(encoded)
+        .or_else(|_| {
+            serde_json::from_str::<shared::v3::Config>(encoded)
+                .map(shared::from_v3)
+        })
+        .or_else(|_| {
+            serde_json::from_str::<shared::v2::Config>(encoded)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
+        })
+        .or_else(|_| {
+            serde_json::from_str::<shared::v1::Config>(encoded)
+                .map(shared::v2::from_v1)
+                .map(shared::v3::from_v2)
+                .map(shared::from_v3)
+        })
 }
 
 fn main() -> std::io::Result<()> {
@@ -52,8 +71,8 @@ fn main() -> std::io::Result<()> {
 
         use std::io::prelude::*;
         file.read_to_string(&mut contents)?;
-        let mut config: shared::Config = serde_json::from_str(&contents).unwrap();
-        config.resize_center(config.width, config.width);
+        let mut config: shared::Config = deserialize(&contents).unwrap();
+        // config.resize_center(config.rendering.width, config.rendering.width);
         // config.width *= x;
         // config.height *= x;
         // for wall in config.walls.iter_mut() {
@@ -62,8 +81,11 @@ fn main() -> std::io::Result<()> {
         // for light in config.lights.iter_mut() {
         //     light.kind.scale(x);
         // }
+        config.rendering.width *= scale as usize;
+        config.rendering.height *= scale as usize;
+        config.rendering.zoom *= scale as f32;
 
-        run(config, outfile, count, scale);
+        run(config, outfile, count);
 
     } else {
         println!("Usage: bin some.json out.png 100000 3")

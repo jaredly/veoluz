@@ -2,10 +2,10 @@ use crate::line;
 use crate::types::*;
 use crate::Timer;
 
-pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
+pub fn grayscale(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     let _timer = Timer::new("Grayscale");
-    let width = config.rendering.width * scale as usize;
-    let height = config.rendering.height * scale as usize;
+    let width = config.rendering.width;
+    let height = config.rendering.height;
 
     let mut top = 0;
     for x in 0..width {
@@ -28,13 +28,22 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint], scale: u8) -> 
     data
 }
 
-fn exposer<'a>(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
+#[inline]
+fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 {
     let min: line::float = exposure.min;
     let max: line::float = exposure.max;
-    // if it's 0 - 0.75
-    // we want (x * (255.0 / .75)).max(255.0)
-    // if it's 0.25 - 0.75
-    // we want ((x - .25).min(0.0) * 255.0 / .5).max(255.0)
+    let scale: line::float = 255.0 / (max - min);
+    let amt = match exposure.curve {
+        Curve::FourthRoot => ((brightness as line::float / top).sqrt().sqrt()),
+        Curve::SquareRoot => ((brightness as line::float / top).sqrt()),
+        Curve::Linear => (brightness as line::float / top),
+    };
+    ((amt - min).max(0.0) * scale).min(255.0)
+}
+
+fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
+    let min: line::float = exposure.min;
+    let max: line::float = exposure.max;
     let scale: line::float = 255.0 / (max - min);
     let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0);
     match exposure.curve {
@@ -42,17 +51,11 @@ fn exposer<'a>(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
             Box::new(move |top: line::float, brightness: line::uint| {
                 scaler((brightness as line::float / top).sqrt().sqrt())
             })
-            // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8
         }
-        // FourthRoot => move |top, brightness|
-        //     scaler((brightness as line::float / top).sqrt().sqrt()),
         Curve::SquareRoot => {
             Box::new(move |top: line::float, brightness: line::uint| {
                 scaler((brightness as line::float / top).sqrt())
             })
-            // (((brightness as line::float / top).sqrt().sqrt() - min).min(0.0) * scale).max(255.0) as u8;
-            // move |top, brightness: u8|
-            // scaler((brightness as line::float / top).sqrt())
         }
         Curve::Linear => Box::new(move |top, brightness| scaler(brightness as line::float / top)),
     }
@@ -94,10 +97,10 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
     bins
 }
 
-pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
+pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     // let _timer = Timer::new("Colorize");
-    let width = config.rendering.width * scale as usize;
-    let height = config.rendering.height * scale as usize;
+    let width = config.rendering.width;
+    let height = config.rendering.height;
 
     let mut top = 0;
     for x in 0..width {
@@ -171,11 +174,11 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> V
     data
 }
 
-pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8) -> Vec<u8> {
+pub fn black_colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     // something like 5% of the time is here
     // let _timer = Timer::new("Colorize");
-    let width = config.rendering.width * scale as usize;
-    let height = config.rendering.height * scale as usize;
+    let width = config.rendering.width;
+    let height = config.rendering.height;
 
     let mut top = 0;
     for x in 0..width {
@@ -204,7 +207,7 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint], scale: u8
 }
 
 pub fn zen_photon(config: &Config) -> Vec<u8> {
-    let brightness_data = crate::calculate::calculate(&config, 100_000, 1);
+    let brightness_data = crate::calculate::calculate(&config, 100_000);
 
-    colorize(&config, &brightness_data, 1)
+    colorize(&config, &brightness_data)
 }
