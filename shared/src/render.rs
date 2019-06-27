@@ -109,21 +109,11 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
         }
     }
 
-    // let front = (255.0, 255.0, 255.0);
-    // let back = (0.0, 50.0, 0.0);
     let color: Box<Fn(f32, &mut [u8], usize)> = match config.rendering.coloration {
         Coloration::Rgb {
             highlight,
             background,
         } => {
-            // (
-            //     (highlight.0 as f32, highlight.1 as f32, highlight.2 as f32),
-            //     (
-            //         background.0 as f32,
-            //         background.1 as f32,
-            //         background.2 as f32,
-            //     ),
-            // );
             let back = background;
             let front = highlight;
             Box::new(move |exposed, data: &mut [u8], index| {
@@ -150,8 +140,6 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
              })
          }
     };
-    // let front = (131.0, 43.0, 93.0);
-    // let front = (255.0, 200.0, 230.0);
 
     let expose = exposer(&config.rendering.exposure);
 
@@ -164,9 +152,6 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
             let brightness = brightness_data[x + y * width];
             let exposed = expose(top, brightness) / 255.0;
             color(exposed, &mut data, index);
-            // data[index] = (front.0 * exposed + back.0 * (1.0 - exposed)) as u8;
-            // data[index + 1] = (front.1 * exposed + back.1 * (1.0 - exposed)) as u8;
-            // data[index + 2] = (front.2 * exposed + back.2 * (1.0 - exposed)) as u8;
             data[index + 3] = 255;
         }
     }
