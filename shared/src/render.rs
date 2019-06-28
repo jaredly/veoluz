@@ -97,6 +97,20 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
     bins
 }
 
+#[inline]
+fn blend(front: u8, back: u8, front_alpha: f32) -> f32 {
+    let gamma = 2.2;
+    let front = front as f32 / 255.0;
+    let back = back as f32 / 255.0;
+    let front = front.powf(gamma);
+    let back = back.powf(gamma);
+
+    let res = front * front_alpha + back * (1.0 - front_alpha);
+    let res = res.powf(1.0 / gamma);
+
+    res * 255.0
+}
+
 pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     // let _timer = Timer::new("Colorize");
     let width = config.rendering.width;
@@ -117,9 +131,9 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
             let back = background;
             let front = highlight;
             Box::new(move |exposed, data: &mut [u8], index| {
-                data[index] = (front.0 as f32 * exposed + back.0 as f32 * (1.0 - exposed)) as u8;
-                data[index + 1] = (front.1 as f32 * exposed + back.1 as f32 * (1.0 - exposed)) as u8;
-                data[index + 2] = (front.2 as f32 * exposed + back.2 as f32 * (1.0 - exposed)) as u8;
+                data[index] = (blend(front.0, back.0, exposed)) as u8;
+                data[index + 1] = (blend(front.1, back.1, exposed)) as u8;
+                data[index + 2] = (blend(front.2, back.2, exposed)) as u8;
             })
         },
         Coloration::HueRange { 
