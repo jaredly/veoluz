@@ -1,5 +1,7 @@
 let x = 10;
 
+[%bs.raw {|require("@mapbox/react-colorpickr/dist/colorpickr.css")|}];
+
 [@bs.module "localforage"]
 external getItem: string => Js.Promise.t(Js.nullable('a)) = "";
 
@@ -22,6 +24,13 @@ type element;
 [@bs.val] [@bs.scope "document"]
 external getElementById: string => element = "";
 external asCanvas: element => canvas = "%identity";
+
+module Colorpickr = {
+  type color = {. "r": float, "g": float, "b": float};
+  [@bs.module "@mapbox/react-colorpickr"]
+  [@react.component]
+  external make: (~onChange: (color) => unit) => React.element = "default";
+}
 
 module Async = {
   let let_ = (v, fn) => Js.Promise.then_(fn, v);
