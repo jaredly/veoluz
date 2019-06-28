@@ -39,8 +39,8 @@ external parseInt: (string, int) => float = "";
 
 let colorToRgb = color => {
   let r = Js.String.substrAtMost(~from=1, ~length=2, color);
-  let g = Js.String.substrAtMost(~from=1, ~length=2, color);
-  let b = Js.String.substrAtMost(~from=1, ~length=2, color);
+  let g = Js.String.substrAtMost(~from=3, ~length=2, color);
+  let b = Js.String.substrAtMost(~from=5, ~length=2, color);
   (
     parseInt(r, 16),
     parseInt(g, 16),
