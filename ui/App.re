@@ -1,6 +1,6 @@
 let x = 10;
 
-[%bs.raw {|require("@mapbox/react-colorpickr/dist/colorpickr.css")|}];
+// [%bs.raw {|require("@mapbox/react-colorpickr/dist/colorpickr.css")|}];
 
 [@bs.module "localforage"]
 external getItem: string => Js.Promise.t(Js.nullable('a)) = "";
@@ -25,11 +25,43 @@ type element;
 external getElementById: string => element = "";
 external asCanvas: element => canvas = "%identity";
 
+// module Colorpickr = {
+//   type color = {. "r": float, "g": float, "b": float};
+//   [@bs.module "@mapbox/react-colorpickr"]
+//   [@react.component]
+//   external make: (~onChange: (color) => unit) => React.element = "default";
+// }
+
+[%bs.raw{|require('rc-color-picker/assets/index.css')|}]
+
+[@bs.val]
+external parseInt: (string, int) => float = "";
+
+let colorToRgb = color => {
+  let r = Js.String.substrAtMost(~from=1, ~length=2, color);
+  let g = Js.String.substrAtMost(~from=1, ~length=2, color);
+  let b = Js.String.substrAtMost(~from=1, ~length=2, color);
+  (
+    parseInt(r, 16),
+    parseInt(g, 16),
+    parseInt(b, 16),
+  )
+};
+
+let toHex = n => (n < 16 ? "0" : "") ++ Js.Int.toStringWithRadix(n, ~radix=16);
+
+let rgbToColor = ((r, g, b)) => {
+  "#" ++
+  toHex(int_of_float(r)) ++
+  toHex(int_of_float(g)) ++
+  toHex(int_of_float(b))
+}
+
 module Colorpickr = {
-  type color = {. "r": float, "g": float, "b": float};
-  [@bs.module "@mapbox/react-colorpickr"]
+  type color = {. "color": string};
+  [@bs.module]
   [@react.component]
-  external make: (~onChange: (color) => unit) => React.element = "default";
+  external make: (~color: string, ~onChange: (color) => unit) => React.element = "rc-color-picker";
 }
 
 module Async = {
@@ -311,18 +343,53 @@ module ExposureControl = {
             ++ "px",
           (),
         )}
-        onMouseDown=onMin
         className=Css.(
           style([
-            width(px(10)),
-            height(px(10)),
-            marginLeft(px(-5)),
-            cursor(`ewResize),
             position(`absolute),
-            backgroundColor(red),
           ])
         )
-      />
+      >
+        <div 
+          onMouseDown=onMin
+          className=Css.(style([
+              width(px(10)),
+              height(px(10)),
+              marginLeft(px(-5)),
+              cursor(`ewResize),
+              backgroundColor(red),
+          ]))
+        />
+        {
+          switch ([%js.deep config##rendering##coloration["Rgb"]]) {
+            | None => React.string("not rgb")
+            | Some(rgb) => {
+              <div
+                style={ReactDOMRe.Style.make(
+                  ~width="10px",
+                  ~height="30px",
+                  ()
+                )}
+              >
+                <Colorpickr
+                  color={rgbToColor(rgb##background)}
+                  onChange={color => {
+                    Js.log2("Color", color);
+                    let config = [%js.deep
+                      config["rendering"]["coloration"]["Rgb"].map(rgb =>
+                        switch (rgb) {
+                        | None => None
+                        | Some(v) => Some(v["background"].replace(colorToRgb(color##color)))
+                        }
+                      )
+                    ];
+                    update(config, false);
+                  }}
+                />
+              </div>
+            }
+          }
+        }
+      </div>
 
       <div
         style={ReactDOMRe.Style.make(
@@ -335,18 +402,53 @@ module ExposureControl = {
             ++ "px",
           (),
         )}
-        onMouseDown=onMax
         className=Css.(
           style([
-            width(px(10)),
-            height(px(10)),
-            marginLeft(px(-5)),
-            cursor(`ewResize),
             position(`absolute),
-            backgroundColor(red),
           ])
         )
-      />
+      >
+        <div 
+          onMouseDown=onMax
+          className=Css.(style([
+              width(px(10)),
+              height(px(10)),
+              marginLeft(px(-5)),
+              cursor(`ewResize),
+              backgroundColor(red),
+          ]))
+        />
+        {
+          switch ([%js.deep config##rendering##coloration["Rgb"]]) {
+            | None => React.string("not rgb")
+            | Some(rgb) => {
+              <div
+                style={ReactDOMRe.Style.make(
+                  ~width="10px",
+                  ~height="30px",
+                  ()
+                )}
+              >
+                <Colorpickr
+                  color={rgbToColor(rgb##highlight)}
+                  onChange={color => {
+                    Js.log2("Color", color);
+                    let config = [%js.deep
+                      config["rendering"]["coloration"]["Rgb"].map(rgb =>
+                        switch (rgb) {
+                        | None => None
+                        | Some(v) => Some(v["highlight"].replace(colorToRgb(color##color)))
+                        }
+                      )
+                    ];
+                    update(config, false);
+                  }}
+                />
+              </div>
+            }
+          }
+        }
+      </div>
     </div>
   }
 }
@@ -364,6 +466,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
+        className="btn"
       >
         {React.string("Fourth Root")}
       </button>
@@ -375,6 +478,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
+        className="btn"
       >
         {React.string("Square Root")}
       </button>
@@ -386,6 +490,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
+        className="btn"
       >
         {React.string("Linear")}
       </button>
@@ -434,7 +539,7 @@ module ConfigEditor = {
   let make = (~config: Rust.config, ~update, ~onSaveScene) => {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
-    <div className=Css.(style([fontFamily("monospace"), whiteSpace(`pre)]))>
+    <div>
       <div>
         <ExposureControl config update />
         <ExposureFunction config update />

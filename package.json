@@ -21,6 +21,7 @@
     "js_deep_ppx": "file:../../../tools/js_deep",
     "let-anything": "^1.0.3",
     "localforage": "^1.7.3",
+    "rc-color-picker": "^1.2.6",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "reason-react": "^0.7.0"
