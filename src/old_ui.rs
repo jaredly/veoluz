@@ -286,101 +286,101 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     //     })
     // })?;
 
-    setup_input("b-r", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { background, .. } => {
-                    background.0 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("b-r", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { background, .. } => {
+    //                 background.0 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("b-g", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { background, .. } => {
-                    background.1 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("b-g", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { background, .. } => {
+    //                 background.1 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("b-b", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { background, .. } => {
-                    background.2 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("b-b", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { background, .. } => {
+    //                 background.2 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("f-r", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { highlight, .. } => {
-                    highlight.0 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("f-r", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { highlight, .. } => {
+    //                 highlight.0 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("f-g", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { highlight, .. } => {
-                    highlight.1 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("f-g", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { highlight, .. } => {
+    //                 highlight.1 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
-    setup_input("f-b", |value, finished| {
-        try_state_ui(|state, ui| {
-            match &mut state.config.rendering.coloration {
-                shared::Coloration::HueRange { .. } => (),
-                shared::Coloration::Rgb { highlight, .. } => {
-                    highlight.2 = value as u8;
-                }
-            };
-            state.reexpose(ui)?;
-            if (finished) {
-                state.maybe_save_history();
-            }
-            Ok(())
-        })
-    })?;
+    // setup_input("f-b", |value, finished| {
+    //     try_state_ui(|state, ui| {
+    //         match &mut state.config.rendering.coloration {
+    //             shared::Coloration::HueRange { .. } => (),
+    //             shared::Coloration::Rgb { highlight, .. } => {
+    //                 highlight.2 = value as u8;
+    //             }
+    //         };
+    //         state.reexpose(ui)?;
+    //         if (finished) {
+    //             state.maybe_save_history();
+    //         }
+    //         Ok(())
+    //     })
+    // })?;
 
     // listen!(
     //     get_button("expose-fourth")?,
@@ -460,20 +460,20 @@ pub fn show_wall_ui(_idx: usize, wall: &Wall) -> Result<(), JsValue> {
 }
 
 pub fn reset_config(config: &shared::Config) -> Result<(), JsValue> {
-    match config.rendering.coloration {
-        shared::Coloration::HueRange { .. } => (),
-        shared::Coloration::Rgb {
-            highlight,
-            background,
-        } => {
-            get_input("f-r")?.set_value_as_number(highlight.0 as f64);
-            get_input("f-g")?.set_value_as_number(highlight.1 as f64);
-            get_input("f-b")?.set_value_as_number(highlight.2 as f64);
-            get_input("b-r")?.set_value_as_number(background.0 as f64);
-            get_input("b-g")?.set_value_as_number(background.1 as f64);
-            get_input("b-b")?.set_value_as_number(background.2 as f64);
-        }
-    };
+    // match config.rendering.coloration {
+    //     shared::Coloration::HueRange { .. } => (),
+    //     shared::Coloration::Rgb {
+    //         highlight,
+    //         background,
+    //     } => {
+    //         get_input("f-r")?.set_value_as_number(highlight.0 as f64);
+    //         get_input("f-g")?.set_value_as_number(highlight.1 as f64);
+    //         get_input("f-b")?.set_value_as_number(highlight.2 as f64);
+    //         get_input("b-r")?.set_value_as_number(background.0 as f64);
+    //         get_input("b-g")?.set_value_as_number(background.1 as f64);
+    //         get_input("b-b")?.set_value_as_number(background.2 as f64);
+    //     }
+    // };
     // get_input("rotation")?.set_value_as_number(config.transform.rotational_symmetry as f64);
     // get_input("reflection")?.set_checked(config.transform.reflection);
     // get_input("zoom")?.set_value_as_number(config.rendering.zoom as f64);
