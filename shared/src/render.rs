@@ -131,9 +131,9 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
             let back = background;
             let front = highlight;
             Box::new(move |exposed, data: &mut [u8], index| {
-                data[index] = (blend(front.0, back.0, exposed)) as u8;
-                data[index + 1] = (blend(front.1, back.1, exposed)) as u8;
-                data[index + 2] = (blend(front.2, back.2, exposed)) as u8;
+                data[index] = blend(front.0, back.0, exposed) as u8;
+                data[index + 1] = blend(front.1, back.1, exposed) as u8;
+                data[index + 2] = blend(front.2, back.2, exposed) as u8;
             })
         },
         Coloration::HueRange { 
