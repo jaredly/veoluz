@@ -54,6 +54,22 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 // pub fn
 
 #[wasm_bindgen]
+pub fn show_ui() {
+    let _ = ui::state_ui(|state, ui| {
+        ui.mouse_over = true;
+        ui::draw(ui, state)
+    });
+}
+
+#[wasm_bindgen]
+pub fn hide_ui() {
+    let _ = ui::state_ui(|state, ui| {
+        ui.mouse_over = false;
+        ui::draw(ui, state)
+    });
+}
+
+#[wasm_bindgen]
 pub fn show_hist() {
     let _ = ui::state_ui(|state, ui| {
         ui.show_hist = true;
