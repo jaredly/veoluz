@@ -97,6 +97,8 @@ type wasm = {
   "restore": [@bs.meth] (config => unit),
   "update": [@bs.meth] ((config, bool) => unit),
   "blank_config": [@bs.meth] (unit => config),
+  "show_hist": [@bs.meth] (unit => unit),
+  "hide_hist": [@bs.meth] (unit => unit),
   "parse_url_config": [@bs.meth] (string => Js.nullable(config))
 };
 

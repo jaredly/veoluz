@@ -291,7 +291,7 @@ let useDraggable = (~onMove) => {
 
 module ExposureControl = {
   [@react.component]
-  let make = (~config, ~update) => {
+  let make = (~config, ~update, ~wasm) => {
 
     let containerRef = React.useRef(Js.Nullable.null);
 
@@ -325,6 +325,12 @@ module ExposureControl = {
 
     <div
       ref={ReactDOMRe.Ref.domRef(containerRef)}
+      onMouseOver={evt => {
+        wasm##show_hist();
+      }}
+      onMouseOut={evt => {
+        wasm##hide_hist();
+      }}
       style={ReactDOMRe.Style.make(
         ~width=Js.Int.toString(config##rendering##width) ++ "px",
         ~position="relative",
@@ -536,12 +542,12 @@ module TransformEditor = {
 
 module ConfigEditor = {
   [@react.component]
-  let make = (~config: Rust.config, ~update, ~onSaveScene) => {
+  let make = (~config: Rust.config, ~wasm, ~update, ~onSaveScene) => {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
     <div>
       <div>
-        <ExposureControl config update />
+        <ExposureControl wasm config update />
         <ExposureFunction config update />
         <TransformEditor config update />
       </div>
@@ -784,6 +790,7 @@ module Inner = {
         </div>
       </div>
       <ConfigEditor
+        wasm
         config={state.config}
         onSaveScene
         update={(config, checkpoint) => {

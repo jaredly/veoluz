@@ -292,48 +292,21 @@ pub use line::float;
 
 impl Config {
     pub fn all_walls(&self) -> Vec<Wall> {
-        // let mut walls = all_walls(self);
-        // let translation = self.render_translation();
-        // for wall in walls.iter_mut() {
-        //     wall.kind.translate(&translation);
-        // }
-        // walls
         all_walls(self)
     }
 
     pub fn main_walls(&self) -> Vec<Wall> {
-        // let mut walls = self.walls.clone();
-        // let translation = self.render_translation();
-        // for wall in walls.iter_mut() {
-        //     wall.kind.translate(&translation);
-        // }
-        // walls
         self.walls.clone()
     }
 
     pub fn extra_walls(&self) -> Vec<Wall> {
         let mut extras = vec![];
         extra_walls(&mut extras, self);
-        // let translation = self.render_translation();
-        // for wall in extras.iter_mut() {
-        //     wall.kind.translate(&translation);
-        // }
         extras
     }
 
-    fn render_translation(&self) -> Vector2<float> {
-        let width = self.rendering.width;
-        let height = self.rendering.height;
-        Vector2::new(width as float / 2.0, height as float / 2.0) - self.rendering.center.coords
-    }
-
     fn all_lights(&self) -> Vec<LightSource> {
-        let mut lights = self.lights.clone();
-        // let translation = self.render_translation();
-        // for light in lights.iter_mut() {
-        //     light.kind.translate(&translation);
-        // }
-        lights
+        self.lights.clone()
     }
 }
 

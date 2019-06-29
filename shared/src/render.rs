@@ -99,14 +99,14 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
 
 #[inline]
 fn blend(front: u8, back: u8, front_alpha: f32) -> f32 {
-    let gamma = 2.2;
+    // let gamma = 2.2;
     let front = front as f32 / 255.0;
     let back = back as f32 / 255.0;
-    let front = front.powf(gamma);
-    let back = back.powf(gamma);
+    // let front = front.powf(gamma);
+    // let back = back.powf(gamma);
 
     let res = front * front_alpha + back * (1.0 - front_alpha);
-    let res = res.powf(1.0 / gamma);
+    // let res = res.powf(1.0 / gamma);
 
     res * 255.0
 }

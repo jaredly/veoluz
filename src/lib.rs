@@ -54,6 +54,22 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 // pub fn
 
 #[wasm_bindgen]
+pub fn show_hist() {
+    let _ = ui::state_ui(|state, ui| {
+        ui.show_hist = true;
+        ui::draw(ui, state)
+    });
+}
+
+#[wasm_bindgen]
+pub fn hide_hist() {
+    let _ = ui::state_ui(|state, ui| {
+        ui.show_hist = false;
+        ui::draw(ui, state)
+    });
+}
+
+#[wasm_bindgen]
 pub fn save() -> JsValue {
     state::with(|state| JsValue::from_serde(&state.config).unwrap())
 }
