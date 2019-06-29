@@ -3,6 +3,27 @@
 
 [@bs.module "url"] external urlParse: (string, bool) => {. "query": Js.nullable({. "error": Js.nullable(string), "code": Js.nullable(string)})} = "parse";
 
+module LocalForage = {
+
+  [@bs.module "localforage"]
+  external getItem: string => Js.Promise.t(Js.nullable('a)) = "";
+
+  [@bs.module "localforage"]
+  external setItem: (string, 'a) => Js.Promise.t(unit) = "";
+
+  [@bs.module "localforage"]
+  external keys: unit => Js.Promise.t(array(string)) = "";
+
+}
+
+type blob;
+type canvas;
+
+[@bs.send] external toBlob: (canvas, blob => unit) => unit = "";
+external asCanvas: Dom.element => canvas = "%identity";
+
+[@bs.val] [@bs.scope "document"]
+external documentGetElementById: string => Dom.element = "getElementById";
 
 type headers;
 [@bs.send] external get: (headers, string) => string = "";

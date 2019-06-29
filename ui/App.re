@@ -1,29 +1,11 @@
-let x = 10;
+open Lets;
 
 // [%bs.raw {|require("@mapbox/react-colorpickr/dist/colorpickr.css")|}];
-
-[@bs.module "localforage"]
-external getItem: string => Js.Promise.t(Js.nullable('a)) = "";
-
-[@bs.module "localforage"]
-external setItem: (string, 'a) => Js.Promise.t(unit) = "";
-
-[@bs.module "localforage"]
-external keys: unit => Js.Promise.t(array(string)) = "";
 
 type location;
 [@bs.val] external location: location = "";
 
 [@bs.set] external setHash: (location, string) => unit = "hash";
-
-type blob;
-type canvas;
-
-[@bs.send] external toBlob: (canvas, blob => unit) => unit = "";
-type element;
-[@bs.val] [@bs.scope "document"]
-external getElementById: string => element = "";
-external asCanvas: element => canvas = "%identity";
 
 // module Colorpickr = {
 //   type color = {. "r": float, "g": float, "b": float};
@@ -34,430 +16,7 @@ external asCanvas: element => canvas = "%identity";
 
 [%bs.raw{|require('rc-color-picker/assets/index.css')|}]
 
-[@bs.val]
-external parseInt: (string, int) => float = "";
-
-let colorToRgb = color => {
-  let r = Js.String.substrAtMost(~from=1, ~length=2, color);
-  let g = Js.String.substrAtMost(~from=3, ~length=2, color);
-  let b = Js.String.substrAtMost(~from=5, ~length=2, color);
-  (
-    parseInt(r, 16),
-    parseInt(g, 16),
-    parseInt(b, 16),
-  )
-};
-
-let toHex = n => (n < 16 ? "0" : "") ++ Js.Int.toStringWithRadix(n, ~radix=16);
-
-let rgbToColor = ((r, g, b)) => {
-  "#" ++
-  toHex(int_of_float(r)) ++
-  toHex(int_of_float(g)) ++
-  toHex(int_of_float(b))
-}
-
-module Colorpickr = {
-  type color = {. "color": string};
-  [@bs.module]
-  [@react.component]
-  external make: (~color: string, ~onChange: (color) => unit) => React.element = "rc-color-picker";
-}
-
-module Async = {
-  let let_ = (v, fn) => Js.Promise.then_(fn, v);
-  let resolve = Js.Promise.resolve;
-  module Consume = {
-    let let_ = (v, fn) => {
-      Js.Promise.then_(
-        v => {
-          let () = fn(v);
-          Js.Promise.resolve();
-        },
-        v,
-      )
-      ->ignore;
-    };
-  };
-};
-
 open Types;
-
-let sceneFromKey = key =>
-  switch (Js.String.split(":", key)) {
-  | [|created, id, "image"|] => {
-      tags: Belt.Set.String.empty,
-      id: created ++ ":" ++ id,
-      title: None,
-      created: float_of_string(created),
-      modified: float_of_string(created),
-      children: [||],
-      parent: None,
-    }
-  | m =>
-    Js.log(m);
-    failwith("Bad key " ++ key);
-  };
-
-let getSceneInfo = () => {
-  let%Async sceneRaw = getItem("scenes");
-  switch (sceneRaw->Js.toOption) {
-  | Some(sceneRaw) =>
-    switch (TypeSerde.deserializeDirectory(sceneRaw)) {
-    | Error(err) =>
-      failwith("Invalid scene data: " ++ String.concat(" : ", err))
-    | Ok(v) => Async.resolve(v)
-    }
-  | None =>
-    let%Async keys = keys();
-    Async.resolve({
-      scenes:
-        keys
-        ->Belt.Array.keep(m => Js.String2.endsWith(m, ":image"))
-        ->Belt.Array.map(key => {
-            let scene = sceneFromKey(key);
-            (scene.id, scene);
-          })
-        ->Belt.Map.String.fromArray,
-      tags: Belt.Map.String.empty,
-    });
-  };
-  // let scenesRaw =
-};
-
-let saveSceneInfo = directory => {
-  let json = TypeSerde.serializeDirectory(directory);
-  setItem("scenes", json);
-};
-
-[@bs.val] [@bs.scope "URL"] external createObjectURL: blob => string = "";
-
-module Scene = {
-  [@react.component]
-  let make = (~scene: scene, ~selected, ~onSelect) => {
-    let key = scene.id ++ ":image";
-    let getter = React.useCallback1(() => getItem(key), [|key|]);
-    let imageBlob = Hooks.useLoading(getter);
-    let url =
-      React.useMemo1(
-        () =>
-          switch (imageBlob) {
-          | None => None
-          | Some(blob) =>
-            switch (Js.toOption(blob)) {
-            | Some(blob) => Some(createObjectURL(blob))
-            | None => Some("invalid")
-            }
-          },
-        [|imageBlob|],
-      );
-    switch (url) {
-    | None => <div> {React.string("Loading...")} </div>
-    | Some(url) =>
-      <div
-        className=Css.(
-          style(
-            [display(`flex), flexDirection(`row), padding(px(4))]
-            @ (selected ? [backgroundColor(hex("5af"))] : []),
-          )
-        )>
-        <div
-          style={ReactDOMRe.Style.make(
-            ~backgroundImage="url(" ++ url ++ ")",
-            (),
-          )}
-          onClick={_evt => {
-            let%Async.Consume config = getItem(scene.id);
-            switch (Js.toOption(config)) {
-            | None => ()
-            | Some(config) => onSelect(scene.id, config)
-            };
-          }}
-          className=Css.(
-            style([
-              width(px(50)),
-              backgroundColor(black),
-              height(px(50)),
-              backgroundSize(`cover),
-              `declaration(("background-position", "center")),
-              // backgroundPosition(`center, `center)
-            ])
-          )
-        />
-        {scene.children->Belt.Array.length === 0
-           ? React.null
-           : <div>
-               {scene.children
-                ->Belt.Array.map(key => <div> {React.string(key)} </div>)
-                ->React.array}
-             </div>}
-      </div>
-    };
-  };
-};
-
-module Opt = {
-  let force = m =>
-    switch (m) {
-    | None => failwith("unwrapping option")
-    | Some(m) => m
-    };
-  module Consume = {
-    let let_ = (v, fn) =>
-      switch (v) {
-      | None => ()
-      | Some(m) => fn(m)
-      };
-  };
-};
-
-module ScenePicker = {
-  [@react.component]
-  let make = (~directory, ~current, ~onSelect) => {
-    <div
-      className=Css.(
-        style([
-          display(`flex),
-          flexDirection(`row),
-          maxHeight(px(300)),
-          maxWidth(px(800)),
-          overflow(`auto),
-          flexWrap(`wrap),
-        ])
-      )>
-      {React.array(
-         directory.scenes
-         ->Belt.Map.String.toArray
-         ->Belt.List.fromArray
-         ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
-         ->Belt.List.map(((key, scene)) =>
-             <Scene selected={current == Some(key)} scene onSelect key />
-           )
-         ->Belt.List.toArray,
-       )}
-    </div>;
-  };
-};
-
-let evtPos = evt => (
-  evt->ReactEvent.Mouse.clientX,
-  evt->ReactEvent.Mouse.clientY,
-);
-
-let useDraggable = (~onMove) => {
-  let (pressed, setPressed) = Hooks.useState(None);
-  let moveRef = React.useRef(onMove);
-  moveRef->React.Ref.setCurrent(onMove);
-
-  React.useEffect3(
-    () =>
-      switch (pressed) {
-      | None => None
-      | Some((x, y)) =>
-        let onMove = moveRef->React.Ref.current;
-        let mousemove = evt => {
-          evt->ReactEvent.Mouse.preventDefault;
-          onMove(evtPos(evt))
-        };
-        let mouseup = evt => {
-          evt->ReactEvent.Mouse.preventDefault;
-          Js.log("Mouseup, remove")
-          setPressed(None);
-        };
-        Web.window->Web.addEventListener("mousemove", mousemove, true);
-        Web.window->Web.addEventListener("mouseup", mouseup, true);
-        Some(
-          () => {
-            Js.log("releasing");
-          Web.window->Web.removeEventListener("mousemove", mousemove, true);
-          Web.window->Web.removeEventListener("mouseup", mouseup, true);
-          },
-        );
-        // None
-      },
-    (pressed, (), ()),
-  );
-
-  (
-    pressed,
-    evt => {
-      evt->ReactEvent.Mouse.preventDefault;
-      let pos = evtPos(evt);
-      setPressed(Some(pos));
-      // onPress(pos);
-    },
-  );
-};
-
-module ExposureControl = {
-  [@react.component]
-  let make = (~config, ~update, ~wasm) => {
-
-    let containerRef = React.useRef(Js.Nullable.null);
-
-    let (_, onMin) =
-      useDraggable(~onMove=((x, y)) => {
-        let%Opt.Consume container =
-          containerRef->React.Ref.current->Js.toOption;
-        let box = Web.getBoundingClientRect(container);
-        let x = float_of_int(x) -. box##left;
-        let y = float_of_int(y) -. box##top;
-        let xPercent = x /. box##width;
-        let config = [%js.deep
-          config["rendering"]["exposure"]["min"].replace(xPercent)
-        ];
-        update(config, false);
-      });
-
-    let (_, onMax) =
-      useDraggable(~onMove=((x, y)) => {
-        let%Opt.Consume container =
-          containerRef->React.Ref.current->Js.toOption;
-        let box = Web.getBoundingClientRect(container);
-        let x = float_of_int(x) -. box##left;
-        let y = float_of_int(y) -. box##top;
-        let xPercent = x /. box##width;
-        let config = [%js.deep
-          config["rendering"]["exposure"]["max"].replace(xPercent)
-        ];
-        update(config, false);
-      });
-
-    <div
-      ref={ReactDOMRe.Ref.domRef(containerRef)}
-      onMouseOver={evt => {
-        wasm##show_hist();
-      }}
-      onMouseOut={evt => {
-        wasm##hide_hist();
-      }}
-      style={ReactDOMRe.Style.make(
-        ~width=Js.Int.toString(config##rendering##width) ++ "px",
-        ~position="relative",
-        ~height="10px",
-        ~backgroundColor="#afa",
-        (),
-      )}>
-      <div
-        style={ReactDOMRe.Style.make(
-          ~left=
-            Js.Float.toString(
-              float_of_int(config##rendering##width)
-              *.
-              config##rendering##exposure##min,
-            )
-            ++ "px",
-          (),
-        )}
-        className=Css.(
-          style([
-            position(`absolute),
-          ])
-        )
-      >
-        <div 
-          onMouseDown=onMin
-          className=Css.(style([
-              width(px(10)),
-              height(px(10)),
-              marginLeft(px(-5)),
-              cursor(`ewResize),
-              backgroundColor(red),
-          ]))
-        />
-        {
-          switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-            | None => React.string("not rgb")
-            | Some(rgb) => {
-              <div
-                style={ReactDOMRe.Style.make(
-                  ~width="10px",
-                  ~height="30px",
-                  ()
-                )}
-              >
-                <Colorpickr
-                  color={rgbToColor(rgb##background)}
-                  onChange={color => {
-                    Js.log2("Color", color);
-                    let config = [%js.deep
-                      config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                        switch (rgb) {
-                        | None => None
-                        | Some(v) => Some(v["background"].replace(colorToRgb(color##color)))
-                        }
-                      )
-                    ];
-                    update(config, false);
-                  }}
-                />
-              </div>
-            }
-          }
-        }
-      </div>
-
-      <div
-        style={ReactDOMRe.Style.make(
-          ~left=
-            Js.Float.toString(
-              float_of_int(config##rendering##width)
-              *.
-              config##rendering##exposure##max,
-            )
-            ++ "px",
-          (),
-        )}
-        className=Css.(
-          style([
-            position(`absolute),
-          ])
-        )
-      >
-        <div 
-          onMouseDown=onMax
-          className=Css.(style([
-              width(px(10)),
-              height(px(10)),
-              marginLeft(px(-5)),
-              cursor(`ewResize),
-              backgroundColor(red),
-          ]))
-        />
-        {
-          switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-            | None => React.string("not rgb")
-            | Some(rgb) => {
-              <div
-                style={ReactDOMRe.Style.make(
-                  ~width="10px",
-                  ~height="30px",
-                  ()
-                )}
-              >
-                <Colorpickr
-                  color={rgbToColor(rgb##highlight)}
-                  onChange={color => {
-                    Js.log2("Color", color);
-                    let config = [%js.deep
-                      config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                        switch (rgb) {
-                        | None => None
-                        | Some(v) => Some(v["highlight"].replace(colorToRgb(color##color)))
-                        }
-                      )
-                    ];
-                    update(config, false);
-                  }}
-                />
-              </div>
-            }
-          }
-        }
-      </div>
-    </div>
-  }
-}
 
 module ExposureFunction = {
   [@react.component]
@@ -624,7 +183,7 @@ module Router = {
   let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) =>
     if (Js.String2.startsWith(hash, "#id=")) {
       let id = Js.String2.sliceToEnd(hash, ~from=4);
-      let%Async.Consume config = getItem(id);
+      let%Async.Consume config = Web.LocalForage.getItem(id);
       switch (config->Js.toOption) {
       | None => ()
       | Some(config) => onLoad((Some(id), config))
@@ -757,7 +316,7 @@ module Inner = {
       state.directory,
       directory => {
         Js.log("Directory changed -- saving");
-        let%Async.Consume () = saveSceneInfo(directory);
+        let%Async.Consume () = ScenePicker.saveSceneInfo(directory);
         ();
       },
     )
@@ -767,10 +326,10 @@ module Inner = {
       React.useCallback1(
         () => {
           let scene = newScene();
-          let canvas = getElementById("drawing")->asCanvas;
-          canvas->toBlob(blob => {
-            let%Async.Consume () = setItem(scene.id ++ ":image", blob);
-            let%Async.Consume () = setItem(scene.id, state.config);
+          let canvas = Web.documentGetElementById("drawing")->Web.asCanvas;
+          canvas->Web.toBlob(blob => {
+            let%Async.Consume () = Web.LocalForage.setItem(scene.id ++ ":image", blob);
+            let%Async.Consume () = Web.LocalForage.setItem(scene.id, state.config);
             dispatch(`Save(scene));
             ();
           });
@@ -815,11 +374,9 @@ module Inner = {
 };
 
 module App = {
-  let getKeys = () => keys();
-
   [@react.component]
   let make = (~wasm: Rust.wasm) => {
-    let keys = Hooks.useLoading(getSceneInfo);
+    let keys = Hooks.useLoading(ScenePicker.getSceneInfo);
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>

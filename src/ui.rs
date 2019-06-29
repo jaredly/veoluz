@@ -49,7 +49,7 @@ lazy_static! {
     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
         selection: None,
         show_lasers: false,
-        show_hist: true,
+        show_hist: false,
         mouse_over: false,
         hovered: None,
         last_mouse_pos: Point2::new(0.0, 0.0)
