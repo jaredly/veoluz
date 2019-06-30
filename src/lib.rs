@@ -33,7 +33,7 @@ fn on_message(wid: usize, evt: web_sys::MessageEvent) -> Result<(), JsValue> {
 
     state::with(|state| {
         state.handle_render(wid, id, uarr)?;
-        ui::use_ui(|ui| ui::draw(ui, state))
+        ui::draw(state)
     })?;
 
     Ok(())
@@ -55,49 +55,49 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 
 #[wasm_bindgen]
 pub fn set_active_wall(idx: usize) {
-    let _ = ui::state_ui(|state, ui| {
-        ui.selection = Some(ui::Selection::Wall(idx, None));
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.selection = Some(ui::Selection::Wall(idx, None));
+        ui::draw(state)
     });
 }
 
 #[wasm_bindgen]
 pub fn hover_wall(idx: usize) {
-    let _ = ui::state_ui(|state, ui| {
-        ui.hovered = Some((idx, ui::Handle::Move(nalgebra::zero())));
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.hovered = Some((idx, ui::Handle::Move(nalgebra::zero())));
+        ui::draw(state)
     });
 }
 
 #[wasm_bindgen]
 pub fn show_ui() {
-    let _ = ui::state_ui(|state, ui| {
-        ui.mouse_over = true;
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.mouse_over = true;
+        ui::draw(state)
     });
 }
 
 #[wasm_bindgen]
 pub fn hide_ui() {
-    let _ = ui::state_ui(|state, ui| {
-        ui.mouse_over = false;
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.mouse_over = false;
+        ui::draw(state)
     });
 }
 
 #[wasm_bindgen]
 pub fn show_hist() {
-    let _ = ui::state_ui(|state, ui| {
-        ui.show_hist = true;
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.show_hist = true;
+        ui::draw(state)
     });
 }
 
 #[wasm_bindgen]
 pub fn hide_hist() {
-    let _ = ui::state_ui(|state, ui| {
-        ui.show_hist = false;
-        ui::draw(ui, state)
+    let _ = state::with(|state| {
+        state.ui.show_hist = false;
+        ui::draw(state)
     });
 }
 
@@ -130,10 +130,10 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
 }
 
 fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
-    ui::try_state_ui(|state, ui| {
+    state::try_with(|state| {
         if reset {
             state.invalidate_past_renders();
-            ui::reset(&config, ui)?;
+            ui::reset(&config, &mut state.ui)?;
         }
         let size_changed = config.rendering.width != state.config.rendering.width
             || config.rendering.height != state.config.rendering.height;

@@ -12,6 +12,7 @@ pub struct State {
     pub history_index: usize,
     pub last_rendered_config: Option<shared::Config>,
     pub buffer: Vec<u32>,
+    pub ui: crate::ui::UiState,
     pub on_change: js_sys::Function,
     pub workers: Vec<(web_sys::Worker, bool, Option<shared::messaging::Message>)>,
 }
@@ -35,6 +36,7 @@ impl State {
             .expect("Can't make an imagedata"),
             buffer: vec![0_u32; config.rendering.width * config.rendering.height],
             workers: vec![],
+            ui: Default::default(),
             history: vec![config.clone()],
             history_index: 0,
             last_rendered_config: None,
@@ -213,12 +215,12 @@ impl State {
         )
     }
 
-    pub fn reexpose(&mut self, ui: &crate::ui::UiState) -> Result<(), JsValue> {
+    pub fn reexpose(&mut self) -> Result<(), JsValue> {
         self.image_data = make_image_data(&self.config, &self.buffer)?;
 
         // self.ctx.put_image_data(&self.image_data, 0.0, 0.0)?;
         // crate::ui::use_ui(|ui| {
-        crate::ui::draw(ui, &self);
+        crate::ui::draw(&self);
         // });
 
         Ok(())

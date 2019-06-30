@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
 use crate::state::State;
+use crate::state;
 use line::float;
 use shared::line;
 use shared::Wall;
@@ -38,8 +39,8 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            use_ui(|ui| {
-                ui.selection = Some(Selection::Adding(AddKindName::Line));
+            state::with(|state| {
+                state.ui.selection = Some(Selection::Adding(AddKindName::Line));
             })
         }
     );
@@ -49,8 +50,8 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            use_ui(|ui| {
-                ui.selection = Some(Selection::Adding(AddKindName::Parabola));
+            state::with(|state| {
+                state.ui.selection = Some(Selection::Adding(AddKindName::Parabola));
             })
         }
     );
@@ -60,8 +61,8 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            use_ui(|ui| {
-                ui.selection = Some(Selection::Adding(AddKindName::Circle));
+            state::with(|state| {
+                state.ui.selection = Some(Selection::Adding(AddKindName::Circle));
             })
         }
     );
@@ -71,10 +72,10 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, ui| {
+            state::try_with(|state| {
                 // TODO support removing multiple walls probably
-                if let Some(Selection::Wall(wid, _)) = ui.selection {
-                    ui.selection = None;
+                if let Some(Selection::Wall(wid, _)) = state.ui.selection {
+                    state.ui.selection = None;
                     hide_wall_ui()?;
                     state.config.walls.remove(wid);
                     state.async_render(false)?;
@@ -123,16 +124,16 @@ pub fn setup_button() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, ui| {
-                ui.show_lasers = !ui.show_lasers;
+            state::try_with(|state| {
+                state.ui.show_lasers = !state.ui.show_lasers;
                 let button = get_button("lasers")?;
-                button.set_inner_html(if ui.show_lasers {
+                button.set_inner_html(if state.ui.show_lasers {
                     "hide lasers"
                 } else {
                     "show lasers"
                 });
-                ui.mouse_over = ui.show_lasers;
-                draw(ui, state)?;
+                state.ui.mouse_over = state.ui.show_lasers;
+                draw(state)?;
                 Ok(())
             })
         }
@@ -143,8 +144,8 @@ pub fn setup_button() -> Result<(), JsValue> {
 
 pub fn setup_wall_ui() -> Result<(), JsValue> {
     setup_input("reflect", |value, finished| {
-        try_state_ui(|state, ui| {
-            if let Some(Selection::Wall(wid, _)) = ui.selection {
+        state::try_with(|state| {
+            if let Some(Selection::Wall(wid, _)) = state.ui.selection {
                 state.config.walls[wid].properties.reflect = value;
             }
             state.async_render(!finished)?;
@@ -156,8 +157,8 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("absorb", |value, finished| {
-        try_state_ui(|state, ui| {
-            if let Some(Selection::Wall(wid, _)) = ui.selection {
+        state::try_with(|state| {
+            if let Some(Selection::Wall(wid, _)) = state.ui.selection {
                 state.config.walls[wid].properties.absorb = value;
             }
             state.async_render(!finished)?;
@@ -169,8 +170,8 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("roughness", |value, finished| {
-        try_state_ui(|state, ui| {
-            if let Some(Selection::Wall(wid, _)) = ui.selection {
+        state::try_with(|state| {
+            if let Some(Selection::Wall(wid, _)) = state.ui.selection {
                 state.config.walls[wid].properties.roughness = value;
             }
             state.async_render(!finished)?;
@@ -182,8 +183,8 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
     })?;
 
     setup_input("refraction", |value, finished| {
-        try_state_ui(|state, ui| {
-            if let Some(Selection::Wall(wid, _)) = ui.selection {
+        state::try_with(|state| {
+            if let Some(Selection::Wall(wid, _)) = state.ui.selection {
                 state.config.walls[wid].properties.refraction = value;
             }
             state.async_render(!finished)?;
@@ -231,7 +232,7 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         "click",
         web_sys::MouseEvent,
         move |_evt| {
-            try_state_ui(|state, _ui| {
+            state::try_with(|state| {
                 let wi = get_input("width")?;
                 let hi = get_input("height")?;
                 state.config.rendering.width = wi.value_as_number() as usize;
@@ -428,14 +429,14 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
         get_button("undo")?,
         "click",
         web_sys::MouseEvent,
-        move |_evt| try_state_ui(|state, _ui| state.undo())
+        move |_evt| state::try_with(|state| state.undo())
     );
 
     listen!(
         get_button("redo")?,
         "click",
         web_sys::MouseEvent,
-        move |_evt| try_state_ui(|state, _ui| state.redo())
+        move |_evt| state::try_with(|state| state.redo())
     );
 
     Ok(())

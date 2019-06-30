@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
 use crate::state::State;
+use crate::state;
 use line::float;
 use shared::line;
 use shared::Wall;
@@ -46,30 +47,43 @@ pub struct UiState {
     pub last_mouse_pos: Point2<float>,
 }
 
-lazy_static! {
-    static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
-        selection: None,
-        show_lasers: false,
-        show_hist: false,
-        mouse_over: false,
-        hovered: None,
-        last_mouse_pos: Point2::new(0.0, 0.0)
-    });
+impl Default for UiState {
+    fn default() -> Self {
+        UiState {
+            selection: None,
+            show_lasers: false,
+            show_hist: false,
+            mouse_over: false,
+            hovered: None,
+            last_mouse_pos: Point2::new(0.0, 0.0)
+        }
+    }
 }
 
-pub fn use_ui<R, F: FnOnce(&mut UiState) -> R>(f: F) -> R {
-    f(&mut STATE.lock().unwrap())
-}
+// lazy_static! {
+//     static ref STATE: std::sync::Mutex<UiState> = std::sync::Mutex::new(UiState {
+//         selection: None,
+//         show_lasers: false,
+//         show_hist: false,
+//         mouse_over: false,
+//         hovered: None,
+//         last_mouse_pos: Point2::new(0.0, 0.0)
+//     });
+// }
 
-pub fn state_ui<R, F: FnOnce(&mut crate::state::State, &mut UiState) -> R>(f: F) -> R {
-    crate::state::with(|state| use_ui(|ui| f(state, ui)))
-}
+// pub fn use_ui<R, F: FnOnce(&mut UiState) -> R>(f: F) -> R {
+//     f(&mut STATE.lock().unwrap())
+// }
 
-pub fn try_state_ui<F: FnOnce(&mut crate::state::State, &mut UiState) -> Result<(), JsValue>>(
-    f: F,
-) {
-    crate::state::try_with(|state| use_ui(|ui| f(state, ui)))
-}
+// pub fn state_ui<R, F: FnOnce(&mut crate::state::State, &mut UiState) -> R>(f: F) -> R {
+//     crate::state::with(|state| use_ui(|ui| f(state, ui)))
+// }
+
+// pub fn try_state_ui<F: FnOnce(&mut crate::state::State, &mut UiState) -> Result<(), JsValue>>(
+//     f: F,
+// ) {
+//     crate::state::try_with(|state| use_ui(|ui| f(state, ui)))
+// }
 
 fn draw_image(state: &State) -> Result<(), JsValue> {
     state.ctx.put_image_data(&state.image_data, 0.0, 0.0)
@@ -431,12 +445,12 @@ pub fn draw_histogram(state: &crate::state::State) {
     }
 }
 
-pub fn draw(ui: &UiState, state: &crate::state::State) -> Result<(), JsValue> {
+pub fn draw(state: &crate::state::State) -> Result<(), JsValue> {
     draw_image(state)?;
-    if ui.mouse_over {
-        draw_walls(state, ui, ui.hovered.clone())?;
+    if state.ui.mouse_over {
+        draw_walls(state, &state.ui, state.ui.hovered.clone())?;
     }
-    if ui.show_hist {
+    if state.ui.show_hist {
         draw_histogram(state);
     }
     Ok(())
@@ -500,19 +514,15 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-            use_ui(|ui| {
-                ui.mouse_over = true;
-                draw(ui, state)
-            })
+                state.ui.mouse_over = true;
+                draw(state)
         })
     });
 
     listen!(canvas, "mouseleave", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-            use_ui(|ui| {
-                ui.mouse_over = false;
-                draw(ui, state)
-            })
+                state.ui.mouse_over = false;
+                draw(state)
         })
     });
 
@@ -527,13 +537,12 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
-            use_ui(|ui| {
                 state.maybe_save_history();
                 let pos = mouse_pos(&state.config.rendering, &evt);
                 use std::ops::Deref;
                 evt.deref().prevent_default();
 
-                if let Some(Selection::Adding(kind)) = &mut ui.selection {
+                if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
                     state.config.walls.push(Wall::new(
                         match kind {
                             AddKindName::Light => unimplemented!(),
@@ -547,23 +556,23 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                 pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
                         }
                     ));
-                    ui.selection = Some(Selection::Wall(state.config.walls.len() - 1, Some((Handle::Handle(0), pos))));
-                    update_cursor(ui)?;
-                    return draw(ui, state)
+                    state.ui.selection = Some(Selection::Wall(state.config.walls.len() - 1, Some((Handle::Handle(0), pos))));
+                    update_cursor(&state.ui)?;
+                    return draw(state)
                 }
 
                 match find_collision(&state.config.walls, &pos) {
                     None => {
-                        ui.selection = Some(Selection::Pan {
+                        state.ui.selection = Some(Selection::Pan {
                             grab: pos,
                             center: state.config.rendering.center,
                         });
-                        ui.hovered = None;
+                        state.ui.hovered = None;
                         hide_wall_ui()?;
                     }
                     Some((wid, id)) => {
                         if evt.shift_key() {
-                            let mut walls = match &ui.selection {
+                            let mut walls = match &state.ui.selection {
                                 Some(Selection::Multiple(walls, _)) => walls.clone(),
                                 Some(Selection::Wall(wid, _)) => vec![*wid],
                                 _ => vec![],
@@ -574,9 +583,9 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                 .iter()
                                 .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
                                 .collect();
-                            ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
+                            state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
                             hide_wall_ui()?;
-                        } else if let Some(Selection::Multiple(walls, _)) = &ui.selection {
+                        } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
                             if walls.contains(&wid) {
                                 let mut walls = walls.clone();
                                 walls.push(wid);
@@ -584,24 +593,23 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                     .iter()
                                     .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
                                     .collect();
-                                ui.selection =
+                                state.ui.selection =
                                     Some(Selection::Multiple(walls, Some((pdiffs, pos))));
                                 hide_wall_ui()?;
                             } else {
-                                ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
-                                ui.hovered = None;
+                                state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
+                                state.ui.hovered = None;
                             }
                             old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         } else {
-                            ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
-                            ui.hovered = None;
+                            state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
+                            state.ui.hovered = None;
                             old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         }
                     }
                 };
-                update_cursor(ui)?;
-                draw(ui, state)
-            })
+                update_cursor(&state.ui)?;
+                draw(state)
         })
     });
 
@@ -611,10 +619,10 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         web_sys::KeyboardEvent,
         move |evt: web_sys::KeyboardEvent| {
             if evt.key() == "Meta" {
-                use_ui(|ui| {
-                    match &mut ui.selection {
+                state::with(|state| {
+                    match &mut state.ui.selection {
                         Some(Selection::Wall(_, Some((_, orig)))) => {
-                            *orig = ui.last_mouse_pos.clone();
+                            *orig = state.ui.last_mouse_pos.clone();
                         }
                         _ => (),
                     };
@@ -626,10 +634,10 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
-            use_ui(|ui| -> Result<(), JsValue> {
+            // use_ui(|ui| -> Result<(), JsValue> {
                 let mut pos = mouse_pos(&state.config.rendering, &evt);
-                ui.last_mouse_pos = pos.clone();
-                match &mut ui.selection {
+                state.ui.last_mouse_pos = pos.clone();
+                match &mut state.ui.selection {
                     Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
                         if evt.meta_key() {
                             pos = *original_point + (pos - *original_point) / 10.0;
@@ -663,42 +671,42 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                             &state.config.walls,
                             &mouse_pos(&state.config.rendering, &evt),
                         ) {
-                            Some((wid, id)) => ui.hovered = Some((wid, id)),
-                            None => ui.hovered = None,
+                            Some((wid, id)) => state.ui.hovered = Some((wid, id)),
+                            None => state.ui.hovered = None,
                         }
                         Ok(())
                     }
                 }?;
                 use std::ops::Deref;
                 evt.deref().prevent_default();
-                update_cursor(ui)?;
-                draw(ui, state)
-            })?;
+                update_cursor(&state.ui)?;
+                draw(state)?;
+            // })?;
             Ok(())
         })
     });
 
     listen!(canvas, "mouseup", web_sys::MouseEvent, move |_evt| {
-        try_state_ui(|state, ui| {
-            match &ui.selection {
+        state::try_with(|state| {
+            match &state.ui.selection {
                 Some(Selection::Wall(wid, Some((id, _)))) => {
-                    ui.hovered = Some((*wid, *id));
-                    ui.selection = Some(Selection::Wall(*wid, None));
+                    state.ui.hovered = Some((*wid, *id));
+                    state.ui.selection = Some(Selection::Wall(*wid, None));
                     state.async_render(false)?;
                 }
                 Some(Selection::Pan { .. }) => {
-                    ui.selection = None;
+                    state.ui.selection = None;
                     state.async_render(false)?;
                 }
                 Some(Selection::Multiple(wids, _)) => {
-                    ui.selection = Some(Selection::Multiple(wids.clone(), None));
+                    state.ui.selection = Some(Selection::Multiple(wids.clone(), None));
                     state.async_render(false)?;
                 }
                 _ => (),
             };
             state.maybe_save_history();
 
-            update_cursor(ui)?;
+            update_cursor(&state.ui)?;
             Ok(())
         })
     });
