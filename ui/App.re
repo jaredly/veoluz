@@ -245,6 +245,7 @@ module Inner = {
     directory,
     current: option(string),
     config: Rust.config,
+    ui: Rust.ui,
   };
 
   [@react.component]
@@ -270,33 +271,33 @@ module Inner = {
               },
               current: Some(scene.id),
             }
-          | `Update(config) => {...state, config}
+          | `Update(config, ui) => {...state, config, ui}
           | `Select(id) =>
             (router^)->Router.updateId(id);
             // updateId(id);
             {...state, current: Some(id)};
           },
-        {directory, current: None, config: blank},
+        {directory, current: None, config: blank, ui: Rust.blankUi},
       );
 
     React.useEffect0(() => {
       // Js.log3("Setting up here", anyHash(state.config), state.config);
       let update =
         debounced(
-          config =>
+          ((config, ui)) =>
             // configRef->React.Ref.setCurrent(config);
             dispatch(
-              `Update(config),
+              `Update(config, ui),
             ),
           200,
         );
-      wasm##setup(state.config, config =>
+      wasm##setup(state.config, (config, ui) =>
         // Prevent a render loop
         // Js.log("Setting current from wasm (TODO debounce)");
         // configRef->React.Ref.setCurrent(config);
         // dispatch(`Update(config))
         update(
-          config,
+          (config, ui)
         )
       );
       None;
@@ -347,9 +348,9 @@ module Inner = {
         <div className=Css.(style([
           marginLeft(px(16))
         ]))>
-          <Objects config=state.config update={(config, checkpoint) => {
+          <Objects config=state.config ui=state.ui update={(config, checkpoint) => {
             wasm##update(config, checkpoint);
-            dispatch(`Update(config));
+            dispatch(`Update(config, state.ui));
           }} wasm />
         </div>
       </div>
@@ -360,7 +361,7 @@ module Inner = {
         update={(config, checkpoint) => {
           // configRef->React.Ref.setCurrent(config);
           wasm##update(config, checkpoint);
-          dispatch(`Update(config));
+          dispatch(`Update(config, state.ui));
         }}
       />
       <ScenePicker

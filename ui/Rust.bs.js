@@ -3,6 +3,18 @@
 
 var Curry = require("bs-platform/lib/js/curry.js");
 
+var blankUi = {
+  show_lasers: false,
+  selection: null,
+  mouse_over: false,
+  show_hist: false,
+  hovered: null,
+  last_mouse_pos: /* tuple */[
+    0.0,
+    0.0
+  ]
+};
+
 var wasm = (import('../pkg/zenphoton'));
 
 function withModule(fn) {
@@ -13,6 +25,7 @@ function withModule(fn) {
   return /* () */0;
 }
 
+exports.blankUi = blankUi;
 exports.wasm = wasm;
 exports.withModule = withModule;
 /* wasm Not a pure module */

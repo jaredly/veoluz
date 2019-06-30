@@ -226,17 +226,25 @@ impl State {
         Ok(())
     }
 
+    pub fn send_on_change(&self) {
+        let _res = self.on_change.call2(
+            &JsValue::null(),
+            &JsValue::from_serde(&self.config).unwrap(),
+            &JsValue::from_serde(&self.ui).unwrap()
+        );
+    }
+
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
         match &self.last_rendered_config {
             Some(config) if *config == self.config => {
                 // Ignore it probably
                 return Ok(());
             }
-            _ => {
-                println!("Render new config");
-                let _res = self.on_change.call1(&JsValue::null(), &JsValue::from_serde(&self.config).unwrap());
-            },
+            _ => (),
         }
+
+        println!("Render new config");
+        self.send_on_change();
 
         self.last_rendered_config = Some(self.config.clone());
         self.render_id += 1;

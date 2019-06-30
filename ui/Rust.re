@@ -88,10 +88,41 @@ type config = {
   },
 };
 
+type handle = {
+  .
+  "Handle": option(int),
+  "Move": option((float, float))
+}
+
+type ui = {
+  .
+  "show_lasers": bool,
+  "selection": Js.null({
+    .
+    "Wall": Js.null((int, Js.null((handle, (float, float))))),
+    "Light": Js.null((int, bool)),
+    // TODO fill in
+    "Multiple": Js.null((array(int), Js.null((array((float, float)), (float, float)))))
+  }),
+  "mouse_over": bool,
+  "show_hist": bool,
+  "hovered": Js.null((int, handle)),
+  "last_mouse_pos": (float, float)
+}
+
+let blankUi: ui = {
+  "show_lasers": false,
+  "selection": Js.null,
+  "mouse_over": false,
+  "show_hist": false,
+  "hovered": Js.null,
+  "last_mouse_pos": (0.0, 0.0)
+}
+
 type wasm = {
   .
   "initial": [@bs.meth] (unit => config),
-  "setup": [@bs.meth] ((config, config => unit) => unit),
+  "setup": [@bs.meth] ((config, (config, ui) => unit) => unit),
   "run": [@bs.meth] (unit => unit),
   "save": [@bs.meth] (unit => config),
   "restore": [@bs.meth] (config => unit),

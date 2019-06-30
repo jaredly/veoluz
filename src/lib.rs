@@ -57,7 +57,8 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 pub fn set_active_wall(idx: usize) {
     let _ = state::with(|state| {
         state.ui.selection = Some(ui::Selection::Wall(idx, None));
-        ui::draw(state)
+        ui::draw(state);
+        state.send_on_change();
     });
 }
 
@@ -65,7 +66,8 @@ pub fn set_active_wall(idx: usize) {
 pub fn hover_wall(idx: usize) {
     let _ = state::with(|state| {
         state.ui.hovered = Some((idx, ui::Handle::Move(nalgebra::zero())));
-        ui::draw(state)
+        ui::draw(state);
+        state.send_on_change();
     });
 }
 

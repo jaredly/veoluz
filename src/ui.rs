@@ -609,6 +609,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     }
                 };
                 update_cursor(&state.ui)?;
+                state.send_on_change();
                 draw(state)
         })
     });

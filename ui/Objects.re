@@ -22,17 +22,22 @@ module Slider = {
 
 module WallEditor = {
   [@react.component]
-  let make = (~wasm, ~wall, ~index, ~onChange) => {
-    <div className=Css.(style([
-      padding(px(8)),
-      margin2(~v=px(8), ~h=px(0)),
-    ]))
-    onMouseOver={evt => {
-      wasm##hover_wall(index)
-    }}
-    onClick={evt => {
-      wasm##set_active_wall(index);
-    }}
+  let make = (~wasm, ~selected, ~wall, ~index, ~onChange) => {
+    <div
+      className=Css.(style([
+        padding(px(8)),
+        margin2(~v=px(8), ~h=px(0)),
+      ] @ (
+        selected
+        ? [backgroundColor(hex("ddd"))]
+        : []
+      )))
+      onMouseOver={evt => {
+        wasm##hover_wall(index)
+      }}
+      onClick={evt => {
+        wasm##set_active_wall(index);
+      }}
     >
       <div className=Css.(style([
         fontWeight(`medium),
@@ -56,7 +61,8 @@ module WallEditor = {
 }
 
 [@react.component]
-let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
+let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
+  Js.log(ui);
 
   <div
     onMouseOver={evt => {
@@ -73,6 +79,13 @@ let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
         <WallEditor
           wasm
           wall
+          selected={switch (ui##selection->Js.nullToOption) {
+            | None => false
+            | Some(selection) => switch ([%js.deep selection["Wall"]]->Js.nullToOption) {
+              | None => false
+              | Some((wid, _)) => i == wid
+            }
+          }}
           index={i}
           onChange={wall => {
             let config = [%js.deep config["walls"].map(walls => {
