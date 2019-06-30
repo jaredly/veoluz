@@ -124,8 +124,9 @@ let make = (~config, ~update, ~wasm) => {
     style={ReactDOMRe.Style.make(
       ~width=Js.Int.toString(config##rendering##width) ++ "px",
       ~position="relative",
-      ~height="10px",
-      ~backgroundColor="#afa",
+      ~height="40px",
+      // ~backgroundColor="#afa",
+      ~outline="2px solid black",
       (),
     )}>
     <div
@@ -151,8 +152,9 @@ let make = (~config, ~update, ~wasm) => {
             width(px(10)),
             height(px(10)),
             marginLeft(px(-5)),
+            borderRadius(`percent(20.0)),
             cursor(`ewResize),
-            backgroundColor(red),
+            backgroundColor(hex("999")),
         ]))
       />
       {
@@ -162,6 +164,8 @@ let make = (~config, ~update, ~wasm) => {
             <div
               style={ReactDOMRe.Style.make(
                 ~width="10px",
+                ~marginLeft="-13px",
+                ~marginTop="2px",
                 ~height="30px",
                 ()
               )}
@@ -210,8 +214,9 @@ let make = (~config, ~update, ~wasm) => {
             width(px(10)),
             height(px(10)),
             marginLeft(px(-5)),
+            borderRadius(`percent(20.0)),
             cursor(`ewResize),
-            backgroundColor(red),
+            backgroundColor(hex("999")),
         ]))
       />
       {
@@ -221,6 +226,8 @@ let make = (~config, ~update, ~wasm) => {
             <div
               style={ReactDOMRe.Style.make(
                 ~width="10px",
+                ~marginLeft="-13px",
+                ~marginTop="2px",
                 ~height="30px",
                 ()
               )}

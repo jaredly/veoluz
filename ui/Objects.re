@@ -87,6 +87,7 @@ module LightEditor = {
               onChange([%js.deep light["kind"]["Point"]["offset"].replace(offset)])
             }}
           />
+          <br/>
           {React.string("x")}
           <NumInput
             min={-500}
@@ -107,6 +108,7 @@ module LightEditor = {
               onChange([%js.deep light["kind"]["Point"]["origin"].map(((x, _)) => (x, y))])
             }}
           />
+          <br/>
           {React.string("t0")}
           <NumInput
             min={0}
@@ -201,8 +203,9 @@ module WallEditor = {
 }
 
 [@react.component]
-let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
-  Js.log(ui);
+let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.wasm) => {
+  // Js.log(ui);
+  // Js.log2("Config", config);
 
   <div
     onMouseOver={evt => {
@@ -219,7 +222,7 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
           light
           selected={switch (ui##selection->Js.nullToOption) {
             | None => false
-            | Some(selection) => switch ([%js.deep selection["Light"]]->Js.nullToOption) {
+            | Some(selection) => switch ([%js.deep selection["Light"]]) {
               | None => false
               | Some((lid, _)) => i == lid
             }
@@ -237,13 +240,30 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
       })->React.array}
     </div>
     <div>
+      <button
+        onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Line"), "Multiple": None, "Light": None, "Wall": None}))])}
+      >
+        {React.string("Add line")}
+      </button>
+      <button
+        onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Parabola"), "Multiple": None, "Light": None, "Wall": None}))])}
+      >
+        {React.string("Add parabola")}
+      </button>
+      <button
+        onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Circle"), "Multiple": None, "Light": None, "Wall": None}))])}
+      >
+        {React.string("Add arc")}
+      </button>
+    </div>
+    <div>
       {config##walls->Belt.Array.mapWithIndex((i, wall) => {
         <WallEditor
           wasm
           wall
           selected={switch (ui##selection->Js.nullToOption) {
             | None => false
-            | Some(selection) => switch ([%js.deep selection["Wall"]]->Js.nullToOption) {
+            | Some(selection) => switch ([%js.deep selection["Wall"]]) {
               | None => false
               | Some((wid, _)) => i == wid
             }

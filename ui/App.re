@@ -14,7 +14,7 @@ type location;
 //   external make: (~onChange: (color) => unit) => React.element = "default";
 // }
 
-[%bs.raw{|require('rc-color-picker/assets/index.css')|}]
+[%bs.raw {|require('rc-color-picker/assets/index.css')|}];
 
 open Types;
 
@@ -31,8 +31,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn"
-      >
+        className="btn">
         {React.string("Fourth Root")}
       </button>
       <button
@@ -43,8 +42,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn"
-      >
+        className="btn">
         {React.string("Square Root")}
       </button>
       <button
@@ -55,14 +53,12 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn"
-      >
+        className="btn">
         {React.string("Linear")}
       </button>
-    </div>
-
+    </div>;
   };
-}
+};
 
 module TransformEditor = {
   [@react.component]
@@ -75,19 +71,19 @@ module TransformEditor = {
         value={config##transform##rotational_symmetry |> string_of_int}
         max="30"
         onChange={evt => {
-          let v = int_of_string((evt->ReactEvent.Form.target)##value);
+          let v = int_of_string(evt->ReactEvent.Form.target##value);
           let config = [%js.deep
             config["transform"]["rotational_symmetry"].replace(v)
           ];
           update(config, false);
         }}
       />
-      <br/>
+      <br />
       <input
         type_="checkbox"
         checked={config##transform##reflection}
         onChange={evt => {
-          let checked = (evt->ReactEvent.Form.target)##checked;
+          let checked = evt->ReactEvent.Form.target##checked;
           let config = [%js.deep
             config["transform"]["reflection"].replace(checked)
           ];
@@ -95,9 +91,9 @@ module TransformEditor = {
         }}
       />
       {React.string(" Reflect over y axis")}
-    </div>
-  }
-}
+    </div>;
+  };
+};
 
 module ConfigEditor = {
   [@react.component]
@@ -286,20 +282,15 @@ module Inner = {
         debounced(
           ((config, ui)) =>
             // configRef->React.Ref.setCurrent(config);
-            dispatch(
-              `Update(config, ui),
-            ),
+            dispatch(`Update((config, ui))),
           200,
         );
-      wasm##setup(state.config, (config, ui) =>
+      wasm##setup(state.config, (config, ui)
         // Prevent a render loop
         // Js.log("Setting current from wasm (TODO debounce)");
         // configRef->React.Ref.setCurrent(config);
         // dispatch(`Update(config))
-        update(
-          (config, ui)
-        )
-      );
+        => update((config, ui)));
       None;
     });
 
@@ -308,7 +299,8 @@ module Inner = {
         ~wasm,
         ~onLoad=((id, config)) => {
           // Js.log("Router log");
-          wasm##restore(config);
+          // This upgrades the schema if needed
+          let config = wasm##restore(config);
           dispatch(`Route((id, config)));
         },
       );
@@ -329,8 +321,10 @@ module Inner = {
           let scene = newScene();
           let canvas = Web.documentGetElementById("drawing")->Web.asCanvas;
           canvas->Web.toBlob(blob => {
-            let%Async.Consume () = Web.LocalForage.setItem(scene.id ++ ":image", blob);
-            let%Async.Consume () = Web.LocalForage.setItem(scene.id, state.config);
+            let%Async.Consume () =
+              Web.LocalForage.setItem(scene.id ++ ":image", blob);
+            let%Async.Consume () =
+              Web.LocalForage.setItem(scene.id, state.config);
             dispatch(`Save(scene));
             ();
           });
@@ -338,43 +332,56 @@ module Inner = {
         [|state.config|],
       );
 
-    <div>
-      <div className=Css.(style([
-        display(`flex),
-        flexDirection(`row),
-        flexWrap(`wrap),
-      ]))>
+    <div
+      className=Css.(
+        style([
+          display(`flex),
+          flexDirection(`row),
+          alignItems(`flexStart),
+          flexWrap(`wrap),
+        ])
+      )>
+      <div>
         <canvas id="drawing" width="600" height="600" />
-        <div className=Css.(style([
-          marginLeft(px(16))
-        ]))>
-          <Objects config=state.config ui=state.ui update={(config, checkpoint) => {
-            wasm##update(config, checkpoint);
-            dispatch(`Update(config, state.ui));
-          }} wasm />
+        <div>
+          <ConfigEditor
+            wasm
+            config={state.config}
+            onSaveScene
+            update={(config, checkpoint) => {
+              // configRef->React.Ref.setCurrent(config);
+              wasm##update(config, checkpoint);
+              dispatch(`Update((config, state.ui)));
+            }}
+          />
+          <ScenePicker
+            directory={state.directory}
+            current={state.current}
+            onSelect={(id, config) => {
+              Js.log3("Resetting", anyHash(config), config);
+              // configRef->React.Ref.setCurrent(config);
+              let _config = wasm##restore(config);
+              (router^)->Router.updateId(id);
+              dispatch(`Select(id));
+            }}
+          />
         </div>
       </div>
-      <ConfigEditor
-        wasm
-        config={state.config}
-        onSaveScene
-        update={(config, checkpoint) => {
-          // configRef->React.Ref.setCurrent(config);
-          wasm##update(config, checkpoint);
-          dispatch(`Update(config, state.ui));
-        }}
-      />
-      <ScenePicker
-        directory={state.directory}
-        current={state.current}
-        onSelect={(id, config) => {
-          Js.log3("Resetting", anyHash(config), config);
-          // configRef->React.Ref.setCurrent(config);
-          wasm##restore(config);
-          (router^)->Router.updateId(id);
-          dispatch(`Select(id));
-        }}
-      />
+      <div className=Css.(style([marginLeft(px(16))]))>
+        <Objects
+          config={state.config}
+          ui={state.ui}
+          update={(config, checkpoint) => {
+            wasm##update(config, checkpoint);
+            dispatch(`Update((config, state.ui)));
+          }}
+          wasm
+          updateUi={ui => {
+            wasm##update_ui(ui);
+            dispatch(`Update((state.config, ui)));
+          }}
+        />
+      </div>
     </div>;
   };
 };

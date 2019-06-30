@@ -164,6 +164,18 @@ fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
 }
 
 #[wasm_bindgen]
+pub fn update_ui(ui: &JsValue) {
+    if let Ok(ui) = ui.into_serde() {
+        state::try_with(|state| {
+            state.ui = ui;
+            ui::draw(state)
+        });
+    } else {
+        println!("Bad config")
+    }
+}
+
+#[wasm_bindgen]
 pub fn update(config: &JsValue, checkpoint: bool) {
     if let Ok(config) = deserialize_jsvalue(config) {
         update_config(config, false, checkpoint)
@@ -173,11 +185,14 @@ pub fn update(config: &JsValue, checkpoint: bool) {
 }
 
 #[wasm_bindgen]
-pub fn restore(config: &JsValue) {
+pub fn restore(config: &JsValue) -> JsValue {
     if let Ok(config) = deserialize_jsvalue(config) {
-        update_config(config, true, true)
+        let js = JsValue::from_serde(&config).unwrap();
+        update_config(config, true, true);
+        js
     } else {
-        println!("Bad config")
+        println!("Bad config");
+        JsValue::null()
     }
 }
 

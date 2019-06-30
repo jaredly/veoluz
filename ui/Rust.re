@@ -99,10 +99,11 @@ type ui = {
   "show_lasers": bool,
   "selection": Js.null({
     .
-    "Wall": Js.null((int, Js.null((handle, (float, float))))),
-    "Light": Js.null((int, bool)),
+    "Wall": option((int, Js.null((handle, (float, float))))),
+    "Light": option((int, bool)),
+    "Adding": option(string),
     // TODO fill in
-    "Multiple": Js.null((array(int), Js.null((array((float, float)), (float, float)))))
+    "Multiple": option((array(int), Js.null((array((float, float)), (float, float)))))
   }),
   "mouse_over": bool,
   "show_hist": bool,
@@ -125,8 +126,9 @@ type wasm = {
   "setup": [@bs.meth] ((config, (config, ui) => unit) => unit),
   "run": [@bs.meth] (unit => unit),
   "save": [@bs.meth] (unit => config),
-  "restore": [@bs.meth] (config => unit),
+  "restore": [@bs.meth] (config => config),
   "update": [@bs.meth] ((config, bool) => unit),
+  "update_ui": [@bs.meth] (ui => unit),
   "blank_config": [@bs.meth] (unit => config),
   "show_hist": [@bs.meth] (unit => unit),
   "hide_hist": [@bs.meth] (unit => unit),
