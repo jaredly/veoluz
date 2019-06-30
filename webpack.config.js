@@ -31,7 +31,8 @@ const mainJs = {
           TextEncoder: ['text-encoding', 'TextEncoder']
         })
     ],
-    mode: 'production'
+    // mode: 'production'
+    mode: 'development'
 };
 
 const worker = require('./worker/webpack.config')

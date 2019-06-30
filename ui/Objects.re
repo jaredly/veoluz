@@ -1,5 +1,23 @@
 open Lets;
 
+module NumInput = {
+  [@react.component]
+  let make = (~value, ~min, ~max, ~step, ~onChange) => {
+    <input
+      type_="number"
+      min={min}
+      max={Js.Float.toString(max)}
+      value={Js.Float.toString(value)}
+      step={step}
+      onChange={evt => {
+        let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
+        onChange(v)
+      }}
+    />
+  }
+
+}
+
 module Slider = {
   [@react.component]
   let make = (~value, ~min, ~max, ~step, ~onChange) => {
@@ -26,6 +44,95 @@ module Slider = {
       </div>
     </div>
   }
+}
+
+module LightEditor = {
+  [@react.component]
+  let make = (~wasm, ~selected, ~light, ~index, ~onChange) => {
+    <div
+      className=Css.(style([
+        padding(px(8)),
+        margin2(~v=px(8), ~h=px(0)),
+      ] @ (
+        selected
+        ? [backgroundColor(hex("ddd"))]
+        : []
+      )))
+      onMouseOver={evt => {
+        // wasm##hover_wall(index)
+        ()
+      }}
+      onClick={evt => {
+        // wasm##set_active_light(index);
+        ()
+      }}
+    >
+      <div className=Css.(style([
+        fontWeight(`medium),
+        fontSize(px(12)),
+
+      ]))>
+        {React.string("Light #" ++ string_of_int(index))}
+      </div>
+      {
+        let point = [%js.deep light##kind["Point"]];
+        <div>
+          {React.string("Offset")}
+          <NumInput
+            min={0}
+            max={500.0}
+            step={5.0}
+            value={point##offset}
+            onChange={offset => {
+              onChange([%js.deep light["kind"]["Point"]["offset"].replace(offset)])
+            }}
+          />
+          {React.string("x")}
+          <NumInput
+            min={-500}
+            max={500.0}
+            step={5.0}
+            value={point##origin |> fst}
+            onChange={x => {
+              onChange([%js.deep light["kind"]["Point"]["origin"].map(((_, y)) => (x, y))])
+            }}
+          />
+          {React.string("y")}
+          <NumInput
+            min={-500}
+            max={500.0}
+            step={5.0}
+            value={point##origin |> snd}
+            onChange={y => {
+              onChange([%js.deep light["kind"]["Point"]["origin"].map(((x, _)) => (x, y))])
+            }}
+          />
+          {React.string("t0")}
+          <NumInput
+            min={0}
+            max={Js.Math._PI *. 2.0}
+            step={0.1}
+            value={point##t0}
+            onChange={t0 => {
+              onChange([%js.deep light["kind"]["Point"]["t0"].replace(t0)])
+            }}
+          />
+          {React.string("t1")}
+          <NumInput
+            min={0}
+            max={Js.Math._PI *. 2.0}
+            step={0.1}
+            value={point##t1}
+            onChange={t1 => {
+              onChange([%js.deep light["kind"]["Point"]["t1"].replace(t1)])
+            }}
+          />
+        </div>
+      }
+    </div>
+
+  }
+
 }
 
 module WallEditor = {
@@ -106,6 +213,28 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
     }}
   >
     <div>
+      {config##lights->Belt.Array.mapWithIndex((i, light) => {
+        <LightEditor
+          wasm
+          light
+          selected={switch (ui##selection->Js.nullToOption) {
+            | None => false
+            | Some(selection) => switch ([%js.deep selection["Light"]]->Js.nullToOption) {
+              | None => false
+              | Some((lid, _)) => i == lid
+            }
+          }}
+          index={i}
+          onChange={light => {
+            let config = [%js.deep config["lights"].map(lights => {
+              let lights = Js.Array.copy(lights);
+              lights[i] = light;
+              lights
+            })];
+            update(config, false)
+          }}
+        />
+      })->React.array}
     </div>
     <div>
       {config##walls->Belt.Array.mapWithIndex((i, wall) => {
