@@ -9,13 +9,13 @@ use shared::Wall;
 
 use nalgebra::{Point2, Vector2};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Handle {
     Handle(usize),
     Move(Vector2<float>),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum AddKindName {
     Light,
     Circle,
@@ -23,7 +23,7 @@ pub enum AddKindName {
     Parabola,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Selection {
     Wall(usize, Option<(Handle, Point2<float>)>),
     Light(usize, bool),
@@ -35,7 +35,8 @@ pub enum Selection {
     Multiple(Vec<usize>, Option<(Vec<Vector2<float>>, Point2<float>)>),
 }
 
-// #[derive(Clone)]
+use serde::{Deserialize, Serialize};
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UiState {
     pub selection: Option<Selection>,
     pub show_lasers: bool,

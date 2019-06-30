@@ -344,8 +344,9 @@ module Inner = {
         flexWrap(`wrap),
       ]))>
         <canvas id="drawing" width="600" height="600" />
-        <div>
-          {React.string("Right side")}
+        <div className=Css.(style([
+          marginLeft(px(16))
+        ]))>
           <Objects config=state.config update={(config, checkpoint) => {
             wasm##update(config, checkpoint);
             dispatch(`Update(config));

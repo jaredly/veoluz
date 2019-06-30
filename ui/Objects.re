@@ -22,9 +22,25 @@ module Slider = {
 
 module WallEditor = {
   [@react.component]
-  let make = (~wall, ~onChange) => {
-    <div>
-    {React.string("Wall editor")}
+  let make = (~wasm, ~wall, ~index, ~onChange) => {
+    <div className=Css.(style([
+      padding(px(8)),
+      margin2(~v=px(8), ~h=px(0)),
+    ]))
+    onMouseOver={evt => {
+      wasm##hover_wall(index)
+    }}
+    onClick={evt => {
+      wasm##set_active_wall(index);
+    }}
+    >
+      <div className=Css.(style([
+        fontWeight(`medium),
+        fontSize(px(12)),
+
+      ]))>
+        {React.string("Wall #" ++ string_of_int(index))}
+      </div>
       <Slider
         min={0}
         max={1.0}
@@ -55,7 +71,9 @@ let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
     <div>
       {config##walls->Belt.Array.mapWithIndex((i, wall) => {
         <WallEditor
+          wasm
           wall
+          index={i}
           onChange={wall => {
             let config = [%js.deep config["walls"].map(walls => {
               let walls = Js.Array.copy(walls);
