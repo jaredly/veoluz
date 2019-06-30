@@ -3,7 +3,10 @@ open Lets;
 module Slider = {
   [@react.component]
   let make = (~value, ~min, ~max, ~step, ~onChange) => {
-    <div>
+    <div className=Css.(style([
+      display(`flex),
+      flexDirection(`row)
+    ]))>
       <input
         type_="range"
         min={min}
@@ -15,7 +18,12 @@ module Slider = {
           onChange(v)
         }}
       />
+      <div className=Css.(style([
+        fontSize(px(8)),
+        width(px(20))
+      ]))>
       {React.string(Js.Float.toString(value))}
+      </div>
     </div>
   }
 }
@@ -46,6 +54,19 @@ module WallEditor = {
       ]))>
         {React.string("Wall #" ++ string_of_int(index))}
       </div>
+      {React.string("Absorb")}
+      <Slider
+        min={0}
+        max={1.0}
+        step={0.01}
+        value={wall##properties##absorb}
+        onChange={absorb => {
+            let wall = [%js.deep wall["properties"]["absorb"].replace(absorb)];
+            onChange(wall)
+        }}
+      />
+
+      {React.string("Reflect vs Refract")}
       <Slider
         min={0}
         max={1.0}
@@ -53,6 +74,18 @@ module WallEditor = {
         value={wall##properties##reflect}
         onChange={reflect => {
             let wall = [%js.deep wall["properties"]["reflect"].replace(reflect)];
+            onChange(wall)
+        }}
+      />
+
+      {React.string("Index of Refraction")}
+      <Slider
+        min={0}
+        max={5.0}
+        step={0.01}
+        value={wall##properties##refraction}
+        onChange={value => {
+            let wall = [%js.deep wall["properties"]["refraction"].replace(value)];
             onChange(wall)
         }}
       />
