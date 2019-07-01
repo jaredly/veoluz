@@ -169,14 +169,22 @@ module LightEditor = {
 
 module WallEditor = {
   [@react.component]
-  let make = (~wasm, ~selected, ~wall, ~index, ~onChange) => {
+  let make = (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove) => {
     <div
       className=Css.(style([
-        padding(px(8)),
-        margin2(~v=px(8), ~h=px(0)),
+        cursor(`pointer),
+        padding2(~v=px(8), ~h=px(8)),
+        hover([
+          backgroundColor(hex("eee"))
+        ])
       ] @ (
         selected
-        ? [backgroundColor(hex("ddd"))]
+        ? [
+          backgroundColor(hex("ddd")),
+        hover([
+          backgroundColor(hex("ddd"))
+        ])
+          ]
         : []
       )))
       onMouseOver={evt => {
@@ -187,19 +195,25 @@ module WallEditor = {
       }}
     >
       <div className=Css.(style([
-        fontWeight(`medium),
-        fontSize(px(12)),
-
+        display(`flex),
+        justifyContent(`spaceBetween)
       ]))>
-        {React.string("Wall #" ++ string_of_int(index))}
+        <div className=Css.(style([
+          fontWeight(`medium),
+          fontSize(px(12)),
+
+        ]))>
+          {React.string("Wall #" ++ string_of_int(index))}
+        </div>
+        <button
+          onClick={_evt => {
+              onChange([% js.deep wall["hide"].replace(!wall##hide)])
+          }}
+        >
+          {React.string(wall##hide ? "Show" : "Hide")}
+        </button>
       </div>
-      <button
-        onClick={_evt => {
-            onChange([% js.deep wall["hide"].replace(!wall##hide)])
-        }}
-      >
-        {React.string(wall##hide ? "Show" : "Hide")}
-      </button>
+      {selected ? <div>
       {React.string("Absorb")}
       <Slider
         min={0}
@@ -235,6 +249,12 @@ module WallEditor = {
             onChange(wall)
         }}
       />
+      <button
+        onClick={evt => onRemove()}
+      >
+        {React.string("Delete")}
+      </button>
+      </div> : React.null}
     </div>
   }
 }
@@ -312,6 +332,15 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
             }
           }}
           index={i}
+          onRemove={() => {
+            let config = [%js.deep config["walls"].map(walls => {
+              let walls = Js.Array.copy(walls);
+              // Js.Array.removeFromInPlace(~pos=i, walls)->ignore;
+              Js.Array.removeCountInPlace(~pos=i, ~count=1, walls)->ignore;
+              walls
+            })];
+            update(config, true)
+          }}
           onChange={wall => {
             let config = [%js.deep config["walls"].map(walls => {
               let walls = Js.Array.copy(walls);

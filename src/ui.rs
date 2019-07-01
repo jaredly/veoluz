@@ -164,6 +164,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
 
     let extras = state.config.extra_walls();
     for wall in extras {
+        if wall.hide {
+            continue;
+        }
         crate::draw::draw(&wall.kind, &state.ctx, false);
     }
 
@@ -176,7 +179,13 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             Some(Selection::Multiple(walls, _)) if walls.contains(&i) => 3.0,
             _ => match hover {
                 Some((wid, _)) if wid == i => 2.0,
-                _ => 1.0,
+                _ => {
+                    // if not hovered/selected, don't draw
+                    if wall.hide {
+                        continue
+                    }
+                    1.0
+                },
             },
         };
         state.ctx.set_line_width(w);
