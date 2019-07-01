@@ -18,6 +18,36 @@ module NumInput = {
 
 }
 
+module LogSlider = {
+  [@react.component]
+  let make = (~value, ~min, ~max, ~step, ~onChange) => {
+    <div className=Css.(style([
+      display(`flex),
+      flexDirection(`row)
+    ]))>
+      <input
+        type_="range"
+        min={min}
+        max={Js.Float.toString(max)}
+        // value={Js.Float.toString(Js.Math.log(value))}
+        value={Js.Float.toString(Js.Math.pow_float(~base=Js.Math._E, ~exp=value))}
+        step={step}
+        onChange={evt => {
+          let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
+          // onChange(Js.Math.pow_float(~base=Js.Math._E, ~exp=v))
+          onChange(Js.Math.log(v))
+        }}
+      />
+      <div className=Css.(style([
+        fontSize(px(8)),
+        width(px(20))
+      ]))>
+      {React.string(Js.Float.toString(value))}
+      </div>
+    </div>
+  }
+}
+
 module Slider = {
   [@react.component]
   let make = (~value, ~min, ~max, ~step, ~onChange) => {
@@ -163,6 +193,13 @@ module WallEditor = {
       ]))>
         {React.string("Wall #" ++ string_of_int(index))}
       </div>
+      <button
+        onClick={_evt => {
+            onChange([% js.deep wall["hide"].replace(!wall##hide)])
+        }}
+      >
+        {React.string(wall##hide ? "Show" : "Hide")}
+      </button>
       {React.string("Absorb")}
       <Slider
         min={0}
@@ -188,7 +225,7 @@ module WallEditor = {
       />
 
       {React.string("Index of Refraction")}
-      <Slider
+      <LogSlider
         min={0}
         max={5.0}
         step={0.01}
@@ -255,6 +292,12 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
       >
         {React.string("Add arc")}
       </button>
+    </div>
+    <div className=Css.(style([
+      fontWeight(`bold),
+      padding(px(8))
+    ]))>
+      {React.string("Walls")}
     </div>
     <div>
       {config##walls->Belt.Array.mapWithIndex((i, wall) => {

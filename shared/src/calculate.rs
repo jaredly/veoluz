@@ -336,7 +336,7 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
     let mut brightness_data = vec![0; width * height];
 
     let total_light: f32 = { config.lights.iter().map(|l| l.brightness).sum() };
-    let walls = config.all_walls();
+    let walls = config.all_walls().into_iter().filter(|w| !w.hide).collect::<Vec<Wall>>();
     let boundaries = boundaries(config);
 
     // if we don't draw at all, we're still getting only 400k/sec
