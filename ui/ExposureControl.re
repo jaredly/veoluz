@@ -90,6 +90,11 @@ let handleStyle =
     ])
   );
 
+let handleWrapperStyle = Css.(style([position(`absolute)
+,
+bottom(px(0))
+]));
+
 [@react.component]
 let make = (~config, ~update, ~wasm) => {
   let containerRef = React.useRef(Js.Nullable.null);
@@ -125,14 +130,20 @@ let make = (~config, ~update, ~wasm) => {
     onMouseOver={evt => wasm##show_hist()}
     onMouseOut={evt => wasm##hide_hist()}
     className=Css.(
-      style([position(`absolute), bottom(px(0)), left(px(0))])
+      style([position(`absolute), bottom(px(0)), left(px(0)),
+        selector(".color-picker-wrapper", [
+          visibility(`hidden)
+        ]),
+      hover([
+        selector(".color-picker-wrapper", [
+          visibility(`visible)
+        ])
+      ])
+      ])
     )
     style={ReactDOMRe.Style.make(
       ~width=Js.Int.toString(config##rendering##width) ++ "px",
-      // ~position="relative",
       ~height="40px",
-      // ~backgroundColor="#afa",
-      // ~outline="2px solid black",
       (),
     )}>
     <div
@@ -141,17 +152,17 @@ let make = (~config, ~update, ~wasm) => {
           Js.Float.toString(
             float_of_int(config##rendering##width)
             *.
-            config##rendering##exposure##min,
+            max(0.0, config##rendering##exposure##min),
           )
           ++ "px",
         (),
       )}
-      className=Css.(style([position(`absolute)]))>
-      <div onMouseDown=onMin className=handleStyle />
+      className=handleWrapperStyle>
       {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
        | None => React.string("not rgb")
        | Some(rgb) =>
          <div
+          className="color-picker-wrapper"
            style={ReactDOMRe.Style.make(
              ~width="10px",
              ~marginLeft="-13px",
@@ -177,6 +188,7 @@ let make = (~config, ~update, ~wasm) => {
            />
          </div>
        }}
+      <div onMouseDown=onMin className=handleStyle />
     </div>
     <div
       style={ReactDOMRe.Style.make(
@@ -184,17 +196,17 @@ let make = (~config, ~update, ~wasm) => {
           Js.Float.toString(
             float_of_int(config##rendering##width)
             *.
-            config##rendering##exposure##max,
+            min(1.0, config##rendering##exposure##max),
           )
           ++ "px",
         (),
       )}
-      className=Css.(style([position(`absolute)]))>
-      <div onMouseDown=onMax className=handleStyle />
+      className=handleWrapperStyle>
       {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
        | None => React.string("not rgb")
        | Some(rgb) =>
          <div
+          className="color-picker-wrapper"
            style={ReactDOMRe.Style.make(
              ~width="10px",
              ~marginLeft="-13px",
@@ -220,6 +232,7 @@ let make = (~config, ~update, ~wasm) => {
            />
          </div>
        }}
+      <div onMouseDown=onMax className=handleStyle />
     </div>
   </div>;
 };

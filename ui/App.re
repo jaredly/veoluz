@@ -63,7 +63,10 @@ module ExposureFunction = {
 module TransformEditor = {
   [@react.component]
   let make = (~config, ~update) => {
-    <div>
+    <div className=Styles.control>
+      <div className=Styles.title>
+        {React.string("Scene transforms")}
+      </div>
       {React.string("Rotational symmetry: ")}
       <input
         type_="number"
@@ -360,6 +363,13 @@ module Inner = {
           ])
         )>
         <div className=Css.(style([overflowX(`auto), flexShrink(0), position(`relative)]))>
+          <canvas
+            id="drawing"
+            width="600"
+            height="600"
+            className=Css.(style([]))
+          />
+          <ExposureControl wasm config={state.config} update />
           {switch (state.hoverUrl) {
            | None => React.null
            | Some(url) =>
@@ -376,13 +386,6 @@ module Inner = {
                )
              />
            }}
-          <canvas
-            id="drawing"
-            width="600"
-            height="600"
-            className=Css.(style([]))
-          />
-          <ExposureControl wasm config={state.config} update />
         </div>
         <ExposureFunction config={state.config} update />
         <ScenePicker

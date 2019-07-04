@@ -208,7 +208,8 @@ module WallEditor = {
           {React.string("Wall #" ++ string_of_int(index))}
         </div>
         <button
-          onClick={_evt => {
+          onClick={evt => {
+            ReactEvent.Mouse.stopPropagation(evt);
               onChange([% js.deep wall["hide"].replace(!wall##hide)])
           }}
         >
@@ -267,12 +268,7 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
   // Js.log2("Config", config);
 
   <div
-    className=Css.(style([
-      borderRadius(px(8)),
-      border(px(2), `solid, Colors.accent),
-      backgroundColor(Colors.control),
-      padding2(~v=px(8), ~h=px(16)),
-    ]))
+    className=Styles.control
     onMouseOver={evt => {
       wasm##show_ui();
     }}
@@ -280,10 +276,14 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
       wasm##hide_ui();
     }}
   >
+    <div className=Styles.title>
+      {React.string("Scene objects")}
+    </div>
     <div>
       {config##lights->Belt.Array.mapWithIndex((i, light) => {
         <LightEditor
           wasm
+          key={string_of_int(i)}
           light
           selected={switch (ui##selection->Js.nullToOption) {
             | None => false
