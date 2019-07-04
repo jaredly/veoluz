@@ -174,6 +174,7 @@ module WallEditor = {
       className=Css.(style([
         cursor(`pointer),
         padding2(~v=px(8), ~h=px(8)),
+        borderBottom(px(1), `solid, hex("ddd")),
         hover([
           backgroundColor(hex("eee"))
         ])
@@ -322,6 +323,7 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
     <div>
       {config##walls->Belt.Array.mapWithIndex((i, wall) => {
         <WallEditor
+          key={string_of_int(i)}
           wasm
           wall
           selected={switch (ui##selection->Js.nullToOption) {

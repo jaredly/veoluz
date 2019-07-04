@@ -66,6 +66,7 @@ pub fn make_image_data(
 impl State {
     pub fn reset_buffer(&mut self) {
         self.buffer = vec![0_u32; self.config.rendering.width * self.config.rendering.height];
+        self.invalidate_past_renders();
     }
 
     pub fn add_worker(&mut self, worker: web_sys::Worker) {

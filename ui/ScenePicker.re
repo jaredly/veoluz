@@ -54,7 +54,7 @@ module Scene = {
   [@react.component]
   let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover) => {
     let key = scene.id ++ ":image";
-    let getter = React.useCallback1(() => Web.LocalForage.getItem(key), [|key|]);
+    let getter = React.useCallback2(() => Web.LocalForage.getItem(key), (key, scene.modified));
     let imageBlob = Hooks.useLoading(getter);
     let url =
       React.useMemo1(
@@ -117,8 +117,38 @@ module Scene = {
   };
 };
 
+module SceneForm = {
+  [@react.component]
+  let make = (~scene=Types.emptyScene, ~onSave) => {
+    let (scene, update) = Hooks.useState(scene);
+    <div >
+    <div>
+      {React.string(scene.id == ""
+      ? "New scene"
+      : "Saved scene")}
+      </div>
+      <button
+        onClick={(_evt) => onSave(scene)}
+      >{React.string(scene.id == "" ? "Save scene" : "Update scene")}
+      </button>
+    </div>
+  }
+}
+
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
+let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => {
+  let currentScene = switch current {
+    | None => None
+    | Some(key) => directory.scenes->Belt.Map.String.get(key)
+  };
+  <div>
+    <SceneForm
+      scene=?currentScene
+      onSave={scene => {
+        onSaveScene(scene)
+      }}
+      key={switch currentScene { | None => "new-scene" | Some(scene) => scene.id}}
+    />
   <div
     className=Css.(
       style([
@@ -140,5 +170,6 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
           )
         ->Belt.List.toArray,
       )}
-  </div>;
+  </div>
+  </div>
 };

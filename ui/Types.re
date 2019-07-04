@@ -9,6 +9,16 @@ type scene = {
   parent: option(string),
 };
 
+let emptyScene = {
+  id: "",
+  modified: 0.,
+  created: 0.,
+  title: None,
+  tags: Belt.Set.String.empty,
+  parent: None,
+  children: [||]
+}
+
 type tag = {
   id: string,
   color: string,

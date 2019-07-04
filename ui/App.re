@@ -97,19 +97,14 @@ module TransformEditor = {
 
 module ConfigEditor = {
   [@react.component]
-  let make = (~config: Rust.config, ~wasm, ~update, ~onSaveScene) => {
+  let make = (~config: Rust.config, ~wasm, ~update) => {
     let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
 
     <div>
       <div>
         <ExposureControl wasm config update />
         <ExposureFunction config update />
-        <TransformEditor config update />
       </div>
-      // <div> {React.string(Js.Json.stringifyWithSpace(Obj.magic(tmpConfig), 2))} </div>
-      <button onClick={_ => onSaveScene()}>
-        {React.string("Save Sceen")}
-      </button>
     </div>;
   };
 };
@@ -120,18 +115,15 @@ let genId = () =>
   ->Js.String2.sliceToEnd(~from=2);
 let genId = () => genId() ++ genId();
 
-let newScene = () => {
+let newScene = (scene) => {
   let id = genId();
   let created = Js.Date.now();
   let fullId = created->Js.Float.toString ++ ":" ++ id;
   {
+    ...scene,
     id: fullId,
     modified: created,
     created,
-    title: None,
-    tags: Belt.Set.String.empty,
-    children: [||],
-    parent: None,
   };
 };
 
@@ -320,8 +312,10 @@ module Inner = {
 
     let onSaveScene =
       React.useCallback1(
-        () => {
-          let scene = newScene();
+        (scene: scene) => {
+          let scene = scene.id == ""
+          ? newScene(scene)
+          : {...scene, modified: Js.Date.now()}
           let canvas = Web.documentGetElementById("drawing")->Web.asCanvas;
           canvas->Web.toBlob(blob => {
             let%Async.Consume () =
@@ -362,9 +356,7 @@ module Inner = {
           <ConfigEditor
             wasm
             config={state.config}
-            onSaveScene
             update={(config, checkpoint) => {
-              // configRef->React.Ref.setCurrent(config);
               wasm##update(config, checkpoint);
               dispatch(`Update((config, state.ui)));
             }}
@@ -374,9 +366,9 @@ module Inner = {
             current={state.current}
             hover={url => dispatch(`Hover(url))}
             unHover={() => dispatch(`Unhover)}
+            onSaveScene
             onSelect={(id, config) => {
               Js.log3("Resetting", anyHash(config), config);
-              // configRef->React.Ref.setCurrent(config);
               let _config = wasm##restore(config);
               (router^)->Router.updateId(id);
               dispatch(`Select(id));
@@ -385,6 +377,10 @@ module Inner = {
         </div>
       </div>
       <div className=Css.(style([marginLeft(px(16))]))>
+        <TransformEditor config={state.config} update={(config, checkpoint) => {
+          wasm##update(config, checkpoint);
+          dispatch(`Update((config, state.ui)));
+        }} />
         <Objects
           config={state.config}
           ui={state.ui}
