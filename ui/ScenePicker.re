@@ -54,7 +54,11 @@ module Scene = {
   [@react.component]
   let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover) => {
     let key = scene.id ++ ":image";
-    let getter = React.useCallback2(() => Web.LocalForage.getItem(key), (key, scene.modified));
+    let getter =
+      React.useCallback2(
+        () => Web.LocalForage.getItem(key),
+        (key, scene.modified),
+      );
     let imageBlob = Hooks.useLoading(getter);
     let url =
       React.useMemo1(
@@ -80,8 +84,7 @@ module Scene = {
           )
         )
         onMouseOver={_evt => hover(url)}
-        onMouseOut={_evt => unHover()}
-        >
+        onMouseOut={_evt => unHover()}>
         <div
           style={ReactDOMRe.Style.make(
             ~backgroundImage="url(" ++ url ++ ")",
@@ -121,57 +124,68 @@ module SceneForm = {
   [@react.component]
   let make = (~scene=Types.emptyScene, ~onSave) => {
     let (scene, update) = Hooks.useState(scene);
-    <div className=Css.(style([
-      padding(px(8))
-    ]))>
-    <div>
-      {React.string(scene.id == ""
-      ? "New scene"
-      : "Scene created " ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)))}
+    <div className=Css.(style([padding(px(8))]))>
+      <div>
+        {React.string(
+           scene.id == ""
+             ? "New scene"
+             : "Scene created "
+               ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
+         )}
       </div>
-      <button
-        onClick={(_evt) => onSave(scene)}
-      >{React.string(scene.id == "" ? "Save scene" : "Update scene")}
+      <button onClick={_evt => onSave(scene)}>
+        {React.string(scene.id == "" ? "Save scene" : "Update scene")}
       </button>
-    </div>
-  }
-}
+    </div>;
+  };
+};
 
 [@react.component]
 let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => {
-  let currentScene = switch current {
+  let currentScene =
+    switch (current) {
     | None => None
     | Some(key) => directory.scenes->Belt.Map.String.get(key)
-  };
+    };
   <div>
     <SceneForm
       scene=?currentScene
-      onSave={scene => {
-        onSaveScene(scene)
-      }}
-      key={switch currentScene { | None => "new-scene" | Some(scene) => scene.id}}
+      onSave={scene => onSaveScene(scene)}
+      key={
+        switch (currentScene) {
+        | None => "new-scene"
+        | Some(scene) => scene.id
+        }
+      }
     />
-  <div
-    className=Css.(
-      style([
-        display(`flex),
-        flexDirection(`row),
-        maxHeight(px(300)),
-        maxWidth(px(800)),
-        overflow(`auto),
-        flexWrap(`wrap),
-      ])
-    )>
-    {React.array(
-        directory.scenes
-        ->Belt.Map.String.toArray
-        ->Belt.List.fromArray
-        ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
-        ->Belt.List.map(((key, scene)) =>
-            <Scene selected={current == Some(key)} scene onSelect key hover unHover />
-          )
-        ->Belt.List.toArray,
-      )}
-  </div>
-  </div>
+    <div
+      className=Css.(
+        style([
+          display(`flex),
+          flexDirection(`row),
+          maxHeight(px(300)),
+          maxWidth(px(800)),
+          overflow(`auto),
+          flexWrap(`wrap),
+        ])
+      )>
+      {React.array(
+         directory.scenes
+         ->Belt.Map.String.toArray
+         ->Belt.List.fromArray
+         ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
+         ->Belt.List.map(((key, scene)) =>
+             <Scene
+               selected={current == Some(key)}
+               scene
+               onSelect
+               key
+               hover
+               unHover
+             />
+           )
+         ->Belt.List.toArray,
+       )}
+    </div>
+  </div>;
 };

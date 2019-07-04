@@ -101,16 +101,11 @@ let genId = () =>
   ->Js.String2.sliceToEnd(~from=2);
 let genId = () => genId() ++ genId();
 
-let newScene = (scene) => {
+let newScene = scene => {
   let id = genId();
   let created = Js.Date.now();
   let fullId = created->Js.Float.toString ++ ":" ++ id;
-  {
-    ...scene,
-    id: fullId,
-    modified: created,
-    created,
-  };
+  {...scene, id: fullId, modified: created, created};
 };
 
 /**
@@ -254,7 +249,13 @@ module Inner = {
             // updateId(id);
             {...state, current: Some(id)};
           },
-        {directory, current: None, config: blank, ui: Rust.blankUi, hoverUrl: None},
+        {
+          directory,
+          current: None,
+          config: blank,
+          ui: Rust.blankUi,
+          hoverUrl: None,
+        },
       );
 
     React.useEffect0(() => {
@@ -299,9 +300,9 @@ module Inner = {
     let onSaveScene =
       React.useCallback1(
         (scene: scene) => {
-          let scene = scene.id == ""
-          ? newScene(scene)
-          : {...scene, modified: Js.Date.now()}
+          let scene =
+            scene.id == ""
+              ? newScene(scene) : {...scene, modified: Js.Date.now()};
           let canvas = Web.documentGetElementById("drawing")->Web.asCanvas;
           canvas->Web.toBlob(blob => {
             let%Async.Consume () =
@@ -316,9 +317,9 @@ module Inner = {
       );
 
     let update = (config, checkpoint) => {
-              wasm##update(config, checkpoint);
-              dispatch(`Update((config, state.ui)));
-            };
+      wasm##update(config, checkpoint);
+      dispatch(`Update((config, state.ui)));
+    };
 
     <div
       className=Css.(
@@ -330,34 +331,40 @@ module Inner = {
           // flexWrap(`wrap),
         ])
       )>
-      <div className=Css.(style([
-        position(`relative),
-        display(`flex),
-        flexDirection(`column),
-        overflow(`hidden),
-        alignItems(`stretch),
-      ]))>
-        <div className=Css.(style([
-          overflowX(`auto),
-          flexShrink(0)
-        ]))>
+      <div
+        className=Css.(
+          style([
+            position(`relative),
+            display(`flex),
+            flexDirection(`column),
+            overflow(`hidden),
+            alignItems(`stretch),
+          ])
+        )>
+        <div className=Css.(style([overflowX(`auto), flexShrink(0)]))>
           {switch (state.hoverUrl) {
-            | None => React.null
-            | Some(url) => <img src={url} className=Css.(style([
-              position(`absolute),
-              top(px(0)),
-              pointerEvents(`none),
-              left(px(0))
-            ])) />
-          }
-          }
-
-          <canvas id="drawing" width="600" height="600"
-          className=Css.(style([
-          ]))
+           | None => React.null
+           | Some(url) =>
+             <img
+               src=url
+               className=Css.(
+                 style([
+                   position(`absolute),
+                   top(px(0)),
+                   pointerEvents(`none),
+                   left(px(0)),
+                 ])
+               )
+             />
+           }}
+          <canvas
+            id="drawing"
+            width="600"
+            height="600"
+            className=Css.(style([]))
           />
-          <ExposureControl wasm config=state.config update />
-          <ExposureFunction config=state.config update />
+          <ExposureControl wasm config={state.config} update />
+          <ExposureFunction config={state.config} update />
         </div>
         <ScenePicker
           directory={state.directory}
@@ -374,10 +381,13 @@ module Inner = {
         />
       </div>
       <div className=Css.(style([marginLeft(px(16)), flex(1)]))>
-        <TransformEditor config={state.config} update={(config, checkpoint) => {
-          wasm##update(config, checkpoint);
-          dispatch(`Update((config, state.ui)));
-        }} />
+        <TransformEditor
+          config={state.config}
+          update={(config, checkpoint) => {
+            wasm##update(config, checkpoint);
+            dispatch(`Update((config, state.ui)));
+          }}
+        />
         <Objects
           config={state.config}
           ui={state.ui}
