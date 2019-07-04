@@ -239,6 +239,7 @@ module Router = {
 module Inner = {
   type state = {
     directory,
+    hoverUrl: option(string),
     current: option(string),
     config: Rust.config,
     ui: Rust.ui,
@@ -252,6 +253,8 @@ module Inner = {
       React.useReducer(
         (state, action) =>
           switch (action) {
+          | `Hover(url) => {...state, hoverUrl: Some(url)}
+          | `Unhover => {...state, hoverUrl: None}
           | `Route(parentId, parentConfig) => {
               ...state,
               current: parentId,
@@ -273,7 +276,7 @@ module Inner = {
             // updateId(id);
             {...state, current: Some(id)};
           },
-        {directory, current: None, config: blank, ui: Rust.blankUi},
+        {directory, current: None, config: blank, ui: Rust.blankUi, hoverUrl: None},
       );
 
     React.useEffect0(() => {
@@ -341,7 +344,19 @@ module Inner = {
           flexWrap(`wrap),
         ])
       )>
-      <div>
+      <div className=Css.(style([
+        position(`relative),
+      ]))>
+        {switch (state.hoverUrl) {
+          | None => React.null
+          | Some(url) => <img src={url} className=Css.(style([
+            position(`absolute),
+            top(px(0)),
+            pointerEvents(`none),
+            left(px(0))
+          ])) />
+        }
+        }
         <canvas id="drawing" width="600" height="600" />
         <div>
           <ConfigEditor
@@ -357,6 +372,8 @@ module Inner = {
           <ScenePicker
             directory={state.directory}
             current={state.current}
+            hover={url => dispatch(`Hover(url))}
+            unHover={() => dispatch(`Unhover)}
             onSelect={(id, config) => {
               Js.log3("Resetting", anyHash(config), config);
               // configRef->React.Ref.setCurrent(config);

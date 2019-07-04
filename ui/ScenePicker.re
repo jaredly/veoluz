@@ -52,7 +52,7 @@ let saveSceneInfo = directory => {
 
 module Scene = {
   [@react.component]
-  let make = (~scene: scene, ~selected, ~onSelect) => {
+  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover) => {
     let key = scene.id ++ ":image";
     let getter = React.useCallback1(() => Web.LocalForage.getItem(key), [|key|]);
     let imageBlob = Hooks.useLoading(getter);
@@ -78,7 +78,10 @@ module Scene = {
             [display(`flex), flexDirection(`row), padding(px(4))]
             @ (selected ? [backgroundColor(hex("5af"))] : []),
           )
-        )>
+        )
+        onMouseOver={_evt => hover(url)}
+        onMouseOut={_evt => unHover()}
+        >
         <div
           style={ReactDOMRe.Style.make(
             ~backgroundImage="url(" ++ url ++ ")",
@@ -115,7 +118,7 @@ module Scene = {
 };
 
 [@react.component]
-let make = (~directory, ~current, ~onSelect) => {
+let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
   <div
     className=Css.(
       style([
@@ -133,7 +136,7 @@ let make = (~directory, ~current, ~onSelect) => {
         ->Belt.List.fromArray
         ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
         ->Belt.List.map(((key, scene)) =>
-            <Scene selected={current == Some(key)} scene onSelect key />
+            <Scene selected={current == Some(key)} scene onSelect key hover unHover />
           )
         ->Belt.List.toArray,
       )}
