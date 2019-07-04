@@ -95,20 +95,6 @@ module TransformEditor = {
   };
 };
 
-module ConfigEditor = {
-  [@react.component]
-  let make = (~config: Rust.config, ~wasm, ~update) => {
-    let (tmpConfig, setTmpConfig) = Hooks.useUpdatingState(config);
-
-    <div>
-      <div>
-        <ExposureControl wasm config update />
-        <ExposureFunction config update />
-      </div>
-    </div>;
-  };
-};
-
 let genId = () =>
   Js.Math.random()
   ->Js.Float.toStringWithRadix(~radix=36)
@@ -329,54 +315,65 @@ module Inner = {
         [|state.config|],
       );
 
+    let update = (config, checkpoint) => {
+              wasm##update(config, checkpoint);
+              dispatch(`Update((config, state.ui)));
+            };
+
     <div
       className=Css.(
         style([
           display(`flex),
           flexDirection(`row),
-          alignItems(`flexStart),
-          flexWrap(`wrap),
+          alignItems(`stretch),
+          height(`vh(100.0)),
+          // flexWrap(`wrap),
         ])
       )>
       <div className=Css.(style([
         position(`relative),
+        display(`flex),
+        flexDirection(`column),
+        overflow(`hidden),
+        alignItems(`stretch),
       ]))>
-        {switch (state.hoverUrl) {
-          | None => React.null
-          | Some(url) => <img src={url} className=Css.(style([
-            position(`absolute),
-            top(px(0)),
-            pointerEvents(`none),
-            left(px(0))
-          ])) />
-        }
-        }
-        <canvas id="drawing" width="600" height="600" />
-        <div>
-          <ConfigEditor
-            wasm
-            config={state.config}
-            update={(config, checkpoint) => {
-              wasm##update(config, checkpoint);
-              dispatch(`Update((config, state.ui)));
-            }}
+        <div className=Css.(style([
+          overflowX(`auto),
+          flexShrink(0)
+        ]))>
+          {switch (state.hoverUrl) {
+            | None => React.null
+            | Some(url) => <img src={url} className=Css.(style([
+              position(`absolute),
+              top(px(0)),
+              pointerEvents(`none),
+              left(px(0))
+            ])) />
+          }
+          }
+
+          <canvas id="drawing" width="600" height="600"
+          className=Css.(style([
+          ]))
           />
-          <ScenePicker
-            directory={state.directory}
-            current={state.current}
-            hover={url => dispatch(`Hover(url))}
-            unHover={() => dispatch(`Unhover)}
-            onSaveScene
-            onSelect={(id, config) => {
-              Js.log3("Resetting", anyHash(config), config);
-              let _config = wasm##restore(config);
-              (router^)->Router.updateId(id);
-              dispatch(`Select(id));
-            }}
-          />
+          <ExposureControl wasm config=state.config update />
+          <ExposureFunction config=state.config update />
         </div>
+        <ScenePicker
+          directory={state.directory}
+          current={state.current}
+          hover={url => dispatch(`Hover(url))}
+          unHover={() => dispatch(`Unhover)}
+          onSaveScene
+          onSelect={(id, config) => {
+            Js.log3("Resetting", anyHash(config), config);
+            let _config = wasm##restore(config);
+            (router^)->Router.updateId(id);
+            dispatch(`Select(id));
+          }}
+        />
       </div>
-      <div className=Css.(style([marginLeft(px(16))]))>
+      <div className=Css.(style([marginLeft(px(16)), flex(1)]))>
         <TransformEditor config={state.config} update={(config, checkpoint) => {
           wasm##update(config, checkpoint);
           dispatch(`Update((config, state.ui)));

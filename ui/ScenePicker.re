@@ -121,11 +121,13 @@ module SceneForm = {
   [@react.component]
   let make = (~scene=Types.emptyScene, ~onSave) => {
     let (scene, update) = Hooks.useState(scene);
-    <div >
+    <div className=Css.(style([
+      padding(px(8))
+    ]))>
     <div>
       {React.string(scene.id == ""
       ? "New scene"
-      : "Saved scene")}
+      : "Scene created " ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)))}
       </div>
       <button
         onClick={(_evt) => onSave(scene)}
