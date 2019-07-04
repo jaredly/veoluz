@@ -248,6 +248,7 @@ pub fn setup_wall_ui() -> Result<(), JsValue> {
                     .unwrap()
                     .set_height(state.config.rendering.height as u32);
                 state.clear();
+                state.invalidate_past_renders();
                 state.reset_buffer();
                 state.maybe_save_history();
                 state.async_render(false)
