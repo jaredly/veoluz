@@ -209,6 +209,23 @@ module Router = {
   };
 };
 
+Css.(global("body", [
+  backgroundColor(Colors.background),
+  color(Colors.text),
+  margin(px(0)),
+]));
+
+Css.(global("input", [
+  backgroundColor(Colors.control),
+  color(Colors.text),
+]));
+
+Css.(global("button", [
+  backgroundColor(Colors.accent),
+  cursor(`pointer),
+  color(Colors.text),
+]));
+
 module Inner = {
   type state = {
     directory,
@@ -217,6 +234,7 @@ module Inner = {
     config: Rust.config,
     ui: Rust.ui,
   };
+
 
   [@react.component]
   let make = (~wasm: Rust.wasm, ~directory, ~blank) => {
@@ -337,11 +355,11 @@ module Inner = {
             position(`relative),
             display(`flex),
             flexDirection(`column),
-            overflow(`hidden),
+            // overflow(`hidden),
             alignItems(`stretch),
           ])
         )>
-        <div className=Css.(style([overflowX(`auto), flexShrink(0)]))>
+        <div className=Css.(style([overflowX(`auto), flexShrink(0), position(`relative)]))>
           {switch (state.hoverUrl) {
            | None => React.null
            | Some(url) =>
@@ -349,6 +367,7 @@ module Inner = {
                src=url
                className=Css.(
                  style([
+                   backgroundColor(black),
                    position(`absolute),
                    top(px(0)),
                    pointerEvents(`none),
@@ -364,8 +383,8 @@ module Inner = {
             className=Css.(style([]))
           />
           <ExposureControl wasm config={state.config} update />
-          <ExposureFunction config={state.config} update />
         </div>
+        <ExposureFunction config={state.config} update />
         <ScenePicker
           directory={state.directory}
           current={state.current}
@@ -380,7 +399,7 @@ module Inner = {
           }}
         />
       </div>
-      <div className=Css.(style([marginLeft(px(16)), flex(1)]))>
+      <div className=Css.(style([margin2(~h=px(16), ~v=px(8)), flex(1), minHeight(px(200))]))>
         <TransformEditor
           config={state.config}
           update={(config, checkpoint) => {

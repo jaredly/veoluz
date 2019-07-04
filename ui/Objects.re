@@ -82,6 +82,7 @@ module LightEditor = {
     <div
       className=Css.(style([
         padding(px(8)),
+        cursor(`pointer),
         margin2(~v=px(8), ~h=px(0)),
       ] @ (
         selected
@@ -93,7 +94,7 @@ module LightEditor = {
         ()
       }}
       onClick={evt => {
-        // wasm##set_active_light(index);
+        wasm##set_active_light(index);
         ()
       }}
     >
@@ -104,7 +105,7 @@ module LightEditor = {
       ]))>
         {React.string("Light #" ++ string_of_int(index))}
       </div>
-      {
+      {selected ? {
         let point = [%js.deep light##kind["Point"]];
         <div>
           {React.string("Offset")}
@@ -160,7 +161,7 @@ module LightEditor = {
             }}
           />
         </div>
-      }
+      } : React.null}
     </div>
 
   }
@@ -266,6 +267,12 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
   // Js.log2("Config", config);
 
   <div
+    className=Css.(style([
+      borderRadius(px(8)),
+      border(px(2), `solid, Colors.accent),
+      backgroundColor(Colors.control),
+      padding2(~v=px(8), ~h=px(16)),
+    ]))
     onMouseOver={evt => {
       wasm##show_ui();
     }}

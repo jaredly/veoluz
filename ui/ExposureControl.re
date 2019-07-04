@@ -80,6 +80,18 @@ let useDraggable = (~onMove) => {
   );
 };
 
+let handleStyle = Css.(style([
+            width(px(10)),
+            height(px(10)),
+            boxSizing(`borderBox),
+            marginLeft(px(-5)),
+            borderRadius(`percent(20.0)),
+            cursor(`grab),
+            backgroundColor(hex("000")),
+            border(px(2), `solid, hex("fff"))
+        ]));
+
+
 [@react.component]
 let make = (~config, ~update, ~wasm) => {
 
@@ -121,12 +133,17 @@ let make = (~config, ~update, ~wasm) => {
     onMouseOut={evt => {
       wasm##hide_hist();
     }}
+    className=Css.(style([
+      position(`absolute),
+      bottom(px(0)),
+      left(px(0)),
+    ]))
     style={ReactDOMRe.Style.make(
       ~width=Js.Int.toString(config##rendering##width) ++ "px",
-      ~position="relative",
+      // ~position="relative",
       ~height="40px",
       // ~backgroundColor="#afa",
-      ~outline="2px solid black",
+      // ~outline="2px solid black",
       (),
     )}>
     <div
@@ -148,14 +165,7 @@ let make = (~config, ~update, ~wasm) => {
     >
       <div 
         onMouseDown=onMin
-        className=Css.(style([
-            width(px(10)),
-            height(px(10)),
-            marginLeft(px(-5)),
-            borderRadius(`percent(20.0)),
-            cursor(`ewResize),
-            backgroundColor(hex("999")),
-        ]))
+        className=handleStyle
       />
       {
         switch ([%js.deep config##rendering##coloration["Rgb"]]) {
@@ -210,14 +220,7 @@ let make = (~config, ~update, ~wasm) => {
     >
       <div 
         onMouseDown=onMax
-        className=Css.(style([
-            width(px(10)),
-            height(px(10)),
-            marginLeft(px(-5)),
-            borderRadius(`percent(20.0)),
-            cursor(`ewResize),
-            backgroundColor(hex("999")),
-        ]))
+        className=handleStyle
       />
       {
         switch ([%js.deep config##rendering##coloration["Rgb"]]) {

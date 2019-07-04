@@ -147,7 +147,11 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => 
     | None => None
     | Some(key) => directory.scenes->Belt.Map.String.get(key)
     };
-  <div>
+  <div className=Css.(style([
+    flex(1),
+    display(`flex),
+    flexDirection(`column),
+  ]))>
     <SceneForm
       scene=?currentScene
       onSave={scene => onSaveScene(scene)}
@@ -161,10 +165,11 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => 
     <div
       className=Css.(
         style([
+          flex(1),
           display(`flex),
           flexDirection(`row),
           maxHeight(px(300)),
-          maxWidth(px(800)),
+          maxWidth(px(1024)),
           overflow(`auto),
           flexWrap(`wrap),
         ])

@@ -133,6 +133,7 @@ type wasm = {
   "show_hist": [@bs.meth] (unit => unit),
   "hide_hist": [@bs.meth] (unit => unit),
   "set_active_wall": [@bs.meth] (int => unit),
+  "set_active_light": [@bs.meth] (int => unit),
   "hover_wall": [@bs.meth] (int => unit),
   "show_ui": [@bs.meth] (unit => unit),
   "hide_ui": [@bs.meth] (unit => unit),
