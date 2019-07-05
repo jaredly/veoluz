@@ -8,6 +8,7 @@ module NumInput = {
       min
       max={Js.Float.toString(max)}
       value={Js.Float.toString(value)}
+      className=Css.(style([width(px(50))]))
       step
       onChange={evt => {
         let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
@@ -40,8 +41,7 @@ module LogSlider = {
       <input
         type_="number"
         step
-        className=Css.(style([
-          fontSize(px(8)), width(px(50))]))
+        className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
         value={Js.Float.toString(value)}
         onChange={evt => {
@@ -72,8 +72,7 @@ module Slider = {
       <input
         type_="number"
         step
-        className=Css.(style([
-          fontSize(px(8)), width(px(50))]))
+        className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
         value={Js.Float.toString(value)}
         onChange={evt => {
@@ -97,7 +96,10 @@ module LightEditor = {
             hover([backgroundColor(Colors.buttonHover)]),
             margin2(~v=px(8), ~h=px(0)),
           ]
-          @ (selected ? [outline(px(2), `solid, Colors.accent)] : []),
+          @ (
+            selected
+              ? [outline(px(2), `solid, Colors.accent), hover([])] : []
+          ),
         )
       )
       onMouseOver={evt =>
@@ -206,15 +208,14 @@ module LightEditor = {
   };
 };
 
-let wallType = kind => {
+let wallType = kind =>
   if ([%js.deep kind["Line"]] != None) {
-    "Line"
+    "Line";
   } else if ([%js.deep kind["Parabola"]] != None) {
-    "Parabola"
+    "Parabola";
   } else {
-    "Arc"
-  }
-}
+    "Arc";
+  };
 
 module WallEditor = {
   [@react.component]
@@ -250,7 +251,9 @@ module WallEditor = {
         )>
         <div
           className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
-          {React.string("Wall #" ++ string_of_int(index) ++ " " ++ wallType(wall##kind))}
+          {React.string(
+             "Wall #" ++ string_of_int(index) ++ " " ++ wallType(wall##kind),
+           )}
         </div>
         <button
           onClick={evt => {
