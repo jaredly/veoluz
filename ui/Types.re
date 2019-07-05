@@ -9,6 +9,13 @@ type scene = {
   parent: option(string),
 };
 
+let genId = () =>
+  Js.Math.random()
+  ->Js.Float.toStringWithRadix(~radix=36)
+  ->Js.String2.sliceToEnd(~from=2);
+let genId = () => genId() ++ genId();
+
+
 let emptyScene = {
   id: "",
   modified: 0.,

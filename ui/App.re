@@ -210,9 +210,11 @@ let debounced = (fn, time) => {
   };
 };
 
-let interestingDefault: Rust.config = [%bs.raw {|
+let interestingDefault: Rust.config = [%bs.raw
+  {|
 {"walls":[{"kind":{"Parabola":{"a":-0.00297538,"left":-87.706406,"right":37.56985,"transform":{"rotation":[-0.92809707,0.37233835],"translation":[46.11507,-51.88139]}}},"properties":{"absorb":0,"reflect":0,"roughness":0,"refraction":0.35065687},"hide":false},{"kind":{"Line":{"a":[164,-18],"b":[113.16666,-11.666672]}},"properties":{"absorb":0,"reflect":1,"roughness":0,"refraction":0.5},"hide":false},{"kind":{"Circle":[{"radius":25.632011},[210,9],-1.2120256,1.2890245]},"properties":{"absorb":0,"reflect":0.45,"roughness":0,"refraction":0.45742485},"hide":false}],"lights":[{"kind":{"Point":{"offset":0,"origin":[0,0],"t0":-3.1415927,"t1":3.1415927}},"brightness":1}],"transform":{"rotational_symmetry":5,"reflection":true},"rendering":{"exposure":{"curve":"SquareRoot","min":0.028320312,"max":0.38378906},"coloration":{"Rgb":{"background":[0,0,0],"highlight":[255,242,217]}},"width":1024,"height":576,"center":[1,0],"zoom":1}}
-|}]
+|}
+];
 
 module Router = {
   let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) =>
@@ -344,6 +346,15 @@ module Inner = {
               current: parentId,
               config: parentConfig,
             }
+          | `UpdateTags(tags) =>
+            // TODO safe the tags too yall
+            {
+              ...state,
+              directory: {
+                ...state.directory,
+                tags,
+              },
+            }
           | `Save((scene: scene)) =>
             (router^)->Router.updateId(scene.id);
             {
@@ -456,10 +467,7 @@ module Inner = {
             alignItems(`stretch),
           ])
         )>
-        <div
-          className=Css.(
-            style([flexShrink(0), position(`relative)])
-          )>
+        <div className=Css.(style([flexShrink(0), position(`relative)]))>
           <canvas
             id="drawing"
             width="600"
@@ -512,7 +520,9 @@ module Inner = {
             | Some(key) => state.directory.scenes->Belt.Map.String.get(key)
             };
 
-          <ScenePicker.SceneForm
+          <SceneForm
+            directory={state.directory}
+            onUpdateTags={tags => dispatch(`UpdateTags(tags))}
             scene=?currentScene
             wasm
             onPermalink={() =>

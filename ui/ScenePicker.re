@@ -120,69 +120,6 @@ module Scene = {
   };
 };
 
-module SceneForm = {
-  [@react.component]
-  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink, ~onDownload, ~wasm: Rust.wasm) => {
-    let (scene, update) = Hooks.useState(scene);
-    <div
-      className={
-        Styles.control
-        ++ " "
-        ++ Css.(
-             style([
-               flexDirection(`column),
-               display(`flex),
-               alignItems(`stretch),
-             ])
-           )
-      }>
-      <div className=Styles.title>
-        {React.string(
-           scene.id == ""
-             ? "New scene"
-             : "Scene created "
-               ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
-         )}
-      </div>
-      <input
-        className=Css.(style([alignSelf(`stretch)]))
-        placeholder="Title"
-        value={switch (scene.title) { | None => "" | Some(x) => x}}
-        onChange={evt => {
-          let title = evt->ReactEvent.Form.target##value;
-          update({...scene, title: title == "" ? None : Some(title)})
-        }}
-      />
-      (Styles.spacer(8))
-      <div>
-        <button onClick={evt => wasm##undo()}>{React.string("Undo")}</button>
-        <button onClick={evt => wasm##redo()}>{React.string("Redo")}</button>
-      </div>
-      (Styles.spacer(8))
-      <div className=Styles.row>
-      {scene.id != ""
-         ? <button onClick={_evt => onSave(scene)}>
-             {React.string("Update scene")}
-           </button>
-         : React.null}
-      (Styles.spacer(4))
-      <button onClick={_evt => onSave({...scene, id: ""})}>
-        {React.string(scene.id == "" ? "Save scene" : "Save new scene")}
-      </button>
-      </div>
-      {Styles.spacer(4)}
-      <div>
-        <button onClick={(_) => onPermalink()} className=Styles.flatButton(Colors.text)>
-          {React.string("Permalink")}
-        </button>
-        <button onClick={(_) => onDownload()} className=Styles.flatButton(Colors.text)>
-          {React.string("Download as json")}
-        </button>
-      </div>
-    </div>;
-  };
-};
-
 [@react.component]
 let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
   <div

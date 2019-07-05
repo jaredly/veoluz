@@ -3,6 +3,14 @@
 
 var Belt_SetString = require("bs-platform/lib/js/belt_SetString.js");
 
+function genId(param) {
+  return Math.random().toString(36).slice(2);
+}
+
+function genId$1(param) {
+  return genId(/* () */0) + genId(/* () */0);
+}
+
 var emptyScene_005 = /* children : array */[];
 
 var emptyScene = /* record */[
@@ -15,5 +23,6 @@ var emptyScene = /* record */[
   /* parent */undefined
 ];
 
+exports.genId = genId$1;
 exports.emptyScene = emptyScene;
 /* No side effect */
