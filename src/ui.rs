@@ -186,13 +186,13 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         };
         state.ctx.set_line_width(w);
         if wall.properties.reflect == 1.0 {
-            state.ctx.set_stroke_style(&JsValue::from_str("yellow"));
+            state.ctx.set_stroke_style(&JsValue::from_str("#faf"));
         } else if wall.properties.absorb == 1.0 {
-            state.ctx.set_stroke_style(&JsValue::from_str("red"));
+            state.ctx.set_stroke_style(&JsValue::from_str("#faa"));
         } else if wall.properties.reflect == 0.0 && wall.properties.absorb == 0.0 {
-            state.ctx.set_stroke_style(&JsValue::from_str("green"));
+            state.ctx.set_stroke_style(&JsValue::from_str("#afa"));
         } else {
-            state.ctx.set_stroke_style(&JsValue::from_str("blue"));
+            state.ctx.set_stroke_style(&JsValue::from_str("#aaf"));
         }
         crate::draw::draw(&wall.kind, &state.ctx, true);
         state.ctx.set_line_width(1.0);

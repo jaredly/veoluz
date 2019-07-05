@@ -80,6 +80,11 @@ impl State {
 
     pub fn undo(&mut self) -> Result<(), JsValue> {
         log!("Undo {} {}", self.history.len(), self.history_index);
+        if self.history_index == 0 {
+            if Some(&self.config) != self.history.last() {
+                self.history.push(self.config.clone());
+            }
+        }
         self.history_index = (self.history_index + 1).min(self.history.len() - 1);
         if let Some(config) = self
             .history

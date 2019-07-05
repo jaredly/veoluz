@@ -122,7 +122,7 @@ module Scene = {
 
 module SceneForm = {
   [@react.component]
-  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink, ~onDownload) => {
+  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink, ~onDownload, ~wasm: Rust.wasm) => {
     let (scene, update) = Hooks.useState(scene);
     <div
       className={
@@ -153,6 +153,11 @@ module SceneForm = {
           update({...scene, title: title == "" ? None : Some(title)})
         }}
       />
+      (Styles.spacer(8))
+      <div>
+        <button onClick={evt => wasm##undo()}>{React.string("Undo")}</button>
+        <button onClick={evt => wasm##redo()}>{React.string("Redo")}</button>
+      </div>
       (Styles.spacer(8))
       <div className=Styles.row>
       {scene.id != ""

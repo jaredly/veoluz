@@ -151,6 +151,8 @@ type wasm = {
   "hover_wall": [@bs.meth] (int => unit),
   "show_ui": [@bs.meth] (unit => unit),
   "hide_ui": [@bs.meth] (unit => unit),
+  "undo": [@bs.meth] (unit => unit),
+  "redo": [@bs.meth] (unit => unit),
   "parse_url_config": [@bs.meth] (string => Js.nullable(config)),
   "serialize_url_config": [@bs.meth] (config => string),
 };

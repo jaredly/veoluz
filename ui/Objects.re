@@ -219,7 +219,7 @@ let wallType = kind =>
 
 module WallEditor = {
   [@react.component]
-  let make = (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove) => {
+  let make = (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove, ~updateUi, ~ui) => {
     <div
       className=Css.(
         style(
@@ -240,7 +240,15 @@ module WallEditor = {
         )
       )
       onMouseOver={evt => wasm##hover_wall(index)}
-      onClick={evt => wasm##set_active_wall(index)}>
+      onClick={evt => {
+        if (selected) {
+               updateUi([%js.deep ui["selection"].replace(Js.null)]);
+
+        } else {
+
+        wasm##set_active_wall(index)
+        }
+        }}>
       <div
         className=Css.(
           style([
@@ -444,6 +452,8 @@ let make =
        ->Belt.Array.mapWithIndex((i, wall) =>
            <WallEditor
              key={string_of_int(i)}
+             ui
+             updateUi
              wasm
              wall
              selected={

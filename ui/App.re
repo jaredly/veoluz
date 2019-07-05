@@ -514,6 +514,7 @@ module Inner = {
 
           <ScenePicker.SceneForm
             scene=?currentScene
+            wasm
             onPermalink={() =>
               (router^)
               ->Router.permalink(wasm##serialize_url_config(state.config))
@@ -576,7 +577,7 @@ module App = {
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
-    | Some(directory) => <Inner wasm directory blank={interestingDefault} />
+    | Some(directory) => <Inner wasm directory blank={wasm##blank_config()} />
     };
   };
 };

@@ -231,6 +231,22 @@ pub fn serialize_url_config(config: &JsValue) -> String {
 }
 
 #[wasm_bindgen]
+pub fn undo() -> Result<JsValue, JsValue> {
+    state::with(|state| {
+        state.undo()?;
+        Ok(JsValue::from_serde(&state.config).unwrap())
+    })
+}
+
+#[wasm_bindgen]
+pub fn redo() -> Result<JsValue, JsValue> {
+    state::with(|state| {
+        state.redo()?;
+        Ok(JsValue::from_serde(&state.config).unwrap())
+    })
+}
+
+#[wasm_bindgen]
 pub fn blank_config() -> JsValue {
     let width = 1024;
     let height = 576;
