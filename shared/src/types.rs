@@ -13,7 +13,11 @@ pub trait LerpEq {
 
 impl<T: PartialEq + Clone + Lerp> LerpEq for T {
     fn lerp(&self, other: &Self, amount: f32) -> Self {
-        if self == other {
+        if amount == 0.0 {
+            self.clone()
+        } else if amount == 1.0 {
+            other.clone()
+        } else if self == other {
             self.clone()
         } else {
             self.lerp_(other, amount)
@@ -478,8 +482,8 @@ pub struct Config {
     pub rendering: Rendering,
 }
 
-impl<T: LerpEq> LerpEq for Vec<T> {
-    fn lerp(&self, other: &Self, amount: f32) -> Self {
+impl<T: LerpEq> Lerp for Vec<T> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
         if other.len() != self.len() {
             panic!("Cannot lerp between vecs of different length")
         };
