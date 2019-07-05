@@ -3,6 +3,66 @@ use crate::wall_type::WallType;
 use nalgebra::{Point2, Vector2};
 use serde::{Deserialize, Serialize};
 
+pub trait Lerp {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self;
+}
+
+pub trait LerpEq {
+    fn lerp(&self, other: &Self, amount: f32) -> Self;
+}
+
+impl<T: PartialEq + Clone + Lerp> LerpEq for T {
+    fn lerp(&self, other: &Self, amount: f32) -> Self {
+        if self == other {
+            self.clone()
+        } else {
+            self.lerp_(other, amount)
+        }
+    }
+}
+
+impl Lerp for f32 {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        self + (other - self) * amount
+    }
+}
+
+impl Lerp for usize {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        self + ((other - self) as f32 * amount) as usize
+    }
+}
+
+impl Lerp for u8 {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        self + ((other - self) as f32 * amount) as u8
+    }
+}
+
+impl Lerp for bool {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        if amount >= 0.5 { *other } else { *self }
+    }
+}
+
+impl Lerp for Point2<f32> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Point2::new(
+            self.x + (other.x - self.x) * amount,
+            self.y + (other.y - self.y) * amount,
+        )
+    }
+}
+
+impl Lerp for Vector2<f32> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Vector2::new(
+            self.x + (other.x - self.x) * amount,
+            self.y + (other.y - self.y) * amount,
+        )
+    }
+}
+
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Properties {
     // percentage of incoming light that's just absorbed
@@ -20,6 +80,17 @@ pub struct Properties {
     // when the RayIntersection has FeatureId::Face(0), then it's hitting the left side
     // Face(1) is hitting the right side
     pub refraction: f32,
+}
+
+impl Lerp for Properties {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Properties {
+            absorb: self.absorb.lerp(&other.absorb, amount),
+            reflect: self.absorb.lerp(&other.reflect, amount),
+            roughness: self.absorb.lerp(&other.roughness, amount),
+            refraction: self.absorb.lerp(&other.refraction, amount),
+        }
+    }
 }
 
 pub mod v0 {
@@ -98,6 +169,19 @@ pub struct Exposure {
     pub max: float,
 }
 
+impl Lerp for Exposure {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        if (other.curve != self.curve) {
+            unimplemented!();
+        }
+        Exposure {
+            curve: self.curve.clone(),
+            min: self.min.lerp(&other.min, amount),
+            max: self.max.lerp(&other.max, amount),
+        }
+    }
+}
+
 impl Exposure {
     fn default() -> Self {
         Exposure {
@@ -151,6 +235,12 @@ pub struct Transform {
     pub reflection: bool,
 }
 
+impl Lerp for Transform {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        unimplemented!()
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum Coloration {
     Rgb {
@@ -166,6 +256,26 @@ pub enum Coloration {
         saturation: f32,
         lightness: f32,
     }, // TODO make colorful schemes and such
+}
+
+impl<T: Clone + LerpEq> Lerp for (T, T, T) {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        (self.0.lerp(&other.0, amount), self.1.lerp(&other.1, amount), self.2.lerp(&other.2, amount))
+    }
+}
+
+impl Lerp for Coloration {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        match (self, other) {
+            (Coloration::Rgb {background, highlight}, Coloration::Rgb {background: b2, highlight: h2}) => {
+                Coloration::Rgb {
+                    background: background.lerp(b2, amount),
+                    highlight: highlight.lerp(b2, amount),
+                }
+            }
+            _ => unimplemented!()
+        }
+    }
 }
 
 impl Coloration {
@@ -193,6 +303,19 @@ pub struct Rendering {
     pub center: Point2<float>,
     // default 1.0
     pub zoom: float,
+}
+
+impl Lerp for Rendering {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Rendering {
+            exposure: self.exposure.lerp(&other.exposure, amount),
+            coloration: self.coloration.lerp(&other.coloration, amount),
+            width: self.width.lerp(&other.width, amount),
+            height: self.height.lerp(&other.height, amount),
+            center: self.center.lerp(&other.center, amount),
+            zoom: self.zoom.lerp(&other.zoom, amount),
+        }
+    }
 }
 
 impl Rendering {
@@ -269,6 +392,16 @@ pub struct Wall {
     pub hide: bool,
 }
 
+impl Lerp for Wall {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Wall {
+            kind: self.kind.lerp(&other.kind, amount),
+            properties: self.properties.lerp(&other.properties, amount),
+            hide: self.hide.lerp(&other.hide, amount),
+        }
+    }
+}
+
 impl From<v0::Wall> for Wall {
     fn from(other: v0::Wall) -> Self {
         Wall {
@@ -289,6 +422,21 @@ pub enum LightKind {
     },
 }
 
+impl Lerp for LightKind {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        match (self, other) {
+            (LightKind::Point {offset, origin, t0, t1}, LightKind::Point {offset: o2, origin: or2, t0: t02, t1: t12}) => {
+                LightKind::Point {
+                    offset: offset.lerp(&o2, amount),
+                    origin: origin.lerp(&or2, amount),
+                    t0: offset.lerp(&t02, amount),
+                    t1: offset.lerp(&t12, amount),
+                }
+            }
+        }
+    }
+}
+
 impl From<v0::LightKind> for LightKind {
     fn from(other: v0::LightKind) -> Self {
         match other {
@@ -302,6 +450,15 @@ pub struct LightSource {
     pub kind: LightKind,
     // something between 0 and 1 I think?
     pub brightness: float,
+}
+
+impl Lerp for LightSource {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        LightSource {
+            kind: self.kind.lerp(&other.kind, amount),
+            brightness: self.brightness.lerp(&other.brightness, amount),
+        }
+    }
 }
 
 impl From<v0::LightSource> for LightSource {
@@ -319,6 +476,26 @@ pub struct Config {
     pub lights: Vec<LightSource>,
     pub transform: Transform,
     pub rendering: Rendering,
+}
+
+impl<T: LerpEq> LerpEq for Vec<T> {
+    fn lerp(&self, other: &Self, amount: f32) -> Self {
+        if other.len() != self.len() {
+            panic!("Cannot lerp between vecs of different length")
+        };
+        self.iter().zip(other.iter()).map(|(one, two)| one.lerp(two, amount)).collect::<Vec<T>>()
+    }
+}
+
+impl Lerp for Config {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Config {
+            walls: self.walls.lerp(&other.walls, amount),
+            lights: self.lights.lerp(&other.lights, amount),
+            transform: self.transform.lerp(&other.transform, amount),
+            rendering: self.rendering.lerp(&other.rendering, amount),
+        }
+    }
 }
 
 pub fn from_v3(

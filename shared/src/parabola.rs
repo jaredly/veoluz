@@ -4,6 +4,8 @@ use ncollide2d::query::{Ray, RayIntersection};
 use ncollide2d::shape::FeatureId;
 use serde::{Deserialize, Serialize};
 
+use crate::types::{Lerp, LerpEq};
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Parabola {
     pub a: line::float,
@@ -11,6 +13,43 @@ pub struct Parabola {
     pub right: line::float,
     pub transform: nalgebra::geometry::Isometry2<line::float>,
 }
+
+impl crate::types::Lerp for nalgebra::UnitComplex<line::float> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        nalgebra::UnitComplex::from_angle(
+            self.angle().lerp(&other.angle(), amount)
+        )
+    }
+}
+
+impl crate::types::Lerp for nalgebra::geometry::Translation2<line::float> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        nalgebra::geometry::Translation2::from_vector(
+            self.vector.lerp(&other.vector, amount)
+        )
+    }
+}
+
+impl crate::types::Lerp for nalgebra::geometry::Isometry2<line::float> {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        nalgebra::geometry::Isometry2::from_parts(
+            self.translation.lerp(&other.translation, amount),
+            self.rotation.lerp(&other.rotation, amount)
+        )
+    }
+}
+
+impl crate::types::Lerp for Parabola {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        Parabola {
+            a: self.a.lerp(&other.a, amount),
+            left: self.left.lerp(&other.left, amount),
+            right: self.a.lerp(&other.right, amount),
+            transform: self.transform.lerp(&other.transform, amount),
+        }
+    }
+}
+
 
 impl Parabola {
     pub fn new(

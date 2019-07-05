@@ -28,6 +28,39 @@ pub enum WallType {
     Parabola(Parabola),
 }
 
+use crate::types::LerpEq;
+
+impl crate::types::LerpEq for Segment<line::float> {
+    fn lerp(&self, other: &Self, amount: f32) -> Self {
+        Segment::new(
+            self.a().lerp(other.a(), amount),
+            self.b().lerp(other.b(), amount),
+        )
+    }
+}
+
+impl crate::types::Lerp for WallType {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        match (self, other) {
+            (WallType::Line(line1), WallType::Line(line2)) => {
+                WallType::Line(line1.lerp(line2, amount))
+            }
+            (WallType::Circle(ball, pos, t0, t1), WallType::Circle(ball2, pos2, t02, t12)) => {
+                WallType::Circle(
+                    Ball::new(ball.radius().lerp(&ball2.radius(), amount)),
+                    pos.lerp(&pos2, amount),
+                    t0.lerp(&t12, amount),
+                    t1.lerp(&t02, amount),
+                )
+            }
+            (WallType::Parabola(p1), WallType::Parabola(p2)) => {
+                WallType::Parabola(p1.lerp(p2, amount))
+            }
+            _ => panic!("Cannot lerp between wall types")
+        }
+    }
+}
+
 impl WallType {
     pub fn rand_circle(width: usize, height: usize) -> WallType {
         WallType::Circle(

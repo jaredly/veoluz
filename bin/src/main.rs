@@ -48,7 +48,7 @@ fn main() -> std::io::Result<()> {
         let name: String = args[1].clone();
         let outfile: String = args[2].clone();
         let count: usize = args[3].parse().unwrap();
-        let scale: u8 = args[4].parse().unwrap();
+        // let scale: u8 = args[4].parse().unwrap();
         println!("Arg {}", name);
 
         let mut file = std::fs::File::open(name)?;
@@ -66,9 +66,18 @@ fn main() -> std::io::Result<()> {
         // for light in config.lights.iter_mut() {
         //     light.kind.scale(x);
         // }
-        config.rendering.width *= scale as usize;
-        config.rendering.height *= scale as usize;
-        config.rendering.zoom *= scale as f32;
+
+        let edge = 8 * 200;
+        let scale = edge as f32 / config.rendering.height as f32;
+
+        // Square it off y'all
+        config.rendering.width = edge;
+        config.rendering.height = edge;
+        config.rendering.zoom *= scale;
+
+        // config.rendering.width *= scale as usize;
+        // config.rendering.height *= scale as usize;
+        // config.rendering.zoom *= scale as f32;
 
         run(config, outfile, count);
 
