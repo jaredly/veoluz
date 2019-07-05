@@ -19,10 +19,16 @@ type location;
 open Types;
 
 module ExposureFunction = {
+  let btn = Css.(style([
+    disabled([
+      backgroundColor(Colors.accent)
+    ])
+  ]));
   [@react.component]
-  let make = (~config, ~update) => {
-    <div className=Styles.row>
+  let make = (~config, ~update, ~wasm) => {
+    <div className=Styles.row onMouseEnter={_ => wasm##show_hist()} onMouseLeave={_ => wasm##hide_hist()}>
       {React.string("Exposure function: ")}
+      (Styles.spacer(8))
       <button
         disabled={config##rendering##exposure##curve == "FourthRoot"}
         onClick={_evt => {
@@ -31,7 +37,8 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn">
+        className=btn
+        >
         {React.string("Fourth Root")}
       </button>
       (Styles.spacer(4))
@@ -43,7 +50,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn">
+        className=btn>
         {React.string("Square Root")}
       </button>
       (Styles.spacer(4))
@@ -55,7 +62,7 @@ module ExposureFunction = {
           ];
           update(config, false);
         }}
-        className="btn">
+        className=btn>
         {React.string("Linear")}
       </button>
     </div>;
@@ -64,11 +71,15 @@ module ExposureFunction = {
 
 module TransformEditor = {
   [@react.component]
-  let make = (~config, ~update) => {
-    <div className=Styles.control>
+  let make = (~config, ~update, ~wasm) => {
+    <div className=Styles.join([Styles.control, Css.(style([
+      display(`flex),
+      flexDirection(`column),
+    ]))])>
       <div className=Styles.title>
         {React.string("Scene transforms")}
       </div>
+      <div>
       {React.string("Rotational symmetry: ")}
       <input
         type_="number"
@@ -83,7 +94,9 @@ module TransformEditor = {
           update(config, false);
         }}
       />
-      <br />
+      </div>
+      {Styles.spacer(8)}
+      <div>
       <input
         type_="checkbox"
         checked={config##transform##reflection}
@@ -96,7 +109,9 @@ module TransformEditor = {
         }}
       />
       {React.string(" Reflect over y axis")}
-      <br />
+      </div>
+      {Styles.spacer(8)}
+      <div>
       {React.string("Center offset: ")}
       <input
         type_="number"
@@ -122,7 +137,9 @@ module TransformEditor = {
           update(config, false);
         }}
       />
-      <br/>
+      </div>
+      {Styles.spacer(8)}
+      <div>
       {React.string("Zoom: ")}
       <input
         type_="number"
@@ -136,7 +153,10 @@ module TransformEditor = {
           update(config, false);
         }}
       />
+      </div>
+      {Styles.spacer(8)}
 
+      <ExposureFunction wasm config={config} update />
 
     </div>;
   };
@@ -259,6 +279,7 @@ module Router = {
 Css.(global("body", [
   backgroundColor(Colors.background),
   color(Colors.text),
+  fontSize(px(12)),
   margin(px(0)),
 ]));
 
@@ -268,12 +289,19 @@ Css.(global("input", [
 ]));
 
 Css.(global("button", [
-  backgroundColor(Colors.accent),
+  backgroundColor(Colors.button),
   cursor(`pointer),
   color(Colors.text),
   padding2(~v=px(4), ~h=px(8)),
   borderStyle(`none),
   borderRadius(px(4)),
+  hover([
+    backgroundColor(Colors.buttonHover),
+  ]),
+  disabled([
+    backgroundColor(`transparent),
+    cursor(`default)
+  ])
 ]));
 
 module Inner = {
@@ -437,7 +465,6 @@ module Inner = {
              />
            }}
         </div>
-        <ExposureFunction config={state.config} update />
         <ScenePicker
           directory={state.directory}
           current={state.current}
@@ -475,6 +502,7 @@ module Inner = {
         />
       }
         <TransformEditor
+          wasm
           config={state.config}
           update={(config, checkpoint) => {
             wasm##update(config, checkpoint);

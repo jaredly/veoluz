@@ -15,6 +15,8 @@ let titleNoMargin =
     color(Colors.accent),
   ]);
 
+let join = styles => String.concat(" ", styles);
+
 let control =
   style([
     borderRadius(px(4)),
@@ -24,6 +26,10 @@ let control =
     padding2(~v=px(6), ~h=px(8)),
     marginBottom(px(8)),
   ]);
+
+let column = style([display(`flex), flexDirection(`column)]);
+
+let controlColumn = join([control, column]);
 
 let spacer = v => <div style=ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ()) />;
 

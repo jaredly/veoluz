@@ -186,9 +186,8 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
         {React.string("Saved scenes")}
       </div>
       {Styles.spacer(8)}
-      // <div className=Css.(style([flex(1)])) />
       <button className=Styles.flatButton(Css.white)>
-        {React.string("Oragnize scenes")}
+        {React.string("Organize scenes")}
       </button>
     </div>
     <div

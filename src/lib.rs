@@ -10,7 +10,6 @@ use wasm_bindgen::JsCast;
 #[macro_use]
 mod utils;
 mod draw;
-mod old_ui;
 mod scenes;
 mod state;
 mod ui;

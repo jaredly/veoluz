@@ -412,7 +412,7 @@ pub fn draw(state: &crate::state::State) -> Result<(), JsValue> {
 pub fn reset(config: &shared::Config, ui: &mut UiState) -> Result<(), JsValue> {
     ui.selection = None;
     // hide_wall_ui()?;
-    old_ui::reset_config(config)
+    Ok(())
 }
 
 #[wasm_bindgen]
@@ -446,9 +446,6 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
     canvas.style().set_property("cursor", cursor)
 }
 
-use crate::old_ui;
-// use crate::old_ui::hide_wall_ui;
-
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
         .expect("window")
@@ -460,10 +457,6 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     canvas.set_width(config.rendering.width as u32);
     canvas.set_height(config.rendering.height as u32);
-
-    old_ui::setup_button()?;
-    old_ui::setup_wall_ui()?;
-    old_ui::reset_config(config)?;
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
