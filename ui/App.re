@@ -443,7 +443,6 @@ module Inner = {
           current={state.current}
           hover={url => dispatch(`Hover(url))}
           unHover={() => dispatch(`Unhover)}
-          onSaveScene
           onSelect={(id, config) => {
             Js.log3("Resetting", anyHash(config), config);
             let _config = wasm##restore(config);
@@ -453,6 +452,28 @@ module Inner = {
         />
       </div>
       <div className=Css.(style([margin2(~h=px(8), ~v=px(8)), flex(1), minHeight(px(200))]))>
+      {
+        let currentScene = {switch (state.current) {
+          | None => None
+          | Some(key) => state.directory.scenes->Belt.Map.String.get(key)
+        }};
+
+        <ScenePicker.SceneForm
+          scene=?currentScene
+          onPermalink={() => {
+            (router^)->Router.permalink(
+              wasm##serialize_url_config(state.config)
+            )
+          }}
+          onSave={scene => onSaveScene(scene)}
+          key={
+            switch (currentScene) {
+            | None => "new-scene"
+            | Some(scene) => scene.id
+            }
+          }
+        />
+      }
         <TransformEditor
           config={state.config}
           update={(config, checkpoint) => {

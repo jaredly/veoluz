@@ -8,6 +8,13 @@ let title =
     marginBottom(px(8)),
   ]);
 
+let titleNoMargin =
+  style([
+    fontSize(px(12)),
+    fontWeight(`num(600)),
+    color(Colors.accent),
+  ]);
+
 let control =
   style([
     borderRadius(px(4)),
@@ -21,3 +28,8 @@ let control =
 let spacer = v => <div style=ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ()) />;
 
 let row = style([display(`flex), flexDirection(`row), alignItems(`center)])
+
+let flatButton = textColor => style([
+  backgroundColor(`transparent),
+  color(textColor)
+]);

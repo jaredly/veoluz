@@ -122,7 +122,7 @@ module Scene = {
 
 module SceneForm = {
   [@react.component]
-  let make = (~scene=Types.emptyScene, ~onSave) => {
+  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink) => {
     let (scene, update) = Hooks.useState(scene);
     <div
       className={
@@ -130,9 +130,9 @@ module SceneForm = {
         ++ " "
         ++ Css.(
              style([
-               flexDirection(`row),
+               flexDirection(`column),
                display(`flex),
-               alignItems(`center),
+               alignItems(`stretch),
              ])
            )
       }>
@@ -144,8 +144,17 @@ module SceneForm = {
                ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
          )}
       </div>
-      (Styles.spacer(4))
-      <div className=Css.(style([flex(1)])) />
+      <input
+        className=Css.(style([alignSelf(`stretch)]))
+        placeholder="Title"
+        value={switch (scene.title) { | None => "" | Some(x) => x}}
+        onChange={evt => {
+          let title = evt->ReactEvent.Form.target##value;
+          update({...scene, title: title == "" ? None : Some(title)})
+        }}
+      />
+      (Styles.spacer(8))
+      <div className=Styles.row>
       {scene.id != ""
          ? <button onClick={_evt => onSave(scene)}>
              {React.string("Update scene")}
@@ -155,31 +164,33 @@ module SceneForm = {
       <button onClick={_evt => onSave({...scene, id: ""})}>
         {React.string(scene.id == "" ? "Save scene" : "Save new scene")}
       </button>
+      </div>
+      {Styles.spacer(4)}
+      <button onClick={(_) => onPermalink()} className=Styles.flatButton(Colors.text)>
+        {React.string("Permalink")}
+      </button>
     </div>;
   };
 };
 
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => {
-  let currentScene =
-    switch (current) {
-    | None => None
-    | Some(key) => directory.scenes->Belt.Map.String.get(key)
-    };
+let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
   <div
     className=Css.(
       style([flex(1), display(`flex), flexDirection(`column)])
     )>
-    <SceneForm
-      scene=?currentScene
-      onSave={scene => onSaveScene(scene)}
-      key={
-        switch (currentScene) {
-        | None => "new-scene"
-        | Some(scene) => scene.id
-        }
-      }
-    />
+    <div className=(Styles.row ++ " " ++ Css.(style([
+      padding(px(8))
+    ])))>
+      <div className=Styles.titleNoMargin>
+        {React.string("Saved scenes")}
+      </div>
+      {Styles.spacer(8)}
+      // <div className=Css.(style([flex(1)])) />
+      <button className=Styles.flatButton(Css.white)>
+        {React.string("Oragnize scenes")}
+      </button>
+    </div>
     <div
       className=Css.(
         style([
