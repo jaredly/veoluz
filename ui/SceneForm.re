@@ -9,8 +9,8 @@ let item =
     ])
   );
 
-let selected =
-  Styles.join([item, Css.(style([backgroundColor(hex("aaa"))]))]);
+let selectedItem =
+  Styles.join([item, Css.(style([backgroundColor(Colors.button)]))]);
 
 module DropDown = {
   type state('a) = {
@@ -33,6 +33,7 @@ module DropDown = {
           | Some(i) => i < state.items->Array.length ? Some(i + 1) : Some(0)
           },
       }
+    | `UpdateList(items) => {...state, items}
     | `Up => {
         ...state,
         selection:
@@ -43,11 +44,18 @@ module DropDown = {
       }
     | `Open => {...state, selection: Some(0)}
     | `Close => {...state, selection: None}
+    | `Done(getList)  => {...state, value: "", items: getList("")}
     };
   [@react.component]
   let make = (~onSelect, ~onCreate, ~getList, ~render) => {
     let (state, dispatch) =
       React.useReducer(reduce, {value: "", selection: None, items: getList("")});
+
+    React.useEffect1(() => {
+      dispatch(`UpdateList(getList(state.value)));
+      None
+    }, [|getList|]);
+
     <div className=Css.(style([position(`relative)]))>
       <input
         value={state.value}
@@ -55,10 +63,11 @@ module DropDown = {
           switch (evt->ReactEvent.Keyboard.key) {
           | "ArrowUp" => dispatch(`Up)
           | "ArrowDown" => dispatch(`Down)
+          | "Escape" => dispatch(`Close)
           | "Return"
           | "Enter" =>
             evt->ReactEvent.Keyboard.preventDefault;
-            dispatch(`Close);
+            dispatch(`Done(getList));
             switch (state.selection) {
             | None => ()
             | Some(i) =>
@@ -89,17 +98,22 @@ module DropDown = {
              style([
                position(`absolute),
                top(`percent(100.0)),
-               backgroundColor(red),
+               backgroundColor(white),
+               boxShadow(
+                 ~blur=px(5),
+                 Colors.accent
+               ),
                padding(px(8)),
                left(px(0)),
              ])
            )>
            {state.items
-            ->Belt.Array.map(item =>
+            ->Belt.Array.mapWithIndex((i, item) =>
                 render(
+                  ~selected=i == selection,
                   item,
                   () => {
-                    dispatch(`Close);
+                    dispatch(`Done(getList));
                     onSelect(item);
                   },
                 )
@@ -107,7 +121,7 @@ module DropDown = {
             ->React.array}
            <div
              className={
-               selection == state.items->Array.length ? selected : item
+               selection == state.items->Array.length ? selectedItem : item
              }
              onClick={_ => {
                dispatch(`Close);
@@ -126,26 +140,45 @@ module TagsEditor = {
 
   [@react.component]
   let make = (~directory, ~tags, ~onChange, ~onUpdateTags) => {
+    let getList = React.useCallback2(text => {
+      directory.tags
+      ->Belt.Map.String.valuesToArray
+      ->Belt.Array.keep(t =>
+      !tags->Belt.Set.String.has(t.id) &&
+        t.title->Js.String2.includes(text))
+      ->Js.Array2.sortInPlaceWith((t1, t2) => {
+        t1.title->Js.String2.indexOf(text) -
+        t2.title->Js.String2.indexOf(text)
+      })
+    }, (directory, tags));
+
     <div>
       {tags
        ->Belt.Set.String.toArray
        ->Belt.Array.map(tid =>
            switch (directory.tags->Belt.Map.String.get(tid)) {
            | None => React.null
-           | Some(tag) => <div> {React.string(tag.title)} </div>
+           | Some(tag) => <div
+           onClick={_ => onChange(tags->Belt.Set.String.remove(tag.id))}
+           className={Css.(style([
+             padding2(~v=px(4), ~h=px(8)),
+             borderRadius(px(4)),
+             marginBottom(px(4)),
+             hover([
+               backgroundColor(Colors.button)
+             ])
+           ]))}
+           >
+           {React.string(tag.title)} </div>
            }
          )
        ->React.array}
       <DropDown
-        getList={text =>
-          directory.tags
-          ->Belt.Map.String.valuesToArray
-          ->Belt.Array.keep(t => t.title->Js.String2.includes(text))
-        }
-        render={(tag, onClick) =>
+        getList={getList        }
+        render={(~selected, tag, onClick) =>
           <div
             key={tag.id}
-            className=item
+            className=(selected ? Styles.join([item, selectedItem]) : item)
             onMouseDown={_evt => onClick()}>
             {React.string(tag.title)}
           </div>
