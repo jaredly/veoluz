@@ -143,10 +143,6 @@ fn draw_laser(
     Ok(())
 }
 
-fn vector_dir(dir: f32) -> Vector2<f32> {
-    Vector2::new(dir.cos(), dir.sin())
-}
-
 fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Result<(), JsValue> {
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
@@ -368,19 +364,6 @@ pub fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
     Ok(input)
 }
 
-pub fn set_text(id: &'static str, text: String) -> Result<(), JsValue> {
-    let document = web_sys::window()
-        .expect("window")
-        .document()
-        .expect("Document");
-    let element = document
-        .get_element_by_id(id)
-        .expect("get input")
-        .dyn_into::<web_sys::HtmlElement>()?;
-    element.set_inner_text(&text);
-    Ok(())
-}
-
 // struct Input<F: FnMut(f32, bool) + 'static> {
 //     name: &'static str,
 //     cb: F,
@@ -391,45 +374,6 @@ pub fn set_text(id: &'static str, text: String) -> Result<(), JsValue> {
 //         Input {name, cb}
 //     }
 // }
-
-pub fn setup_checkbox<F: FnMut(bool) + 'static>(
-    name: &'static str,
-    update: F,
-) -> Result<(), JsValue> {
-    let node = get_input(name)?;
-    let rc = std::sync::Arc::new(std::cell::RefCell::new(update));
-    let other = rc.clone();
-
-    use std::ops::DerefMut;
-
-    listen!(node, "change", web_sys::InputEvent, move |_evt| {
-        let input = get_input(name).expect("No input");
-        other.borrow_mut().deref_mut()(input.checked());
-    });
-    Ok(())
-}
-
-pub fn setup_input<F: FnMut(f32, bool) + 'static>(
-    name: &'static str,
-    update: F,
-) -> Result<(), JsValue> {
-    let node = get_input(name)?;
-    let rc = std::sync::Arc::new(std::cell::RefCell::new(update));
-    let other = rc.clone();
-
-    use std::ops::DerefMut;
-
-    listen!(node, "input", web_sys::InputEvent, move |_evt| {
-        let input = get_input(name).expect("No input");
-        rc.borrow_mut().deref_mut()(input.value_as_number() as f32, false);
-    });
-
-    listen!(node, "change", web_sys::InputEvent, move |_evt| {
-        let input = get_input(name).expect("No input");
-        other.borrow_mut().deref_mut()(input.value_as_number() as f32, true);
-    });
-    Ok(())
-}
 
 pub fn draw_histogram(state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
@@ -467,7 +411,7 @@ pub fn draw(state: &crate::state::State) -> Result<(), JsValue> {
 
 pub fn reset(config: &shared::Config, ui: &mut UiState) -> Result<(), JsValue> {
     ui.selection = None;
-    hide_wall_ui()?;
+    // hide_wall_ui()?;
     old_ui::reset_config(config)
 }
 
@@ -503,7 +447,7 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
 }
 
 use crate::old_ui;
-use crate::old_ui::hide_wall_ui;
+// use crate::old_ui::hide_wall_ui;
 
 pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d, JsValue> {
     let document = web_sys::window()
@@ -577,7 +521,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                             center: state.config.rendering.center,
                         });
                         state.ui.hovered = None;
-                        hide_wall_ui()?;
+                        // hide_wall_ui()?;
                     }
                     Some((wid, id)) => {
                         if evt.shift_key() {
@@ -593,7 +537,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                 .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
                                 .collect();
                             state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                            hide_wall_ui()?;
+                            // hide_wall_ui()?;
                         } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
                             if walls.contains(&wid) {
                                 let mut walls = walls.clone();
@@ -604,16 +548,16 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                                     .collect();
                                 state.ui.selection =
                                     Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                                hide_wall_ui()?;
+                                // hide_wall_ui()?;
                             } else {
                                 state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
                                 state.ui.hovered = None;
                             }
-                            old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         } else {
                             state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
                             state.ui.hovered = None;
-                            old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         }
                     }
                 };

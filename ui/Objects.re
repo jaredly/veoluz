@@ -304,17 +304,19 @@ let make = (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.
         />
       })->React.array}
     </div>
-    <div>
+    <div className=Styles.row>
       <button
         onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Line"), "Multiple": None, "Light": None, "Wall": None}))])}
       >
         {React.string("Add line")}
       </button>
+      (Styles.spacer(4))
       <button
         onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Parabola"), "Multiple": None, "Light": None, "Wall": None}))])}
       >
         {React.string("Add parabola")}
       </button>
+      (Styles.spacer(4))
       <button
         onClick={_evt => updateUi([%js.deep ui["selection"].replace(Js.Null.return({"Adding": Some("Circle"), "Multiple": None, "Light": None, "Wall": None}))])}
       >

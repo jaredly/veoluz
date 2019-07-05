@@ -21,7 +21,7 @@ open Types;
 module ExposureFunction = {
   [@react.component]
   let make = (~config, ~update) => {
-    <div>
+    <div className=Styles.row>
       {React.string("Exposure function: ")}
       <button
         disabled={config##rendering##exposure##curve == "FourthRoot"}
@@ -34,6 +34,7 @@ module ExposureFunction = {
         className="btn">
         {React.string("Fourth Root")}
       </button>
+      (Styles.spacer(4))
       <button
         disabled={config##rendering##exposure##curve == "SquareRoot"}
         onClick={_evt => {
@@ -45,6 +46,7 @@ module ExposureFunction = {
         className="btn">
         {React.string("Square Root")}
       </button>
+      (Styles.spacer(4))
       <button
         disabled={config##rendering##exposure##curve == "Linear"}
         onClick={_evt => {
@@ -94,6 +96,48 @@ module TransformEditor = {
         }}
       />
       {React.string(" Reflect over y axis")}
+      <br />
+      {React.string("Center offset: ")}
+      <input
+        type_="number"
+        className=Css.(style([width(px(50))]))
+        value={config##rendering##center |> fst |> Js.Float.toString}
+        onChange={evt => {
+          let x = float_of_string(evt->ReactEvent.Form.target##value);
+          let config = [%js.deep
+            config["rendering"]["center"].map(((_, y)) => (x, y))
+          ];
+          update(config, false);
+        }}
+      />
+      <input
+        type_="number"
+        value={config##rendering##center |> snd |> Js.Float.toString}
+        className=Css.(style([width(px(50))]))
+        onChange={evt => {
+          let y = float_of_string(evt->ReactEvent.Form.target##value);
+          let config = [%js.deep
+            config["rendering"]["center"].map(((x, _)) => (x, y))
+          ];
+          update(config, false);
+        }}
+      />
+      <br/>
+      {React.string("Zoom: ")}
+      <input
+        type_="number"
+        value={config##rendering##zoom |> Js.Float.toString}
+        className=Css.(style([width(px(50))]))
+        onChange={evt => {
+          let zoom = float_of_string(evt->ReactEvent.Form.target##value);
+          let config = [%js.deep
+            config["rendering"]["zoom"].replace(zoom)
+          ];
+          update(config, false);
+        }}
+      />
+
+
     </div>;
   };
 };
@@ -227,6 +271,9 @@ Css.(global("button", [
   backgroundColor(Colors.accent),
   cursor(`pointer),
   color(Colors.text),
+  padding2(~v=px(4), ~h=px(8)),
+  borderStyle(`none),
+  borderRadius(px(4)),
 ]));
 
 module Inner = {
@@ -255,6 +302,8 @@ module Inner = {
               config: parentConfig,
             }
           | `Save((scene: scene)) => {
+            (router^)->Router.updateId(scene.id);
+            {
               ...state,
               directory: {
                 ...state.directory,
@@ -264,6 +313,7 @@ module Inner = {
               },
               current: Some(scene.id),
             }
+          }
           | `Update(config, ui) => {...state, config, ui}
           | `Select(id) =>
             (router^)->Router.updateId(id);
@@ -402,7 +452,7 @@ module Inner = {
           }}
         />
       </div>
-      <div className=Css.(style([margin2(~h=px(16), ~v=px(8)), flex(1), minHeight(px(200))]))>
+      <div className=Css.(style([margin2(~h=px(8), ~v=px(8)), flex(1), minHeight(px(200))]))>
         <TransformEditor
           config={state.config}
           update={(config, checkpoint) => {

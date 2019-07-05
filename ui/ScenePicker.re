@@ -124,8 +124,19 @@ module SceneForm = {
   [@react.component]
   let make = (~scene=Types.emptyScene, ~onSave) => {
     let (scene, update) = Hooks.useState(scene);
-    <div className=Css.(style([padding(px(8))]))>
-      <div>
+    <div
+      className={
+        Styles.control
+        ++ " "
+        ++ Css.(
+             style([
+               flexDirection(`row),
+               display(`flex),
+               alignItems(`center),
+             ])
+           )
+      }>
+      <div className=Styles.title>
         {React.string(
            scene.id == ""
              ? "New scene"
@@ -133,8 +144,16 @@ module SceneForm = {
                ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
          )}
       </div>
-      <button onClick={_evt => onSave(scene)}>
-        {React.string(scene.id == "" ? "Save scene" : "Update scene")}
+      (Styles.spacer(4))
+      <div className=Css.(style([flex(1)])) />
+      {scene.id != ""
+         ? <button onClick={_evt => onSave(scene)}>
+             {React.string("Update scene")}
+           </button>
+         : React.null}
+      (Styles.spacer(4))
+      <button onClick={_evt => onSave({...scene, id: ""})}>
+        {React.string(scene.id == "" ? "Save scene" : "Save new scene")}
       </button>
     </div>;
   };
@@ -147,11 +166,10 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onSaveScene) => 
     | None => None
     | Some(key) => directory.scenes->Belt.Map.String.get(key)
     };
-  <div className=Css.(style([
-    flex(1),
-    display(`flex),
-    flexDirection(`column),
-  ]))>
+  <div
+    className=Css.(
+      style([flex(1), display(`flex), flexDirection(`column)])
+    )>
     <SceneForm
       scene=?currentScene
       onSave={scene => onSaveScene(scene)}

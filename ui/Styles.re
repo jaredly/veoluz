@@ -17,3 +17,7 @@ let control =
     padding2(~v=px(6), ~h=px(8)),
     marginBottom(px(8)),
   ]);
+
+let spacer = v => <div style=ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ()) />;
+
+let row = style([display(`flex), flexDirection(`row), alignItems(`center)])
