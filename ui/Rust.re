@@ -111,6 +111,20 @@ type ui = {
   "last_mouse_pos": (float, float)
 }
 
+let selectWall = (idx: int) => {
+  "Wall": Some((idx, Js.null)),
+  "Light": None,
+  "Adding": None,
+  "Multiple": None,
+};
+
+let selectLight = (idx: int) => {
+  "Wall": None,
+  "Light": Some((idx, false)),
+  "Adding": None,
+  "Multiple": None,
+};
+
 let blankUi: ui = {
   "show_lasers": false,
   "selection": Js.null,

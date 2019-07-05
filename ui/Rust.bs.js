@@ -3,6 +3,30 @@
 
 var Curry = require("bs-platform/lib/js/curry.js");
 
+function selectWall(idx) {
+  return {
+          Wall: /* tuple */[
+            idx,
+            null
+          ],
+          Light: undefined,
+          Adding: undefined,
+          Multiple: undefined
+        };
+}
+
+function selectLight(idx) {
+  return {
+          Wall: undefined,
+          Light: /* tuple */[
+            idx,
+            false
+          ],
+          Adding: undefined,
+          Multiple: undefined
+        };
+}
+
 var blankUi = {
   show_lasers: false,
   selection: null,
@@ -25,6 +49,8 @@ function withModule(fn) {
   return /* () */0;
 }
 
+exports.selectWall = selectWall;
+exports.selectLight = selectLight;
 exports.blankUi = blankUi;
 exports.wasm = wasm;
 exports.withModule = withModule;

@@ -101,7 +101,7 @@ pub struct Exposure {
 impl Exposure {
     fn default() -> Self {
         Exposure {
-            curve: Curve::FourthRoot,
+            curve: Curve::SquareRoot,
             min: 0.0,
             max: 1.0,
         }

@@ -167,6 +167,7 @@ fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
         if reset || checkpoint {
             state.maybe_save_history();
         }
+        state.last_rendered_config = None;
         state.async_render(false)
     })
 }
@@ -194,7 +195,9 @@ pub fn update(config: &JsValue, checkpoint: bool) {
 
 #[wasm_bindgen]
 pub fn restore(config: &JsValue) -> JsValue {
-    if let Ok(config) = deserialize_jsvalue(config) {
+    if let Ok(mut config) = deserialize_jsvalue(config) {
+        config.rendering.width = 1024;
+        config.rendering.height = 576;
         let js = JsValue::from_serde(&config).unwrap();
         update_config(config, true, true);
         js

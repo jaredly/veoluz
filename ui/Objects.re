@@ -206,6 +206,16 @@ module LightEditor = {
   };
 };
 
+let wallType = kind => {
+  if ([%js.deep kind["Line"]] != None) {
+    "Line"
+  } else if ([%js.deep kind["Parabola"]] != None) {
+    "Parabola"
+  } else {
+    "Arc"
+  }
+}
+
 module WallEditor = {
   [@react.component]
   let make = (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove) => {
@@ -240,7 +250,7 @@ module WallEditor = {
         )>
         <div
           className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
-          {React.string("Wall #" ++ string_of_int(index))}
+          {React.string("Wall #" ++ string_of_int(index) ++ " " ++ wallType(wall##kind))}
         </div>
         <button
           onClick={evt => {
@@ -454,6 +464,8 @@ let make =
                    walls;
                  })
                ];
+               Js.log("Updating UI");
+               updateUi([%js.deep ui["selection"].replace(Js.null)]);
                update(config, true);
              }}
              onChange={wall => {

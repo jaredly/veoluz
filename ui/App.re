@@ -210,6 +210,10 @@ let debounced = (fn, time) => {
   };
 };
 
+let interestingDefault: Rust.config = [%bs.raw {|
+{"walls":[{"kind":{"Parabola":{"a":-0.00297538,"left":-87.706406,"right":37.56985,"transform":{"rotation":[-0.92809707,0.37233835],"translation":[46.11507,-51.88139]}}},"properties":{"absorb":0,"reflect":0,"roughness":0,"refraction":0.35065687},"hide":false},{"kind":{"Line":{"a":[164,-18],"b":[113.16666,-11.666672]}},"properties":{"absorb":0,"reflect":1,"roughness":0,"refraction":0.5},"hide":false},{"kind":{"Circle":[{"radius":25.632011},[210,9],-1.2120256,1.2890245]},"properties":{"absorb":0,"reflect":0.45,"roughness":0,"refraction":0.45742485},"hide":false}],"lights":[{"kind":{"Point":{"offset":0,"origin":[0,0],"t0":-3.1415927,"t1":3.1415927}},"brightness":1}],"transform":{"rotational_symmetry":5,"reflection":true},"rendering":{"exposure":{"curve":"SquareRoot","min":0.028320312,"max":0.38378906},"coloration":{"Rgb":{"background":[0,0,0],"highlight":[255,242,217]}},"width":1024,"height":576,"center":[1,0],"zoom":1}}
+|}]
+
 module Router = {
   let loadHash = (~hash, ~wasm: Rust.wasm, ~onLoad) =>
     if (Js.String2.startsWith(hash, "#id=")) {
@@ -229,7 +233,7 @@ module Router = {
       };
     } else {
       // ermm maybe not a reset? idk.
-      onLoad((None, wasm##blank_config()));
+      onLoad((None, interestingDefault));
     };
 
   let updateId = (set, id) => {
@@ -555,6 +559,7 @@ module Inner = {
           }}
           wasm
           updateUi={ui => {
+            Js.log2("New ui", ui);
             wasm##update_ui(ui);
             dispatch(`Update((state.config, ui)));
           }}
@@ -571,7 +576,7 @@ module App = {
 
     switch (keys) {
     | None => <div> {React.string("Loading")} </div>
-    | Some(directory) => <Inner wasm directory blank={wasm##blank_config()} />
+    | Some(directory) => <Inner wasm directory blank={interestingDefault} />
     };
   };
 };
