@@ -458,7 +458,7 @@ module Inner = {
         )>
         <div
           className=Css.(
-            style([overflowX(`auto), flexShrink(0), position(`relative)])
+            style([flexShrink(0), position(`relative)])
           )>
           <canvas
             id="drawing"

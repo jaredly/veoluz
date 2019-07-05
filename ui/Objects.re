@@ -224,7 +224,7 @@ module WallEditor = {
       className=Css.(
         style(
           [
-            cursor(`pointer),
+            // cursor(`pointer),
             padding2(~v=px(8), ~h=px(8)),
             borderBottom(px(1), `solid, hex("ddd")),
             hover([backgroundColor(Colors.buttonHover)]),
@@ -240,23 +240,24 @@ module WallEditor = {
         )
       )
       onMouseOver={evt => wasm##hover_wall(index)}
-      onClick={evt => {
-        if (selected) {
-               updateUi([%js.deep ui["selection"].replace(Js.null)]);
-
-        } else {
-
-        wasm##set_active_wall(index)
-        }
-        }}>
+        >
       <div
         className=Css.(
           style([
             display(`flex),
+            cursor(`pointer),
             justifyContent(`spaceBetween),
             alignItems(`center),
           ])
-        )>
+        )
+      onClick={evt => {
+        if (selected) {
+          updateUi([%js.deep ui["selection"].replace(Js.null)]);
+        } else {
+          wasm##set_active_wall(index)
+        }
+        }}
+        >
         <div
           className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
           {React.string(
