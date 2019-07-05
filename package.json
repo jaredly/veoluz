@@ -1,4 +1,5 @@
 {
+  "name": "veoluz",
   "scripts": {
     "build": "webpack",
     "bs": "bsb -make-world",
