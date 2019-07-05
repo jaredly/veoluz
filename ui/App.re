@@ -19,52 +19,52 @@ type location;
 open Types;
 
 module ExposureFunction = {
-  let btn = Css.(style([
-    disabled([
-      backgroundColor(Colors.accent)
-    ])
-  ]));
+  let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
   [@react.component]
   let make = (~config, ~update, ~wasm) => {
-    <div className=Styles.row onMouseEnter={_ => wasm##show_hist()} onMouseLeave={_ => wasm##hide_hist()}>
+    <div
+      className=Styles.column
+      onMouseEnter={_ => wasm##show_hist()}
+      onMouseLeave={_ => wasm##hide_hist()}>
       {React.string("Exposure function: ")}
-      (Styles.spacer(8))
-      <button
-        disabled={config##rendering##exposure##curve == "FourthRoot"}
-        onClick={_evt => {
-          let config = [%js.deep
-            config["rendering"]["exposure"]["curve"].replace("FourthRoot")
-          ];
-          update(config, false);
-        }}
-        className=btn
-        >
-        {React.string("Fourth Root")}
-      </button>
-      (Styles.spacer(4))
-      <button
-        disabled={config##rendering##exposure##curve == "SquareRoot"}
-        onClick={_evt => {
-          let config = [%js.deep
-            config["rendering"]["exposure"]["curve"].replace("SquareRoot")
-          ];
-          update(config, false);
-        }}
-        className=btn>
-        {React.string("Square Root")}
-      </button>
-      (Styles.spacer(4))
-      <button
-        disabled={config##rendering##exposure##curve == "Linear"}
-        onClick={_evt => {
-          let config = [%js.deep
-            config["rendering"]["exposure"]["curve"].replace("Linear")
-          ];
-          update(config, false);
-        }}
-        className=btn>
-        {React.string("Linear")}
-      </button>
+      {Styles.spacer(8)}
+      <div className=Styles.row>
+        <button
+          disabled={config##rendering##exposure##curve == "FourthRoot"}
+          onClick={_evt => {
+            let config = [%js.deep
+              config["rendering"]["exposure"]["curve"].replace("FourthRoot")
+            ];
+            update(config, false);
+          }}
+          className=btn>
+          {React.string("Fourth Root")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+          disabled={config##rendering##exposure##curve == "SquareRoot"}
+          onClick={_evt => {
+            let config = [%js.deep
+              config["rendering"]["exposure"]["curve"].replace("SquareRoot")
+            ];
+            update(config, false);
+          }}
+          className=btn>
+          {React.string("Square Root")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+          disabled={config##rendering##exposure##curve == "Linear"}
+          onClick={_evt => {
+            let config = [%js.deep
+              config["rendering"]["exposure"]["curve"].replace("Linear")
+            ];
+            update(config, false);
+          }}
+          className=btn>
+          {React.string("Linear")}
+        </button>
+      </div>
     </div>;
   };
 };
@@ -72,92 +72,87 @@ module ExposureFunction = {
 module TransformEditor = {
   [@react.component]
   let make = (~config, ~update, ~wasm) => {
-    <div className=Styles.join([Styles.control, Css.(style([
-      display(`flex),
-      flexDirection(`column),
-    ]))])>
-      <div className=Styles.title>
-        {React.string("Scene transforms")}
-      </div>
+    <div
+      className={Styles.join([
+        Styles.control,
+        Css.(style([display(`flex), flexDirection(`column)])),
+      ])}>
+      <div className=Styles.title> {React.string("Scene transforms")} </div>
       <div>
-      {React.string("Rotational symmetry: ")}
-      <input
-        type_="number"
-        min=0
-        value={config##transform##rotational_symmetry |> string_of_int}
-        max="30"
-        onChange={evt => {
-          let v = int_of_string(evt->ReactEvent.Form.target##value);
-          let config = [%js.deep
-            config["transform"]["rotational_symmetry"].replace(v)
-          ];
-          update(config, false);
-        }}
-      />
+        {React.string("Rotational symmetry: ")}
+        <input
+          type_="number"
+          min=0
+          value={config##transform##rotational_symmetry |> string_of_int}
+          max="30"
+          onChange={evt => {
+            let v = int_of_string(evt->ReactEvent.Form.target##value);
+            let config = [%js.deep
+              config["transform"]["rotational_symmetry"].replace(v)
+            ];
+            update(config, false);
+          }}
+        />
       </div>
       {Styles.spacer(8)}
       <div>
-      <input
-        type_="checkbox"
-        checked={config##transform##reflection}
-        onChange={evt => {
-          let checked = evt->ReactEvent.Form.target##checked;
-          let config = [%js.deep
-            config["transform"]["reflection"].replace(checked)
-          ];
-          update(config, false);
-        }}
-      />
-      {React.string(" Reflect over y axis")}
+        <input
+          type_="checkbox"
+          checked={config##transform##reflection}
+          onChange={evt => {
+            let checked = evt->ReactEvent.Form.target##checked;
+            let config = [%js.deep
+              config["transform"]["reflection"].replace(checked)
+            ];
+            update(config, false);
+          }}
+        />
+        {React.string(" Reflect over y axis")}
       </div>
       {Styles.spacer(8)}
       <div>
-      {React.string("Center offset: ")}
-      <input
-        type_="number"
-        className=Css.(style([width(px(50))]))
-        value={config##rendering##center |> fst |> Js.Float.toString}
-        onChange={evt => {
-          let x = float_of_string(evt->ReactEvent.Form.target##value);
-          let config = [%js.deep
-            config["rendering"]["center"].map(((_, y)) => (x, y))
-          ];
-          update(config, false);
-        }}
-      />
-      <input
-        type_="number"
-        value={config##rendering##center |> snd |> Js.Float.toString}
-        className=Css.(style([width(px(50))]))
-        onChange={evt => {
-          let y = float_of_string(evt->ReactEvent.Form.target##value);
-          let config = [%js.deep
-            config["rendering"]["center"].map(((x, _)) => (x, y))
-          ];
-          update(config, false);
-        }}
-      />
+        {React.string("Center offset: ")}
+        <input
+          type_="number"
+          className=Css.(style([width(px(50))]))
+          value={config##rendering##center |> fst |> Js.Float.toString}
+          onChange={evt => {
+            let x = float_of_string(evt->ReactEvent.Form.target##value);
+            let config = [%js.deep
+              config["rendering"]["center"].map(((_, y)) => (x, y))
+            ];
+            update(config, false);
+          }}
+        />
+        <input
+          type_="number"
+          value={config##rendering##center |> snd |> Js.Float.toString}
+          className=Css.(style([width(px(50))]))
+          onChange={evt => {
+            let y = float_of_string(evt->ReactEvent.Form.target##value);
+            let config = [%js.deep
+              config["rendering"]["center"].map(((x, _)) => (x, y))
+            ];
+            update(config, false);
+          }}
+        />
       </div>
       {Styles.spacer(8)}
       <div>
-      {React.string("Zoom: ")}
-      <input
-        type_="number"
-        value={config##rendering##zoom |> Js.Float.toString}
-        className=Css.(style([width(px(50))]))
-        onChange={evt => {
-          let zoom = float_of_string(evt->ReactEvent.Form.target##value);
-          let config = [%js.deep
-            config["rendering"]["zoom"].replace(zoom)
-          ];
-          update(config, false);
-        }}
-      />
+        {React.string("Zoom: ")}
+        <input
+          type_="number"
+          value={config##rendering##zoom |> Js.Float.toString}
+          className=Css.(style([width(px(50))]))
+          onChange={evt => {
+            let zoom = float_of_string(evt->ReactEvent.Form.target##value);
+            let config = [%js.deep config["rendering"]["zoom"].replace(zoom)];
+            update(config, false);
+          }}
+        />
       </div>
       {Styles.spacer(8)}
-
-      <ExposureFunction wasm config={config} update />
-
+      <ExposureFunction wasm config update />
     </div>;
   };
 };
@@ -276,7 +271,8 @@ module Router = {
   };
 };
 
-let downloadFile: (string, string) => unit = [%bs.raw {|
+let downloadFile: (string, string) => unit = [%bs.raw
+  {|
 (function(title, data) {
   var a = document.createElement('a');
   a.download = title + ".json";
@@ -285,35 +281,40 @@ let downloadFile: (string, string) => unit = [%bs.raw {|
   a.click();
   document.body.removeChild(a);
 })
-|}];
+|}
+];
 
-Css.(global("body", [
-  backgroundColor(Colors.background),
-  color(Colors.text),
-  fontSize(px(12)),
-  margin(px(0)),
-]));
+Css.(
+  global(
+    "body",
+    [
+      backgroundColor(Colors.background),
+      color(Colors.text),
+      fontSize(px(12)),
+      margin(px(0)),
+    ],
+  )
+);
 
-Css.(global("input", [
-  backgroundColor(Colors.control),
-  color(Colors.text),
-]));
+Css.(
+  global("input", [backgroundColor(Colors.control), color(Colors.text)])
+);
 
-Css.(global("button", [
-  backgroundColor(Colors.button),
-  cursor(`pointer),
-  color(Colors.text),
-  padding2(~v=px(4), ~h=px(8)),
-  borderStyle(`none),
-  borderRadius(px(4)),
-  hover([
-    backgroundColor(Colors.buttonHover),
-  ]),
-  disabled([
-    backgroundColor(`transparent),
-    cursor(`default)
-  ])
-]));
+Css.(
+  global(
+    "button",
+    [
+      backgroundColor(Colors.button),
+      cursor(`pointer),
+      color(Colors.text),
+      padding2(~v=px(4), ~h=px(8)),
+      borderStyle(`none),
+      borderRadius(px(4)),
+      hover([backgroundColor(Colors.buttonHover)]),
+      disabled([backgroundColor(`transparent), cursor(`default)]),
+    ],
+  )
+);
 
 module Inner = {
   type state = {
@@ -323,7 +324,6 @@ module Inner = {
     config: Rust.config,
     ui: Rust.ui,
   };
-
 
   [@react.component]
   let make = (~wasm: Rust.wasm, ~directory, ~blank) => {
@@ -340,7 +340,7 @@ module Inner = {
               current: parentId,
               config: parentConfig,
             }
-          | `Save((scene: scene)) => {
+          | `Save((scene: scene)) =>
             (router^)->Router.updateId(scene.id);
             {
               ...state,
@@ -351,8 +351,7 @@ module Inner = {
                   ->Belt.Map.String.set(scene.id, scene),
               },
               current: Some(scene.id),
-            }
-          }
+            };
           | `Update(config, ui) => {...state, config, ui}
           | `Select(id) =>
             (router^)->Router.updateId(id);
@@ -437,6 +436,8 @@ module Inner = {
           display(`flex),
           flexDirection(`row),
           alignItems(`stretch),
+          maxWidth(px(1300)),
+          margin2(~v=`zero, ~h=`auto),
           height(`vh(100.0)),
           // flexWrap(`wrap),
         ])
@@ -451,7 +452,10 @@ module Inner = {
             alignItems(`stretch),
           ])
         )>
-        <div className=Css.(style([overflowX(`auto), flexShrink(0), position(`relative)]))>
+        <div
+          className=Css.(
+            style([overflowX(`auto), flexShrink(0), position(`relative)])
+          )>
           <canvas
             id="drawing"
             width="600"
@@ -489,42 +493,51 @@ module Inner = {
           }}
         />
       </div>
-      <div className=Css.(style([margin2(~h=px(8), ~v=px(8)), flex(1), minHeight(px(200))]))>
-      {
-        let currentScene = {switch (state.current) {
-          | None => None
-          | Some(key) => state.directory.scenes->Belt.Map.String.get(key)
-        }};
+      <div
+        className=Css.(
+          style([
+            margin2(~h=px(8), ~v=px(8)),
+            flex(1),
+            minHeight(px(200)),
+          ])
+        )>
+        {
+          let currentScene =
+            switch (state.current) {
+            | None => None
+            | Some(key) => state.directory.scenes->Belt.Map.String.get(key)
+            };
 
-        <ScenePicker.SceneForm
-          scene=?currentScene
-          onPermalink={() => {
-            (router^)->Router.permalink(
-              wasm##serialize_url_config(state.config)
-            )
-          }}
-          onDownload={() => {
-            let data = Js.Json.stringifyAny(state.config);
-            switch data {
+          <ScenePicker.SceneForm
+            scene=?currentScene
+            onPermalink={() =>
+              (router^)
+              ->Router.permalink(wasm##serialize_url_config(state.config))
+            }
+            onDownload={() => {
+              let data = Js.Json.stringifyAny(state.config);
+              switch (data) {
               | None => ()
               | Some(data) =>
-            let title = switch (currentScene) {
-              | Some({title: Some(title)}) => title
-              | Some({created}) => Js.Date.toISOString(Js.Date.fromFloat(created))
-              | _ => Js.Date.toISOString(Js.Date.make())
-            };
-            downloadFile(title, data)
+                let title =
+                  switch (currentScene) {
+                  | Some({title: Some(title)}) => title
+                  | Some({created}) =>
+                    Js.Date.toISOString(Js.Date.fromFloat(created))
+                  | _ => Js.Date.toISOString(Js.Date.make())
+                  };
+                downloadFile(title, data);
+              };
+            }}
+            onSave={scene => onSaveScene(scene)}
+            key={
+              switch (currentScene) {
+              | None => "new-scene"
+              | Some(scene) => scene.id
+              }
             }
-          }}
-          onSave={scene => onSaveScene(scene)}
-          key={
-            switch (currentScene) {
-            | None => "new-scene"
-            | Some(scene) => scene.id
-            }
-          }
-        />
-      }
+          />;
+        }
         <TransformEditor
           wasm
           config={state.config}
