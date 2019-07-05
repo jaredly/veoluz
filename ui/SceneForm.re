@@ -153,6 +153,7 @@ module TagsEditor = {
     }, (directory, tags));
 
     <div>
+    <div className=Styles.join([Styles.row, Css.(style([flexWrap(`wrap)]))])>
       {tags
        ->Belt.Set.String.toArray
        ->Belt.Array.map(tid =>
@@ -164,6 +165,7 @@ module TagsEditor = {
              padding2(~v=px(4), ~h=px(8)),
              borderRadius(px(4)),
              marginBottom(px(4)),
+             marginRight(px(4)),
              hover([
                backgroundColor(Colors.button)
              ])
@@ -173,6 +175,7 @@ module TagsEditor = {
            }
          )
        ->React.array}
+       </div>
       <DropDown
         getList={getList        }
         render={(~selected, tag, onClick) =>

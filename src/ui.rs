@@ -377,10 +377,12 @@ pub fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 
 pub fn draw_histogram(state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
-    let dx = state.config.rendering.exposure.max as f64 - state.config.rendering.exposure.min as f64;
+    let min = state.config.rendering.exposure.min as f64;
+    let max = (state.config.rendering.exposure.max as f64).max(min + 0.01);
+    let dx = max - min;
     let full_width = state.config.rendering.width as f64;
-    let x0 = full_width * state.config.rendering.exposure.min as f64;
-    let x1 = full_width * state.config.rendering.exposure.max as f64;
+    let x0 = full_width * min;
+    let x1 = full_width * max;
     let bin_count = (200.0 * dx) as usize;
     let w = (x1 - x0) / bin_count as f64;
     let histogram = shared::render::histogram(&state.config, &state.buffer, bin_count);

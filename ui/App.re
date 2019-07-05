@@ -26,7 +26,33 @@ module ExposureFunction = {
       className=Styles.column
       onMouseEnter={_ => wasm##show_hist()}
       onMouseLeave={_ => wasm##hide_hist()}>
-      {React.string("Exposure function: ")}
+      <div className=Styles.row>
+      {React.string("Exposure: ")}
+      <input
+        type_="number"
+        value=Js.Float.toString(config##rendering##exposure##min)
+        className=Css.(style([width(px(70))]))
+        onChange={evt => {
+          let v = evt->ReactEvent.Form.target##value->float_of_string;
+          let config = [%js.deep
+            config["rendering"]["exposure"]["min"].replace(v)
+          ];
+          update(config, false);
+        }}
+      />
+      <input
+        type_="number"
+        className=Css.(style([width(px(70))]))
+        value=Js.Float.toString(config##rendering##exposure##max)
+        onChange={evt => {
+          let v = evt->ReactEvent.Form.target##value->float_of_string;
+          let config = [%js.deep
+            config["rendering"]["exposure"]["max"].replace(v)
+          ];
+          update(config, false);
+        }}
+      />
+      </div>
       {Styles.spacer(8)}
       <div className=Styles.row>
         <button
@@ -355,6 +381,16 @@ module Inner = {
                 tags,
               },
             }
+          | `SaveInPlace((scene: scene)) =>
+            {
+              ...state,
+              directory: {
+                ...state.directory,
+                scenes:
+                  state.directory.scenes
+                  ->Belt.Map.String.set(scene.id, scene),
+              },
+            }
           | `Save((scene: scene)) =>
             (router^)->Router.updateId(scene.id);
             {
@@ -494,6 +530,9 @@ module Inner = {
         </div>
         <ScenePicker
           directory={state.directory}
+          onChangeScene={scene => {
+            dispatch(`SaveInPlace(scene))
+          }}
           current={state.current}
           hover={url => dispatch(`Hover(url))}
           unHover={() => dispatch(`Unhover)}

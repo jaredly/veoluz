@@ -1,5 +1,6 @@
 open Lets;
 open Types;
+open Belt;
 
 let sceneFromKey = key =>
   switch (Js.String.split(":", key)) {
@@ -53,7 +54,7 @@ let saveSceneInfo = directory => {
 
 module Scene = {
   [@react.component]
-  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover) => {
+  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover, ~onChangeScene) => {
     let key = scene.id ++ ":image";
     let getter =
       React.useCallback2(
@@ -108,7 +109,24 @@ module Scene = {
               // backgroundPosition(`center, `center)
             ])
           )
-        />
+        >
+          <div
+            className=Css.(style([
+              color(scene.starred ? gold : white),
+              Css.hover([
+                color(scene.starred ? white : gold),
+              ]),
+              cursor(`pointer),
+            ]))
+            onClick={evt => {
+              evt->ReactEvent.Mouse.stopPropagation;
+              evt->ReactEvent.Mouse.preventDefault;
+              onChangeScene({...scene, starred: !scene.starred})
+            }}
+          >
+            {React.string(scene.starred ? {j|✭|j} : {j|☆|j})}
+          </div>
+        </div>
         {scene.children->Belt.Array.length === 0
            ? React.null
            : <div>
@@ -121,8 +139,12 @@ module Scene = {
   };
 };
 
+type filter = {star: bool, tags: Set.String.t};
+
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
+let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene) => {
+  let (filter, setFilter) = Hooks.useState({star: false, tags: Set.String.empty});
+
   <div
     className=Css.(
       style([flex(1), display(`flex), flexDirection(`column)])
@@ -137,12 +159,22 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
       <button className=Styles.flatButton(Css.white)>
         {React.string("Organize scenes")}
       </button>
+      {Styles.spacer(8)}
+      {React.string("Filters:")}
+      {Styles.spacer(8)}
+      <button
+        className=Styles.flatButton(Css.white)
+        onClick={_ => setFilter({...filter, star: !filter.star})}
+      >
+        {React.string("Starred")}
+      </button>
     </div>
     <div
       className=Css.(
         style([
           flex(1),
           display(`flex),
+          alignItems(`flexStart),
           flexDirection(`row),
           maxHeight(px(300)),
           maxWidth(px(1024)),
@@ -153,11 +185,16 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover) => {
       {React.array(
          directory.scenes
          ->Belt.Map.String.toArray
+         ->Array.keep(((_, scene)) => {
+           (filter.star ? scene.starred : true) &&
+           (filter.tags->Set.String.every(t => scene.tags->Set.String.has(t)))
+         })
          ->Belt.List.fromArray
          ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
          ->Belt.List.map(((key, scene)) =>
              <Scene
                selected={current == Some(key)}
+               onChangeScene
                scene
                onSelect
                key

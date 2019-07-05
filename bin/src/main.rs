@@ -2,28 +2,12 @@
 fn run(config: shared::Config, outfile: String, count: usize) {
     println!("Calculate");
     let brightness_data = shared::calculate(&config, count);
-    println!("Colorize");
-    // let pixels = shared::black_colorize(&config, &brightness_data, scale);
 
-    // // For reading and opening files
-    // use std::path::Path;
+    println!("Colorize");
+
     use std::fs::File;
     use std::io::BufWriter;
-    // // To use encoder.set()
-    // use png::HasParameters;
 
-    // println!("Write out");
-    // let path = Path::new(&outfile);
-    // let file = File::create(path).unwrap();
-    // let ref mut w = BufWriter::new(file);
-
-    // let mut encoder = png::Encoder::new(w, config.width as u32 * scale as u32, config.height as u32 * scale as u32); // Width is 2 pixels and height is 1.
-    // encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
-    // let mut writer = encoder.write_header().unwrap();
-
-    // writer.write_image_data(&pixels).unwrap(); // Save
-
-    // let pixels = shared::grayscale(&config, &brightness_data);
     let pixels = shared::colorize(&config, &brightness_data);
 
     if outfile.ends_with(".tiff") {

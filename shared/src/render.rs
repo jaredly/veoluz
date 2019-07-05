@@ -31,7 +31,7 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
 #[inline]
 fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 {
     let min: line::float = exposure.min;
-    let max: line::float = exposure.max;
+    let max: line::float = exposure.max.max(min + 0.01);
     let scale: line::float = 255.0 / (max - min);
     let amt = match exposure.curve {
         Curve::FourthRoot => ((brightness as line::float / top).sqrt().sqrt()),
@@ -43,7 +43,7 @@ fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 
 
 fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
     let min: line::float = exposure.min;
-    let max: line::float = exposure.max;
+    let max: line::float = exposure.max.max(min + 0.01);
     let scale: line::float = 255.0 / (max - min);
     let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0);
     match exposure.curve {
