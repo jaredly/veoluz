@@ -11,6 +11,7 @@ let sceneFromKey = key =>
       modified: float_of_string(created),
       children: [||],
       parent: None,
+      starred: false,
     }
   | m =>
     Js.log(m);

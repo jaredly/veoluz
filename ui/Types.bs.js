@@ -20,7 +20,8 @@ var emptyScene = /* record */[
   /* title */undefined,
   /* tags */Belt_SetString.empty,
   emptyScene_005,
-  /* parent */undefined
+  /* parent */undefined,
+  /* starred */false
 ];
 
 exports.genId = genId$1;

@@ -355,6 +355,398 @@
           ]
         ]
       ]
+    },
+    {
+      "entries": [
+        {
+          "moduleName": "Types",
+          "modulePath": [],
+          "engines": [
+            [
+              ["Js.Json"],
+              1
+            ]
+          ],
+          "name": "directory"
+        }
+      ],
+      "typeMap": [
+        [
+          [
+            "Belt_MapString",
+            [],
+            "t"
+          ],
+          [
+            [
+              [
+                {
+                  "txt": "ocaml.doc",
+                  "loc": {
+                    "loc_start": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_end": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_ghost": true
+                  }
+                },
+                [
+                  "PStr",
+                  "let _ = \" The type of maps from type [key] to type ['value]. \""
+                ]
+              ]
+            ],
+            {
+              "name": "t",
+              "variables": [
+                [
+                  "Variable",
+                  "value"
+                ]
+              ],
+              "body": ["Abstract"]
+            }
+          ]
+        ],
+        [
+          [
+            "Belt_SetString",
+            [],
+            "t"
+          ],
+          [
+            [
+              [
+                {
+                  "txt": "ocaml.doc",
+                  "loc": {
+                    "loc_start": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_end": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_ghost": true
+                  }
+                },
+                [
+                  "PStr",
+                  "let _ = \" The type of sets. \""
+                ]
+              ]
+            ],
+            {
+              "name": "t",
+              "variables": [],
+              "body": ["Abstract"]
+            }
+          ]
+        ],
+        [
+          [
+            "Types",
+            [],
+            "directory"
+          ],
+          [
+            [],
+            {
+              "name": "directory",
+              "variables": [],
+              "body": [
+                "Record",
+                [
+                  [
+                    "scenes",
+                    [
+                      "Reference",
+                      [
+                        "Public",
+                        [
+                          "Belt_MapString",
+                          [],
+                          "t"
+                        ]
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Public",
+                            [
+                              "Types",
+                              [],
+                              "scene"
+                            ]
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "tags",
+                    [
+                      "Reference",
+                      [
+                        "Public",
+                        [
+                          "Belt_MapString",
+                          [],
+                          "t"
+                        ]
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Public",
+                            [
+                              "Types",
+                              [],
+                              "tag"
+                            ]
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          ]
+        ],
+        [
+          [
+            "Types",
+            [],
+            "scene"
+          ],
+          [
+            [
+              [
+                {
+                  "txt": "migrate.starred",
+                  "loc": {
+                    "loc_start": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_end": {
+                      "pos_fname": "_none_",
+                      "pos_lnum": 1,
+                      "pos_bol": 0,
+                      "pos_cnum": -1
+                    },
+                    "loc_ghost": true
+                  }
+                },
+                [
+                  "PStr",
+                  "let _ = fun _ -> false"
+                ]
+              ]
+            ],
+            {
+              "name": "scene",
+              "variables": [],
+              "body": [
+                "Record",
+                [
+                  [
+                    "id",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "modified",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "float"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "created",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "float"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "title",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "option"
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Builtin",
+                            "string"
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "tags",
+                    [
+                      "Reference",
+                      [
+                        "Public",
+                        [
+                          "Belt_SetString",
+                          [],
+                          "t"
+                        ]
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "children",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "array"
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Builtin",
+                            "string"
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "parent",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "option"
+                      ],
+                      [
+                        [
+                          "Reference",
+                          [
+                            "Builtin",
+                            "string"
+                          ],
+                          []
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "starred",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "bool"
+                      ],
+                      []
+                    ]
+                  ]
+                ]
+              ]
+            }
+          ]
+        ],
+        [
+          [
+            "Types",
+            [],
+            "tag"
+          ],
+          [
+            [],
+            {
+              "name": "tag",
+              "variables": [],
+              "body": [
+                "Record",
+                [
+                  [
+                    "id",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "color",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "title",
+                    [
+                      "Reference",
+                      [
+                        "Builtin",
+                        "string"
+                      ],
+                      []
+                    ]
+                  ]
+                ]
+              ]
+            }
+          ]
+        ]
+      ]
     }
   ],
   "milkSchemaVersion": 1

@@ -1,4 +1,5 @@
 
+[@migrate.starred (_) => false]
 type scene = {
   id: string,
   modified: float,
@@ -7,6 +8,7 @@ type scene = {
   tags: Belt.Set.String.t,
   children: array(string),
   parent: option(string),
+  starred: bool,
 };
 
 let genId = () =>
@@ -23,7 +25,8 @@ let emptyScene = {
   title: None,
   tags: Belt.Set.String.empty,
   parent: None,
-  children: [||]
+  children: [||],
+  starred: false,
 }
 
 type tag = {
