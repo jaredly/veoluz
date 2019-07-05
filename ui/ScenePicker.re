@@ -122,7 +122,7 @@ module Scene = {
 
 module SceneForm = {
   [@react.component]
-  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink) => {
+  let make = (~scene=Types.emptyScene, ~onSave, ~onPermalink, ~onDownload) => {
     let (scene, update) = Hooks.useState(scene);
     <div
       className={
@@ -166,9 +166,14 @@ module SceneForm = {
       </button>
       </div>
       {Styles.spacer(4)}
-      <button onClick={(_) => onPermalink()} className=Styles.flatButton(Colors.text)>
-        {React.string("Permalink")}
-      </button>
+      <div>
+        <button onClick={(_) => onPermalink()} className=Styles.flatButton(Colors.text)>
+          {React.string("Permalink")}
+        </button>
+        <button onClick={(_) => onDownload()} className=Styles.flatButton(Colors.text)>
+          {React.string("Download as json")}
+        </button>
+      </div>
     </div>;
   };
 };
