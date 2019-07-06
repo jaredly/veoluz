@@ -247,10 +247,10 @@ impl Wall {
 //     Finished(JsValue)
 // }
 
-fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
-    let mut orig_walls = config.walls.clone();
+pub fn extra_walls(mut orig_walls: Vec<Wall>, walls: &mut Vec<Wall>, config: &Config) {
+    // let mut orig_walls = config.walls.clone();
     if config.transform.reflection {
-        for wall in config.walls.iter() {
+        for wall in orig_walls.clone().iter() {
             let mut wall = wall.clone();
             wall.kind.reflect_across(0.0);
             walls.push(wall.clone());
@@ -272,7 +272,7 @@ fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
 
 fn all_walls(config: &Config) -> Vec<Wall> {
     let mut walls = config.walls.clone();
-    extra_walls(&mut walls, config);
+    extra_walls(walls.clone(), &mut walls, config);
     walls
 }
 
@@ -301,7 +301,7 @@ impl Config {
 
     pub fn extra_walls(&self) -> Vec<Wall> {
         let mut extras = vec![];
-        extra_walls(&mut extras, self);
+        extra_walls(self.walls.clone(), &mut extras, self);
         extras
     }
 

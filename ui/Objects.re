@@ -355,8 +355,9 @@ let make =
   // Js.log2("Config", config);
   <div
     className=Styles.control
-    onMouseOver={evt => wasm##show_ui()}
-    onMouseOut={evt => wasm##hide_ui()}>
+    // onMouseOver={evt => wasm##show_ui()}
+    // onMouseOut={evt => wasm##hide_ui()}
+    >
     <div className=Styles.title> {React.string("Scene objects")} </div>
     <div>
       {config##lights
@@ -448,7 +449,10 @@ let make =
     <div className=Css.(style([fontWeight(`bold), padding(px(8))]))>
       {React.string("Walls")}
     </div>
-    <div>
+    <div
+    onMouseEnter={_evt => wasm##show_ui()}
+    onMouseLeave={_evt => wasm##hide_ui()}
+    >
       {config##walls
        ->Belt.Array.mapWithIndex((i, wall) =>
            <WallEditor

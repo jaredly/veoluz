@@ -158,12 +158,14 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_line_width(1.0);
     state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
 
-    let extras = state.config.extra_walls();
-    for wall in extras {
-        if wall.hide {
-            continue;
+    if let Some((wid, _)) = hover {
+        if let Some(wall) = state.config.walls.get(wid) {
+            let mut extras = vec![];
+            shared::extra_walls(vec![wall.clone()], &mut extras, &state.config);
+            for wall in extras {
+                crate::draw::draw(&wall.kind, &state.ctx, false);
+            }
         }
-        crate::draw::draw(&wall.kind, &state.ctx, false);
     }
 
     let dashes = js_sys::Array::new();
@@ -259,6 +261,9 @@ fn find_wall_hover(
 ) -> Option<(usize, Vector2<float>)> {
     let mut close = None;
     for (wid, wall) in walls.iter().enumerate() {
+        if wall.hide {
+            continue;
+        }
         let dist = wall.kind.point_dist(pos);
         if dist < 15.0 {
             match close {
@@ -272,6 +277,9 @@ fn find_wall_hover(
 
 fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
+        if wall.hide {
+            continue;
+        }
         match wall.kind.check_handle(pos, 5.0) {
             None => (),
             Some(id) => return Some((wid, Handle::Handle(id))),
