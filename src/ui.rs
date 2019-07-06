@@ -158,7 +158,15 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_line_width(1.0);
     state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
 
-    if let Some((wid, _)) = hover {
+    let hovered_wall = if let Some(Selection::Wall(wid, Some(_))) = ui.selection {
+        Some(wid)
+    } else if let Some((wid, _)) = hover {
+        Some(wid)
+    } else {
+        None
+    };
+
+    if let Some(wid) = hovered_wall {
         if let Some(wall) = state.config.walls.get(wid) {
             let mut extras = vec![];
             shared::extra_walls(vec![wall.clone()], &mut extras, &state.config);
@@ -264,6 +272,7 @@ fn mouse_pos(rendering: &shared::Rendering, evt: &web_sys::MouseEvent) -> Point2
 }
 
 fn find_wall_hover(
+    zoom: f32,
     walls: &[Wall],
     pos: &Point2<shared::line::float>,
 ) -> Option<(usize, Vector2<float>)> {
@@ -273,7 +282,7 @@ fn find_wall_hover(
             continue;
         }
         let dist = wall.kind.point_dist(pos);
-        if dist < 15.0 {
+        if dist < 15.0 / zoom {
             match close {
                 Some((_, d, _)) if d < dist => (),
                 _ => close = Some((wid, dist, wall.kind.point_base() - pos)),
@@ -283,17 +292,17 @@ fn find_wall_hover(
     return close.map(|(wid, _, pdiff)| (wid, pdiff));
 }
 
-fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
+fn find_collision(zoom: f32, walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
         if wall.hide {
             continue;
         }
-        match wall.kind.check_handle(pos, 5.0) {
+        match wall.kind.check_handle(pos, 5.0 / zoom) {
             None => (),
             Some(id) => return Some((wid, Handle::Handle(id))),
         }
     }
-    return find_wall_hover(walls, pos).map(|(wid, pdiff)| (wid, Handle::Move(pdiff)));
+    return find_wall_hover(zoom, walls, pos).map(|(wid, pdiff)| (wid, Handle::Move(pdiff)));
 }
 
 #[wasm_bindgen]
@@ -525,7 +534,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     return draw(state)
                 }
 
-                match find_collision(&state.config.walls, &pos) {
+                match find_collision(state.config.rendering.zoom, &state.config.walls, &pos) {
                     None => {
                         state.ui.selection = Some(Selection::Pan {
                             grab: pos,
@@ -633,6 +642,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     }
                     _ => {
                         match find_collision(
+                            state.config.rendering.zoom,
                             &state.config.walls,
                             &mouse_pos(&state.config.rendering, &evt),
                         ) {

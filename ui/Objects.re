@@ -348,6 +348,8 @@ module WallEditor = {
   };
 };
 
+let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
+
 [@react.component]
 let make =
     (~ui: Rust.ui, ~config: Rust.config, ~update, ~updateUi, ~wasm: Rust.wasm) => {
@@ -393,6 +395,8 @@ let make =
     </div>
     <div className=Styles.row>
       <button
+      className=btn
+        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Line") | _ => false}}
         onClick={_evt =>
           updateUi(
             [%js.deep
@@ -411,6 +415,8 @@ let make =
       </button>
       {Styles.spacer(4)}
       <button
+      className=btn
+        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Parabola") | _ => false}}
         onClick={_evt =>
           updateUi(
             [%js.deep
@@ -429,6 +435,8 @@ let make =
       </button>
       {Styles.spacer(4)}
       <button
+      className=btn
+        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Circle") | _ => false}}
         onClick={_evt =>
           updateUi(
             [%js.deep

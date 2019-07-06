@@ -374,10 +374,13 @@ impl WallType {
                 // 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 0 => {
                     let dist = transform.translation.vector - pos.coords;
-                    *a = -1.0 / (4.0 * dist.norm_squared().sqrt());
-                    transform.rotation = nalgebra::UnitComplex::from_angle(
-                        dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
-                    );
+                    let det = 4.0 * dist.norm_squared().sqrt();
+                    if det != 0.0 {
+                        *a = -1.0 / det;
+                        transform.rotation = nalgebra::UnitComplex::from_angle(
+                            dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
+                        );
+                    }
                 }
                 1 => {
                     let pos = transform.inverse_transform_point(pos);

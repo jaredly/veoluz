@@ -280,7 +280,7 @@ pub fn deterministic_calc(config: &Config) -> Vec<line::uint> {
 }
 
 pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
-    let _timer = Timer::new("Calculate");
+    // let _timer = Timer::new("Calculate");
     let width = config.rendering.width;
     let height = config.rendering.height;
 
