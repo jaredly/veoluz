@@ -9,6 +9,8 @@ fn run(config: shared::Config, outfile: String, count: usize) {
 
     let pixels = shared::colorize(&config, &brightness_data);
 
+    println!("Writing to {}", outfile);
+
     if outfile.ends_with(".tiff") {
         let fout = &mut BufWriter::new(File::create(outfile).unwrap());
         image::tiff::TiffEncoder::new(fout)

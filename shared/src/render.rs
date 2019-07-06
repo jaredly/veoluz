@@ -112,7 +112,7 @@ fn blend(front: u8, back: u8, front_alpha: f32) -> f32 {
 }
 
 pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
-    // let _timer = Timer::new("Colorize");
+    let _timer = Timer::new("Colorize");
     let width = config.rendering.width;
     let height = config.rendering.height;
 
