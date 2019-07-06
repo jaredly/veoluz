@@ -312,13 +312,19 @@ impl Config {
 
 pub struct Timer<'a> {
     name: &'a str,
+    #[cfg(not(target_arch = "wasm32"))]
+    initial: std::time::SystemTime,
 }
 
 impl<'a> Timer<'a> {
     pub fn new(name: &'a str) -> Timer<'a> {
         #[cfg(target_arch = "wasm32")]
-        web_sys::console::time_with_label(name);
-        Timer { name }
+        {
+            web_sys::console::time_with_label(name);
+            return Timer { name };
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        Timer { name, initial: std::time::SystemTime::now() }
     }
 }
 
@@ -326,5 +332,10 @@ impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
         #[cfg(target_arch = "wasm32")]
         web_sys::console::time_end_with_label(self.name);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let diff = std::time::SystemTime::now().duration_since(self.initial).unwrap();
+            println!("Timer {}: {}s", self.name, diff.as_secs());
+        }
     }
 }
