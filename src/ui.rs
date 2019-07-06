@@ -147,9 +147,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     let (zoom, dx, dy) = state.config.transform();
-    state.ctx.save();
-    state.ctx.translate(dx as f64, dy as f64)?;
-    state.ctx.scale(zoom as f64, zoom as f64)?;
+    // state.ctx.save();
+    // state.ctx.translate(dx as f64, dy as f64)?;
+    // state.ctx.scale(zoom as f64, zoom as f64)?;
 
     let dashes = js_sys::Array::new();
     dashes.push(&JsValue::from(2.0f64));
@@ -163,7 +163,10 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             let mut extras = vec![];
             shared::extra_walls(vec![wall.clone()], &mut extras, &state.config);
             for wall in extras {
-                crate::draw::draw(&wall.kind, &state.ctx, false);
+                let mut kind = wall.kind.clone();
+                kind.scale(zoom);
+                kind.translate(&Vector2::new(dx, dy));
+                crate::draw::draw(&kind, &state.ctx, false);
             }
         }
     }
@@ -180,24 +183,15 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
                 _ => false,
             },
         };
-        // let w = match &ui.selection {
-        //     Some(Selection::Wall(wid, _)) if *wid == i => 3.0,
-        //     Some(Selection::Multiple(walls, _)) if walls.contains(&i) => 3.0,
-        //     _ => match hover {
-        //         Some((wid, _)) if wid == i => 2.0,
-        //         _ => {
-        //             // if not hovered/selected, don't draw
-        //             if wall.hide {
-        //                 continue
-        //             }
-        //             1.0
-        //         },
-        //     },
-        // };
+
+        let mut kind = wall.kind.clone();
+        kind.scale(zoom);
+        kind.translate(&Vector2::new(dx, dy));
+
         if selected {
             state.ctx.set_line_width(3.0);
             state.ctx.set_stroke_style(&JsValue::from_str("#fff"));
-            crate::draw::draw(&wall.kind, &state.ctx, true);
+            crate::draw::draw(&kind, &state.ctx, true);
         } else if wall.hide {
             continue;
         }
@@ -211,9 +205,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         } else {
             state.ctx.set_stroke_style(&JsValue::from_str("#aaf"));
         }
-        crate::draw::draw(&wall.kind, &state.ctx, true);
+        crate::draw::draw(&kind, &state.ctx, true);
         crate::draw::draw_handles(
-            &wall.kind,
+            &kind,
             &state.ctx,
             5.0,
             match hover {
@@ -245,7 +239,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             }
         }
     }
-    state.ctx.restore();
+    // state.ctx.restore();
 
     Ok(())
 }

@@ -171,17 +171,20 @@ impl WallType {
         }
     }
 
-    pub fn scale(&mut self, by: usize) {
+    pub fn scale(&mut self, by: f32) {
         match self {
             WallType::Line(wall) => {
-                *wall = Segment::new(wall.a() * by as f32, wall.b() * by as f32)
+                *wall = Segment::new(wall.a() * by, wall.b() * by )
             }
             WallType::Circle(ball, center, _, _) => {
-                *ball = Ball::new(ball.radius() * by as f32);
-                *center = *center * by as f32;
+                *ball = Ball::new(ball.radius() * by );
+                *center = *center * by ;
             }
             WallType::Parabola(parabola) => {
-                parabola.transform.translation.vector *= by as f32;
+                parabola.transform.translation.vector *= by ;
+                parabola.a /= by ;
+                parabola.left *= by ;
+                parabola.right *= by ;
             }
         }
     }
