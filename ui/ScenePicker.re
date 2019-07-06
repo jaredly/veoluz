@@ -113,6 +113,7 @@ module Scene = {
           <div
             className=Css.(style([
               color(scene.starred ? gold : white),
+              display(`inlineBlock),
               Css.hover([
                 color(scene.starred ? white : gold),
               ]),
@@ -166,7 +167,7 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene) =
         className=Styles.flatButton(Css.white)
         onClick={_ => setFilter({...filter, star: !filter.star})}
       >
-        {React.string("Starred")}
+        {React.string(filter.star ? "Show all" : "Starred")}
       </button>
     </div>
     <div

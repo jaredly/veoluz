@@ -172,21 +172,36 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_line_dash(&dashes)?;
 
     for (i, wall) in state.config.main_walls().iter().enumerate() {
-        let w = match &ui.selection {
-            Some(Selection::Wall(wid, _)) if *wid == i => 3.0,
-            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => 3.0,
+        let selected = match &ui.selection {
+            Some(Selection::Wall(wid, _)) if *wid == i => true,
+            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => true,
             _ => match hover {
-                Some((wid, _)) if wid == i => 2.0,
-                _ => {
-                    // if not hovered/selected, don't draw
-                    if wall.hide {
-                        continue
-                    }
-                    1.0
-                },
+                Some((wid, _)) if wid == i => true,
+                _ => false,
             },
         };
-        state.ctx.set_line_width(w);
+        // let w = match &ui.selection {
+        //     Some(Selection::Wall(wid, _)) if *wid == i => 3.0,
+        //     Some(Selection::Multiple(walls, _)) if walls.contains(&i) => 3.0,
+        //     _ => match hover {
+        //         Some((wid, _)) if wid == i => 2.0,
+        //         _ => {
+        //             // if not hovered/selected, don't draw
+        //             if wall.hide {
+        //                 continue
+        //             }
+        //             1.0
+        //         },
+        //     },
+        // };
+        if selected {
+            state.ctx.set_line_width(3.0);
+            state.ctx.set_stroke_style(&JsValue::from_str("#fff"));
+            crate::draw::draw(&wall.kind, &state.ctx, true);
+        } else if wall.hide {
+            continue;
+        }
+        state.ctx.set_line_width(1.0);
         if wall.properties.reflect == 1.0 {
             state.ctx.set_stroke_style(&JsValue::from_str("#faf"));
         } else if wall.properties.absorb == 1.0 {
@@ -197,7 +212,6 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             state.ctx.set_stroke_style(&JsValue::from_str("#aaf"));
         }
         crate::draw::draw(&wall.kind, &state.ctx, true);
-        state.ctx.set_line_width(1.0);
         crate::draw::draw_handles(
             &wall.kind,
             &state.ctx,
