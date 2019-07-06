@@ -44,17 +44,23 @@ module DropDown = {
       }
     | `Open => {...state, selection: Some(0)}
     | `Close => {...state, selection: None}
-    | `Done(getList)  => {...state, value: "", items: getList("")}
+    | `Done(getList) => {...state, value: "", items: getList("")}
     };
   [@react.component]
   let make = (~onSelect, ~onCreate, ~getList, ~render) => {
     let (state, dispatch) =
-      React.useReducer(reduce, {value: "", selection: None, items: getList("")});
+      React.useReducer(
+        reduce,
+        {value: "", selection: None, items: getList("")},
+      );
 
-    React.useEffect1(() => {
-      dispatch(`UpdateList(getList(state.value)));
-      None
-    }, [|getList|]);
+    React.useEffect1(
+      () => {
+        dispatch(`UpdateList(getList(state.value)));
+        None;
+      },
+      [|getList|],
+    );
 
     <div className=Css.(style([position(`relative)]))>
       <input
@@ -99,10 +105,7 @@ module DropDown = {
                position(`absolute),
                top(`percent(100.0)),
                backgroundColor(white),
-               boxShadow(
-                 ~blur=px(5),
-                 Colors.accent
-               ),
+               boxShadow(~blur=px(5), Colors.accent),
                padding(px(8)),
                left(px(0)),
              ])
@@ -140,48 +143,59 @@ module TagsEditor = {
 
   [@react.component]
   let make = (~directory, ~tags, ~onChange, ~onUpdateTags) => {
-    let getList = React.useCallback2(text => {
-      directory.tags
-      ->Belt.Map.String.valuesToArray
-      ->Belt.Array.keep(t =>
-      !tags->Belt.Set.String.has(t.id) &&
-        t.title->Js.String2.includes(text))
-      ->Js.Array2.sortInPlaceWith((t1, t2) => {
-        t1.title->Js.String2.indexOf(text) -
-        t2.title->Js.String2.indexOf(text)
-      })
-    }, (directory, tags));
+    let getList =
+      React.useCallback2(
+        text =>
+          directory.tags
+          ->Belt.Map.String.valuesToArray
+          ->Belt.Array.keep(t =>
+              !tags->Belt.Set.String.has(t.id)
+              && t.title->Js.String2.includes(text)
+            )
+          ->Js.Array2.sortInPlaceWith((t1, t2) =>
+              t1.title->Js.String2.indexOf(text)
+              - t2.title->Js.String2.indexOf(text)
+            ),
+        (directory, tags),
+      );
 
     <div>
-    <div className=Styles.join([Styles.row, Css.(style([flexWrap(`wrap)]))])>
-      {tags
-       ->Belt.Set.String.toArray
-       ->Belt.Array.map(tid =>
-           switch (directory.tags->Belt.Map.String.get(tid)) {
-           | None => React.null
-           | Some(tag) => <div
-           onClick={_ => onChange(tags->Belt.Set.String.remove(tag.id))}
-           className={Css.(style([
-             padding2(~v=px(4), ~h=px(8)),
-             borderRadius(px(4)),
-             marginBottom(px(4)),
-             marginRight(px(4)),
-             hover([
-               backgroundColor(Colors.button)
-             ])
-           ]))}
-           >
-           {React.string(tag.title)} </div>
-           }
-         )
-       ->React.array}
-       </div>
+      <div
+        className={Styles.join([
+          Styles.row,
+          Css.(style([flexWrap(`wrap)])),
+        ])}>
+        {tags
+         ->Belt.Set.String.toArray
+         ->Belt.Array.map(tid =>
+             switch (directory.tags->Belt.Map.String.get(tid)) {
+             | None => React.null
+             | Some(tag) =>
+               <div
+                 onClick={_ =>
+                   onChange(tags->Belt.Set.String.remove(tag.id))
+                 }
+                 className=Css.(
+                   style([
+                     padding2(~v=px(4), ~h=px(8)),
+                     borderRadius(px(4)),
+                     marginBottom(px(4)),
+                     marginRight(px(4)),
+                     hover([backgroundColor(Colors.button)]),
+                   ])
+                 )>
+                 {React.string(tag.title)}
+               </div>
+             }
+           )
+         ->React.array}
+      </div>
       <DropDown
-        getList={getList        }
+        getList
         render={(~selected, tag, onClick) =>
           <div
             key={tag.id}
-            className=(selected ? Styles.join([item, selectedItem]) : item)
+            className={selected ? Styles.join([item, selectedItem]) : item}
             onMouseDown={_evt => onClick()}>
             {React.string(tag.title)}
           </div>
@@ -213,9 +227,10 @@ let make =
   let (scene, update) = Hooks.useState(scene);
   <div
     className={
-      Styles.control
-      ++ " "
-      ++ Css.(
+      // Styles.control
+      // ++ " "
+      // ++
+      Css.(
            style([
              flexDirection(`column),
              display(`flex),
@@ -223,64 +238,61 @@ let make =
            ])
          )
     }>
-    <div className=Styles.title>
-      {React.string(
-         scene.id == ""
-           ? "New scene"
-           : "Scene created "
-             ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
-       )}
-    </div>
-    <input
-      className=Css.(style([alignSelf(`stretch)]))
-      placeholder="Title"
-      value={
-        switch (scene.title) {
-        | None => ""
-        | Some(x) => x
-        }
-      }
-      onChange={evt => {
-        let title = evt->ReactEvent.Form.target##value;
-        update({...scene, title: title == "" ? None : Some(title)});
-      }}
-    />
-    {Styles.spacer(8)}
-    <TagsEditor
-      directory
-      onUpdateTags
-      onChange={tags => update({...scene, tags})}
-      tags={scene.tags}
-    />
-    {Styles.spacer(8)}
-    <div className=Styles.row>
-      {scene.id != ""
-         ? <button onClick={_evt => onSave(scene)}>
-             {React.string("Update scene")}
-           </button>
-         : React.null}
+    // <div className=Styles.title>
+    //   {React.string(
+    //      scene.id == ""
+    //        ? "New scene"
+    //        : "Scene created "
+    //          ++ Js.Date.toLocaleString(Js.Date.fromFloat(scene.created)),
+    //    )}
+    // </div>
+    // <input
+    //   className=Css.(style([alignSelf(`stretch)]))
+    //   placeholder="Title"
+    //   value={
+    //     switch (scene.title) {
+    //     | None => ""
+    //     | Some(x) => x
+    //     }
+    //   }
+    //   onChange={evt => {
+    //     let title = evt->ReactEvent.Form.target##value;
+    //     update({...scene, title: title == "" ? None : Some(title)});
+    //   }}
+    // />
+    // {Styles.spacer(8)}
+    // <TagsEditor
+    //   directory
+    //   onUpdateTags
+    //   onChange={tags => update({...scene, tags})}
+    //   tags={scene.tags}
+    // />
+    // {Styles.spacer(8)}
+    // <div className=Styles.row>
+    //   {scene.id != ""
+    //      ? <button onClick={_evt => onSave(scene)}>
+    //          {React.string("Update scene")}
+    //        </button>
+    //      : React.null}
+    //   {Styles.spacer(4)}
+    //   <button onClick={_evt => onSave({...scene, id: ""})}>
+    //     {React.string(scene.id == "" ? "Save scene" : "Save new scene")}
+    //   </button>
+    // </div>
+    // {Styles.spacer(4)}
+
+      <div className=Styles.row>
+        <button onClick={_ => onPermalink()}>
+          // className={Styles.flatButton(Colors.text)}
+           <IonIcons.Link /> </button>
       {Styles.spacer(4)}
-      <button onClick={_evt => onSave({...scene, id: ""})}>
-        {React.string(scene.id == "" ? "Save scene" : "Save new scene")}
-      </button>
-    </div>
-    {Styles.spacer(4)}
-    <div>
-      <button
-        onClick={_ => onPermalink()}
-        className={Styles.flatButton(Colors.text)}>
-        {React.string("Permalink")}
-      </button>
-      <button
-        onClick={_ => onDownload()}
-        className={Styles.flatButton(Colors.text)}>
-        {React.string("Download as json")}
-      </button>
-    </div>
-    {Styles.spacer(8)}
-    <div>
-      <button onClick={evt => wasm##undo()}> {React.string("Undo")} </button>
-      <button onClick={evt => wasm##redo()}> {React.string("Redo")} </button>
-    </div>
-  </div>;
+        <button onClick={_ => onDownload()}>
+          // className={Styles.flatButton(Colors.text)}
+           <IonIcons.Download /> </button>
+      {Styles.spacer(4)}
+        <button onClick={_evt => wasm##undo()}> <IonIcons.Undo /> </button>
+      {Styles.spacer(4)}
+        <button onClick={_evt => wasm##redo()}> <IonIcons.Redo /> </button>
+      </div>
+    </div>;
 };

@@ -354,7 +354,7 @@ let make =
   // Js.log(ui);
   // Js.log2("Config", config);
   <div
-    className=Styles.control
+    className=Styles.join([Styles.control , Css.(style([flexShrink(1), overflow(`auto)]))])
     // onMouseOver={evt => wasm##show_ui()}
     // onMouseOut={evt => wasm##hide_ui()}
     >

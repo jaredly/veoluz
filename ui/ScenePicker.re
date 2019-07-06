@@ -52,9 +52,7 @@ let saveSceneInfo = directory => {
 
 [@bs.val] [@bs.scope "URL"] external createObjectURL: Web.blob => string = "";
 
-module Scene = {
-  [@react.component]
-  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover, ~onChangeScene) => {
+let useSceneImage = (scene: scene) => {
     let key = scene.id ++ ":image";
     let getter =
       React.useCallback2(
@@ -75,6 +73,13 @@ module Scene = {
           },
         [|imageBlob|],
       );
+  url
+};
+
+module Scene = {
+  [@react.component]
+  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~onSaveScene) => {
+    let url = useSceneImage(scene);
     switch (url) {
     | None => <div> {React.string("Loading...")} </div>
     | Some(url) =>
@@ -105,6 +110,10 @@ module Scene = {
               backgroundColor(black),
               height(px(50)),
               backgroundSize(`cover),
+              position(`relative),
+              // display(`flex),
+              // justifyContent(`spaceBetween),
+              // flexDirection(`column),
               `declaration(("background-position", "center")),
               // backgroundPosition(`center, `center)
             ])
@@ -127,6 +136,32 @@ module Scene = {
           >
             {React.string(scene.starred ? {j|✭|j} : {j|☆|j})}
           </div>
+
+          {selected ? <div
+            className=Css.(style([
+              cursor(`pointer),
+              color(rgba(255,255,255,0.7)),
+              backgroundColor(black),
+              borderRadius(px(4)),
+              position(`absolute),
+              top(px(0)),
+              right(px(0)),
+              alignSelf(`center),
+              margin2(~v=px(0), ~h=`auto),
+              Css.hover([
+                color(hex("fff"))
+              ])
+            ]))
+              onClick={(evt) => {
+                ReactEvent.Mouse.stopPropagation(evt);
+                onSaveScene(scene);
+              }}
+          >
+            <IonIcons.ReverseCamera
+              color="currentcolor"
+            />
+          </div> : React.null}
+
         </div>
         {scene.children->Belt.Array.length === 0
            ? React.null
@@ -143,7 +178,7 @@ module Scene = {
 type filter = {star: bool, tags: Set.String.t};
 
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene) => {
+let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~onSaveScene) => {
   let (filter, setFilter) = Hooks.useState({star: false, tags: Set.String.empty});
 
   <div
@@ -195,6 +230,7 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene) =
          ->Belt.List.map(((key, scene)) =>
              <Scene
                selected={current == Some(key)}
+               onSaveScene
                onChangeScene
                scene
                onSelect

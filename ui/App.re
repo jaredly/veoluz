@@ -528,11 +528,15 @@ module Inner = {
              />
            }}
         </div>
-        <ScenePicker
+        <MiniScenePicker
           directory={state.directory}
           onChangeScene={scene => {
             dispatch(`SaveInPlace(scene))
           }}
+          onClearScene={() => {
+            let _ = wasm##restore(wasm##blank_config());
+          }}
+          onSaveScene
           current={state.current}
           hover={url => dispatch(`Hover(url))}
           unHover={() => dispatch(`Unhover)}
@@ -549,6 +553,8 @@ module Inner = {
           style([
             margin2(~h=px(8), ~v=px(8)),
             flex(1),
+            display(`flex),
+            flexDirection(`column),
             minHeight(px(200)),
           ])
         )>
@@ -592,6 +598,7 @@ module Inner = {
             }
           />;
         }
+        {Styles.spacer(8)}
         <TransformEditor
           wasm
           config={state.config}
