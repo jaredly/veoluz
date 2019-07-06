@@ -69,6 +69,7 @@ fn main() -> std::io::Result<()> {
         let outfile: String = args[4].clone();
         let count: usize = args[5].parse().unwrap();
         let lerps: usize = args[6].parse().unwrap();
+        let only: Option<usize> = args.get(7).map(|m| m.parse::<usize>().unwrap());
 
         let mut config1 = load_config(name);
         let mut config2 = load_config(name2);
@@ -78,10 +79,15 @@ fn main() -> std::io::Result<()> {
         use shared::types::LerpEq;
 
         for i in 0..=lerps {
+            if let Some(only) = only {
+                if only != i {
+                    continue;
+                }
+            }
             println!("Lerping {}", i);
             let amount = i as f32 / lerps as f32;
             let config = config1.lerp(&config2, amount);
-            run(config, format!("{}_{}.png", outfile, i), count);
+            run(config, format!("{}_{}.tiff", outfile, i), count);
         }
     } else if args.len() >= 5 {
         let name: String = args[1].clone();
