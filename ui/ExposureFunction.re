@@ -2,13 +2,13 @@
 module ExposureFunction = {
   let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
   [@react.component]
-  let make = (~config, ~update, ~wasm) => {
+  let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
     let (isOpen, setOpen) = Hooks.useState(false);
 
 
     let canvasRef = React.useRef(Js.Nullable.null);
 
-    React.useEffect1(
+    React.useEffect2(
       () => {
         if (isOpen) {
           switch (Js.Nullable.toOption(canvasRef->React.Ref.current)) {
@@ -22,7 +22,7 @@ module ExposureFunction = {
         };
         None;
       },
-      [|isOpen|],
+      (isOpen, canvasRef->React.Ref.current),
     );
 
     <div className=Styles.column>
@@ -39,17 +39,117 @@ module ExposureFunction = {
       >
         {isOpen ? <IonIcons.ArrowDown fontSize="14px" /> : <IonIcons.ArrowRight fontSize="14px" />}
         {Styles.spacer(4)}
-        {React.string("Exposure")}
+        {React.string("Contrast")}
       </div>
       <div
         style={ReactDOMRe.Style.make(~display=isOpen ? "flex" : "none", ())}
         className=Styles.column
       >
         {Styles.spacer(8)}
-        <div className=Css.(style([position(`relative), paddingBottom(px(12)), marginBottom(px(8))]))>
-          <canvas width="200px" height="100px" ref={ReactDOMRe.Ref.domRef(canvasRef)} />
-          <ExposureControl wasm config update width=200 />
+        <div className=Styles.row>
+          <button
+            disabled={config##rendering##exposure##curve == "FourthRoot"}
+            onClick={_evt => {
+              let config = [%js.deep
+                config["rendering"]["exposure"]["curve"].replace("FourthRoot")
+              ];
+              update(config, true);
+            }}
+            className=btn>
+            {React.string("Low")}
+          </button>
+          {Styles.spacer(4)}
+          <button
+            disabled={config##rendering##exposure##curve == "SquareRoot"}
+            onClick={_evt => {
+              let config = [%js.deep
+                config["rendering"]["exposure"]["curve"].replace("SquareRoot")
+              ];
+              update(config, true);
+            }}
+            className=btn>
+            {React.string("Medium")}
+          </button>
+          {Styles.spacer(4)}
+          <button
+            disabled={config##rendering##exposure##curve == "Linear"}
+            onClick={_evt => {
+              let config = [%js.deep
+                config["rendering"]["exposure"]["curve"].replace("Linear")
+              ];
+              update(config, true);
+            }}
+            className=btn>
+            {React.string("Hight")}
+          </button>
         </div>
+        {Styles.spacer(8)}
+        <div className=Styles.row>
+          <button disabled={config##rendering##exposure##limits == Js.Null.empty}
+          onClick={_ => {
+              let config = [%js.deep
+                config["rendering"]["exposure"]["limits"].replace(Js.Null.empty)
+              ];
+              update(config, true);
+
+          }}
+          className=btn
+          >
+            {React.string("Automatic")}
+          </button>
+          {Styles.spacer(4)}
+          <button disabled={config##rendering##exposure##limits != Js.Null.empty}
+          onClick={_ => {
+              let config = [%js.deep
+                config["rendering"]["exposure"]["limits"].replace(Js.Null.return((0.0, 1.0)))
+              ];
+              update(config, true);
+          }}
+          className=btn
+          >
+            {React.string("Manual")}
+          </button>
+        </div>
+        {switch (Js.Null.toOption(config##rendering##exposure##limits)) {
+          | None => React.null
+          | Some((min,max)) =>
+          <div className=Styles.column>
+          {Styles.spacer(8)}
+            <div className=Css.(style([position(`relative), paddingBottom(px(12)), marginBottom(px(8))]))>
+              <canvas width="200px" height="100px" ref={ReactDOMRe.Ref.domRef(canvasRef)} />
+              <ExposureControl limits=(min, max) wasm config update width=200 />
+            </div>
+        {Styles.spacer(8)}
+        <div className=Styles.row>
+          <input
+            type_="number"
+            value={Js.Float.toString(min)}
+            className=Css.(style([width(px(70))]))
+            onChange={evt => {
+              let v = evt->ReactEvent.Form.target##value->float_of_string;
+              let config = [%js.deep
+                config["rendering"]["exposure"]["limits"].replace(Js.Null.return((v, max)))
+              ];
+              update(config, false);
+            }}
+          />
+        {Styles.spacer(4)}
+          <input
+            type_="number"
+            className=Css.(style([width(px(70))]))
+            value={Js.Float.toString(max)}
+            onChange={evt => {
+              let v = evt->ReactEvent.Form.target##value->float_of_string;
+              let config = [%js.deep
+                config["rendering"]["exposure"]["limits"].replace(Js.Null.return((min, v)))
+              ];
+              update(config, false);
+            }}
+          />
+          </div>
+          </div>
+        }}
+        {Styles.spacer(8)}
         <div className=Styles.row>
           {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
            | None => React.string("not rgb")
@@ -85,19 +185,6 @@ module ExposureFunction = {
                />
              </div>
            }}
-        {Styles.spacer(4)}
-          <input
-            type_="number"
-            value={Js.Float.toString(config##rendering##exposure##min)}
-            className=Css.(style([width(px(70))]))
-            onChange={evt => {
-              let v = evt->ReactEvent.Form.target##value->float_of_string;
-              let config = [%js.deep
-                config["rendering"]["exposure"]["min"].replace(v)
-              ];
-              update(config, false);
-            }}
-          />
         {Styles.spacer(8)}
           {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
            | None => React.string("not rgb")
@@ -133,57 +220,6 @@ module ExposureFunction = {
                />
              </div>
            }}
-        {Styles.spacer(4)}
-          <input
-            type_="number"
-            className=Css.(style([width(px(70))]))
-            value={Js.Float.toString(config##rendering##exposure##max)}
-            onChange={evt => {
-              let v = evt->ReactEvent.Form.target##value->float_of_string;
-              let config = [%js.deep
-                config["rendering"]["exposure"]["max"].replace(v)
-              ];
-              update(config, false);
-            }}
-          />
-        </div>
-        {Styles.spacer(16)}
-        <div className=Styles.row>
-          <button
-            disabled={config##rendering##exposure##curve == "FourthRoot"}
-            onClick={_evt => {
-              let config = [%js.deep
-                config["rendering"]["exposure"]["curve"].replace("FourthRoot")
-              ];
-              update(config, false);
-            }}
-            className=btn>
-            {React.string("Fourth Root")}
-          </button>
-          {Styles.spacer(4)}
-          <button
-            disabled={config##rendering##exposure##curve == "SquareRoot"}
-            onClick={_evt => {
-              let config = [%js.deep
-                config["rendering"]["exposure"]["curve"].replace("SquareRoot")
-              ];
-              update(config, false);
-            }}
-            className=btn>
-            {React.string("Square Root")}
-          </button>
-          {Styles.spacer(4)}
-          <button
-            disabled={config##rendering##exposure##curve == "Linear"}
-            onClick={_evt => {
-              let config = [%js.deep
-                config["rendering"]["exposure"]["curve"].replace("Linear")
-              ];
-              update(config, false);
-            }}
-            className=btn>
-            {React.string("Linear")}
-          </button>
         </div>
       </div>
     </div>;
@@ -192,7 +228,7 @@ module ExposureFunction = {
 
 module TransformEditor = {
   [@react.component]
-  let make = (~config, ~update, ~wasm) => {
+  let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
     <div
       className={Styles.join([
         Styles.control,
