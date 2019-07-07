@@ -41,9 +41,8 @@ fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 
     ((amt - min).max(0.0) * scale).min(255.0)
 }
 
-fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
-    let min: line::float = exposure.min;
-    let max: line::float = exposure.max.max(min + 0.01);
+fn exposer2(exposure: &Exposure, min: line::float, max: line::float) -> Box<Fn(line::float, line::uint) -> f32> {
+    let max: line::float = max.max(min + 0.01);
     let scale: line::float = 255.0 / (max - min);
     let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0);
     match exposure.curve {
@@ -59,6 +58,10 @@ fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
         }
         Curve::Linear => Box::new(move |top, brightness| scaler(brightness as line::float / top)),
     }
+}
+
+fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
+    exposer2(exposure, exposure.min, exposure.max)
 }
 
 // #[inline]
@@ -111,6 +114,45 @@ fn blend(front: u8, back: u8, front_alpha: f32) -> f32 {
     res * 255.0
 }
 
+pub fn hist_max(config: &Config, brightness_data: &[line::uint]) -> line::float {
+    let width = config.rendering.width as usize;
+    let height = config.rendering.height as usize;
+
+    let mut top = 0.0 as f32;
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[x + y * width] as f32);
+        }
+    }
+    let mut bins = vec![0; 100];
+
+    for x in 0..width {
+        for y in 0..height {
+            let brightness = brightness_data[x + y * width];
+
+            let amt = match config.rendering.exposure.curve {
+                Curve::FourthRoot => ((brightness as line::float / top).sqrt().sqrt()),
+                Curve::SquareRoot => ((brightness as line::float / top).sqrt()),
+                Curve::Linear => (brightness as line::float / top),
+            };
+
+            let exposed = amt * (100 - 1) as f32;
+            bins[exposed as usize] += 1;
+        }
+    }
+
+    let ninetyfive = ((width * height) as f32 * 0.9999) as usize;
+    let mut covered = 0;
+    for i in 0..100 {
+        covered += bins[i];
+        if covered > ninetyfive {
+            return i as f32 / 100.0;
+        }
+    }
+
+    1.0
+}
+
 pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     // let _timer = Timer::new("Colorize");
     let width = config.rendering.width;
@@ -155,7 +197,8 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
          }
     };
 
-    let expose = exposer(&config.rendering.exposure);
+    let expose_max = hist_max(config, brightness_data);
+    let expose = exposer2(&config.rendering.exposure, 0.0, expose_max);
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;
