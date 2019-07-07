@@ -13,7 +13,7 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
             top = top.max(brightness_data[x + y * width]);
         }
     }
-    let expose = exposer(&config.rendering.exposure);
+    let expose = exposer(&config.rendering.exposure, config, brightness_data);
 
     let mut data = vec![0; width * height];
     let top = top as line::float;
@@ -28,18 +28,18 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
     data
 }
 
-#[inline]
-fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 {
-    let min: line::float = exposure.min;
-    let max: line::float = exposure.max.max(min + 0.01);
-    let scale: line::float = 255.0 / (max - min);
-    let amt = match exposure.curve {
-        Curve::FourthRoot => ((brightness as line::float / top).sqrt().sqrt()),
-        Curve::SquareRoot => ((brightness as line::float / top).sqrt()),
-        Curve::Linear => (brightness as line::float / top),
-    };
-    ((amt - min).max(0.0) * scale).min(255.0)
-}
+// #[inline]
+// fn expose(exposure: &Exposure, top: line::float, brightness: line::uint) -> f32 {
+//     let min: line::float = exposure.min;
+//     let max: line::float = exposure.max.max(min + 0.01);
+//     let scale: line::float = 255.0 / (max - min);
+//     let amt = match exposure.curve {
+//         Curve::FourthRoot => ((brightness as line::float / top).sqrt().sqrt()),
+//         Curve::SquareRoot => ((brightness as line::float / top).sqrt()),
+//         Curve::Linear => (brightness as line::float / top),
+//     };
+//     ((amt - min).max(0.0) * scale).min(255.0)
+// }
 
 fn exposer2(exposure: &Exposure, min: line::float, max: line::float) -> Box<Fn(line::float, line::uint) -> f32> {
     let max: line::float = max.max(min + 0.01);
@@ -60,8 +60,11 @@ fn exposer2(exposure: &Exposure, min: line::float, max: line::float) -> Box<Fn(l
     }
 }
 
-fn exposer(exposure: &Exposure) -> Box<Fn(line::float, line::uint) -> f32> {
-    exposer2(exposure, exposure.min, exposure.max)
+fn exposer(exposure: &Exposure, config: &Config, brightness_data: &[line::uint]) -> Box<Fn(line::float, line::uint) -> f32> {
+    match exposure.limits {
+        Some((min, max)) => exposer2(exposure, min, max),
+        None => exposer2(exposure, 0.0, hist_max(config, brightness_data))
+    }
 }
 
 // #[inline]
@@ -86,7 +89,7 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
         }
     }
     
-    let expose = exposer(&config.rendering.exposure);
+    let expose = exposer(&config.rendering.exposure, config, brightness_data);
 
     let top = top as line::float;
     for x in 0..width {
@@ -197,8 +200,7 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
          }
     };
 
-    let expose_max = hist_max(config, brightness_data);
-    let expose = exposer2(&config.rendering.exposure, 0.0, expose_max);
+    let expose = exposer(&config.rendering.exposure, config, brightness_data);
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;
@@ -228,7 +230,7 @@ pub fn black_colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8
             top = top.max(brightness_data[x + y * width]);
         }
     }
-    let expose = exposer(&config.rendering.exposure);
+    let expose = exposer(&config.rendering.exposure, config, brightness_data);
 
     let mut data = vec![0; width * height * 4];
     let top = top as line::float;

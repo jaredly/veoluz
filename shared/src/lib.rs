@@ -82,6 +82,7 @@ impl Config {
     pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
         Config {
             walls,
+            light_formation: Default::default(),
             lights: vec![LightSource {
                 kind: LightKind::Point {
                     origin: Point2::origin(),

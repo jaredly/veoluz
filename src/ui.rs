@@ -400,8 +400,12 @@ pub fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 
 pub fn draw_histogram(canvas: &web_sys::HtmlCanvasElement, state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
-    let min = state.config.rendering.exposure.min as f64;
-    let max = (state.config.rendering.exposure.max as f64).max(min + 0.01);
+    let (min, max) = match state.config.rendering.exposure.limits {
+        None => return,
+        Some((min, max)) => (min, max)
+    };
+    let min = min as f64;
+    let max = (max as f64).max(min + 0.01);
     let dx = max - min;
 
     let full_width = canvas.width() as f64;
