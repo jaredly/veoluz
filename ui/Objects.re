@@ -104,18 +104,17 @@ module LightEditor = {
       )
       onMouseOver={evt =>
         // wasm##hover_wall(index)
-        ()}
-      >
-      <div className=Css.(style([fontWeight(`medium), fontSize(px(12))]))
-      onClick={evt => {
-        if (selected) {
-          updateUi([%js.deep ui["selection"].replace(Js.null)]);
-        } else {
-          wasm##set_active_light(index);
-        };
-        ();
-      }}
-      >
+        ()}>
+      <div
+        className=Css.(style([fontWeight(`medium), fontSize(px(12))]))
+        onClick={evt => {
+          if (selected) {
+            updateUi([%js.deep ui["selection"].replace(Js.null)]);
+          } else {
+            wasm##set_active_light(index);
+          };
+          ();
+        }}>
         {React.string("Light #" ++ string_of_int(index))}
       </div>
       {selected
@@ -225,7 +224,8 @@ let wallType = kind =>
 
 module WallEditor = {
   [@react.component]
-  let make = (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove, ~updateUi, ~ui) => {
+  let make =
+      (~wasm, ~selected, ~wall, ~index, ~onChange, ~onRemove, ~updateUi, ~ui) => {
     <div
       className=Css.(
         style(
@@ -245,8 +245,7 @@ module WallEditor = {
           ),
         )
       )
-      onMouseOver={evt => wasm##hover_wall(index)}
-        >
+      onMouseOver={evt => wasm##hover_wall(index)}>
       <div
         className=Css.(
           style([
@@ -256,14 +255,13 @@ module WallEditor = {
             alignItems(`center),
           ])
         )
-      onClick={evt => {
-        if (selected) {
-          updateUi([%js.deep ui["selection"].replace(Js.null)]);
-        } else {
-          wasm##set_active_wall(index)
-        }
-        }}
-        >
+        onClick={evt =>
+          if (selected) {
+            updateUi([%js.deep ui["selection"].replace(Js.null)]);
+          } else {
+            wasm##set_active_wall(index);
+          }
+        }>
         <div
           className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
           {React.string(
@@ -355,16 +353,18 @@ module WallEditor = {
 };
 
 let formationType = kind =>
-switch ([%js.deep kind["Single"]]) {
+  switch ([%js.deep kind["Single"]]) {
   | Some(_) => `Single
-  | None => switch ([%js.deep kind["Circle"]]) {
-    | Some((count, dist, center)) => `Circle(count, dist, center)
-    | None => switch ([%js.deep kind["Line"]]) {
-      | Some((count, dist)) => `Line(count, dist)
+  | None =>
+    switch ([%js.deep kind["Circle"]]) {
+    | Some((count, dist, center)) => `Circle((count, dist, center))
+    | None =>
+      switch ([%js.deep kind["Line"]]) {
+      | Some((count, dist)) => `Line((count, dist))
       | None => `Other
+      }
     }
-  }
-};
+  };
 
 let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
 
@@ -372,86 +372,108 @@ module FormationEditor = {
   [@react.component]
   let make = (~wasm, ~update, ~config) => {
     <div className=Styles.column>
-      <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
+      <div
+        className=Css.(
+          style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)])
+        )>
         {React.string("Light formation")}
       </div>
       {Styles.spacer(8)}
       <div className=Styles.row>
         <button
-        className=btn
+          className=btn
           disabled={[%js.deep config##light_formation["Single"]] != None}
           onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": Some(Js.Null.empty), "Line": None, "Circle": None})
-               ];
-               update(config, false);
+            let config = [%js.deep
+              config["light_formation"].replace({
+                "Single": Some(Js.Null.empty),
+                "Line": None,
+                "Circle": None,
+              })
+            ];
+            update(config, false);
           }}>
           {React.string("Single")}
         </button>
         {Styles.spacer(4)}
         <button
-        className=btn
+          className=btn
           disabled={[%js.deep config##light_formation["Circle"]] != None}
           onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((3, 50.0, false))})
-               ];
-               update(config, false);
+            let config = [%js.deep
+              config["light_formation"].replace({
+                "Single": None,
+                "Line": None,
+                "Circle": Some((3, 50.0, false)),
+              })
+            ];
+            update(config, false);
           }}>
           {React.string("Circle")}
         </button>
         {Styles.spacer(4)}
         <button
-        className=btn
+          className=btn
           disabled={[%js.deep config##light_formation["Line"]] != None}
           onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": None, "Line": Some((3, 50.0)), "Circle": None})
-               ];
-               update(config, false);
+            let config = [%js.deep
+              config["light_formation"].replace({
+                "Single": None,
+                "Line": Some((3, 50.0)),
+                "Circle": None,
+              })
+            ];
+            update(config, false);
           }}>
           {React.string("Line")}
         </button>
       </div>
       {Styles.spacer(8)}
       {switch (formationType(config##light_formation)) {
-        | `Circle(count, dist, center) => <div className=Styles.row>
-          <button
-            className=Css.style([
-              Css.backgroundColor(center ? Colors.accent : Colors.button)
-            ])
-            onClick={_evt => {
-                let config = [%js.deep
-                  config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((count, dist, !center))})
-                ];
-                update(config, false);
-            }}>
-            {React.string("Center dot")}
-          </button>
-          {React.string("Count:")}
-          <input
-            type_="number"
-            min=2
-            max="30"
-            step=1.0
-            value={string_of_int(count)}
-            onChange={evt => {
-              let v = int_of_string(evt->ReactEvent.Form.target##value);
-              let config = [%js.deep
-                config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((v, dist, center))})
-              ];
-              update(config, false);
-            }}
-          />
-        </div>
-        | `Line(count, dist) => <div className=Styles.row>
-        </div>
-        | _ => React.null
-      }}
-    </div>
-
-  }
-}
+       | `Circle(count, dist, center) =>
+         <div className=Styles.row>
+           <button
+             className={Css.style([
+               Css.backgroundColor(center ? Colors.accent : Colors.button),
+             ])}
+             onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({
+                   "Single": None,
+                   "Line": None,
+                   "Circle": Some((count, dist, !center)),
+                 })
+               ];
+               update(config, false);
+             }}>
+             {React.string("Center dot")}
+           </button>
+           {React.string("Count:")}
+           <input
+             type_="number"
+             min=2
+             max="30"
+             step=1.0
+             value={string_of_int(count)}
+             onChange={evt => {
+               let v = int_of_string(evt->ReactEvent.Form.target##value);
+               let config = [%js.deep
+                 config["light_formation"].replace({
+                   "Single": None,
+                   "Line": None,
+                   "Circle": Some((v, dist, center)),
+                 })
+               ];
+               update(config, false);
+             }}
+           />
+         </div>
+       | `Line(count, dist) => <div className=Styles.row />
+       | _ => React.null
+       }}
+    </div>;
+  };
+};
 
 [@react.component]
 let make =
@@ -459,161 +481,182 @@ let make =
   // Js.log(ui);
   // Js.log2("Config", config);
   <div
-    className=Styles.join([Styles.control, Styles.column, Css.(style([flexShrink(1), overflow(`auto)]))])
+    className={Styles.join([
+      Styles.control,
+      Styles.column,
+      Css.(style([flexShrink(1), overflow(`auto)])),
+    ])}>
     // onMouseOver={evt => wasm##show_ui()}
     // onMouseOut={evt => wasm##hide_ui()}
-    >
-    <div className=Styles.title> {React.string("Scene objects")} </div>
-    <div>
-      {config##lights
-       ->Belt.Array.mapWithIndex((i, light) =>
-           <LightEditor
-             ui
-             updateUi
-             wasm
-             key={string_of_int(i)}
-             light
-             selected={
-               switch (ui##selection->Js.nullToOption) {
-               | None => false
-               | Some(selection) =>
-                 switch ([%js.deep selection["Light"]]) {
+
+      <div className=Styles.title> {React.string("Scene objects")} </div>
+      <div>
+        {config##lights
+         ->Belt.Array.mapWithIndex((i, light) =>
+             <LightEditor
+               ui
+               updateUi
+               wasm
+               key={string_of_int(i)}
+               light
+               selected={
+                 switch (ui##selection->Js.nullToOption) {
                  | None => false
-                 | Some((lid, _)) => i == lid
+                 | Some(selection) =>
+                   switch ([%js.deep selection["Light"]]) {
+                   | None => false
+                   | Some((lid, _)) => i == lid
+                   }
                  }
                }
-             }
-             index=i
-             onChange={light => {
-               let config = [%js.deep
-                 config["lights"].map(lights => {
-                   let lights = Js.Array.copy(lights);
-                   lights[i] = light;
-                   lights;
-                 })
-               ];
-               update(config, false);
-             }}
-           />
-         )
-       ->React.array}
-    </div>
-    <FormationEditor wasm config update />
-    {Styles.spacer(8)}
-    <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
-      {React.string("Walls")}
-    </div>
-    <div className=Styles.row>
-      <button
-      className=btn
-        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Line") | _ => false}}
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                Js.Null.return({
-                  "Adding": Some("Line"),
-                  "Multiple": None,
-                  "Light": None,
-                  "Wall": None,
-                }),
-              )
-            ],
-          )
-        }>
-        {React.string("Add line")}
-      </button>
-      {Styles.spacer(4)}
-      <button
-      className=btn
-        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Parabola") | _ => false}}
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                Js.Null.return({
-                  "Adding": Some("Parabola"),
-                  "Multiple": None,
-                  "Light": None,
-                  "Wall": None,
-                }),
-              )
-            ],
-          )
-        }>
-        {React.string("Add parabola")}
-      </button>
-      {Styles.spacer(4)}
-      <button
-      className=btn
-        disabled={switch (Js.nullToOption(ui##selection)) { | Some(obj) => [%js.deep obj["Adding"]] == Some("Circle") | _ => false}}
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                Js.Null.return({
-                  "Adding": Some("Circle"),
-                  "Multiple": None,
-                  "Light": None,
-                  "Wall": None,
-                }),
-              )
-            ],
-          )
-        }>
-        {React.string("Add arc")}
-      </button>
-    </div>
-    <div
-    onMouseEnter={_evt => wasm##show_ui()}
-    onMouseLeave={_evt => wasm##hide_ui()}
-    >
-      {config##walls
-       ->Belt.Array.mapWithIndex((i, wall) =>
-           <WallEditor
-             key={string_of_int(i)}
-             ui
-             updateUi
-             wasm
-             wall
-             selected={
-               switch (ui##selection->Js.nullToOption) {
-               | None => false
-               | Some(selection) =>
-                 switch ([%js.deep selection["Wall"]]) {
+               index=i
+               onChange={light => {
+                 let config = [%js.deep
+                   config["lights"].map(lights => {
+                     let lights = Js.Array.copy(lights);
+                     lights[i] = light;
+                     lights;
+                   })
+                 ];
+                 update(config, false);
+               }}
+             />
+           )
+         ->React.array}
+      </div>
+      <FormationEditor wasm config update />
+      {Styles.spacer(8)}
+      <div
+        className=Css.(
+          style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)])
+        )>
+        {React.string("Walls")}
+      </div>
+      <div className=Styles.row>
+        <button
+          className=btn
+          disabled={
+            switch (Js.nullToOption(ui##selection)) {
+            | Some(obj) => [%js.deep obj["Adding"]] == Some("Line")
+            | _ => false
+            }
+          }
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  Js.Null.return({
+                    "Adding": Some("Line"),
+                    "Multiple": None,
+                    "Light": None,
+                    "Wall": None,
+                  }),
+                )
+              ],
+            )
+          }>
+          {React.string("Add line")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+          className=btn
+          disabled={
+            switch (Js.nullToOption(ui##selection)) {
+            | Some(obj) => [%js.deep obj["Adding"]] == Some("Parabola")
+            | _ => false
+            }
+          }
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  Js.Null.return({
+                    "Adding": Some("Parabola"),
+                    "Multiple": None,
+                    "Light": None,
+                    "Wall": None,
+                  }),
+                )
+              ],
+            )
+          }>
+          {React.string("Add parabola")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+          className=btn
+          disabled={
+            switch (Js.nullToOption(ui##selection)) {
+            | Some(obj) => [%js.deep obj["Adding"]] == Some("Circle")
+            | _ => false
+            }
+          }
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  Js.Null.return({
+                    "Adding": Some("Circle"),
+                    "Multiple": None,
+                    "Light": None,
+                    "Wall": None,
+                  }),
+                )
+              ],
+            )
+          }>
+          {React.string("Add arc")}
+        </button>
+      </div>
+      <div
+        onMouseEnter={_evt => wasm##show_ui()}
+        onMouseLeave={_evt => wasm##hide_ui()}>
+        {config##walls
+         ->Belt.Array.mapWithIndex((i, wall) =>
+             <WallEditor
+               key={string_of_int(i)}
+               ui
+               updateUi
+               wasm
+               wall
+               selected={
+                 switch (ui##selection->Js.nullToOption) {
                  | None => false
-                 | Some((wid, _)) => i == wid
+                 | Some(selection) =>
+                   switch ([%js.deep selection["Wall"]]) {
+                   | None => false
+                   | Some((wid, _)) => i == wid
+                   }
                  }
                }
-             }
-             index=i
-             onRemove={() => {
-               let config = [%js.deep
-                 config["walls"].map(walls => {
-                   let walls = Js.Array.copy(walls);
-                   // Js.Array.removeFromInPlace(~pos=i, walls)->ignore;
-                   Js.Array.removeCountInPlace(~pos=i, ~count=1, walls)
-                   ->ignore;
-                   walls;
-                 })
-               ];
-               Js.log("Updating UI");
-               updateUi([%js.deep ui["selection"].replace(Js.null)]);
-               update(config, true);
-             }}
-             onChange={wall => {
-               let config = [%js.deep
-                 config["walls"].map(walls => {
-                   let walls = Js.Array.copy(walls);
-                   walls[i] = wall;
-                   walls;
-                 })
-               ];
-               update(config, false);
-             }}
-           />
-         )
-       ->React.array}
-    </div>
-  </div>;
+               index=i
+               onRemove={() => {
+                 let config = [%js.deep
+                   config["walls"].map(walls => {
+                     let walls = Js.Array.copy(walls);
+                     // Js.Array.removeFromInPlace(~pos=i, walls)->ignore;
+                     Js.Array.removeCountInPlace(~pos=i, ~count=1, walls)
+                     ->ignore;
+                     walls;
+                   })
+                 ];
+                 Js.log("Updating UI");
+                 updateUi([%js.deep ui["selection"].replace(Js.null)]);
+                 update(config, true);
+               }}
+               onChange={wall => {
+                 let config = [%js.deep
+                   config["walls"].map(walls => {
+                     let walls = Js.Array.copy(walls);
+                     walls[i] = wall;
+                     walls;
+                   })
+                 ];
+                 update(config, false);
+               }}
+             />
+           )
+         ->React.array}
+      </div>
+    </div>;
 };
