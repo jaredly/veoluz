@@ -96,7 +96,7 @@ bottom(px(0))
 ]));
 
 [@react.component]
-let make = (~config, ~update, ~wasm: Rust.wasm, ~width) => {
+let make = (~config, ~limits as (min_v, max_v), ~update, ~wasm: Rust.wasm, ~width) => {
   let containerRef = React.useRef(Js.Nullable.null);
 
   let (_, onMin) =
@@ -107,7 +107,7 @@ let make = (~config, ~update, ~wasm: Rust.wasm, ~width) => {
       let y = float_of_int(y) -. box##top;
       let xPercent = x /. box##width;
       let config = [%js.deep
-        config["rendering"]["exposure"]["min"].replace(xPercent)
+        config["rendering"]["exposure"]["limits"].replace(Js.Null.return((xPercent, max_v)))
       ];
       update(config, false);
     });
@@ -120,7 +120,7 @@ let make = (~config, ~update, ~wasm: Rust.wasm, ~width) => {
       let y = float_of_int(y) -. box##top;
       let xPercent = x /. box##width;
       let config = [%js.deep
-        config["rendering"]["exposure"]["max"].replace(xPercent)
+        config["rendering"]["exposure"]["limits"].replace(Js.Null.return((min_v, xPercent)))
       ];
       update(config, false);
     });
@@ -142,7 +142,7 @@ let make = (~config, ~update, ~wasm: Rust.wasm, ~width) => {
           Js.Float.toString(
             float_of_int(width)
             *.
-            max(0.0, config##rendering##exposure##min),
+            max(0.0, min_v),
           )
           ++ "px",
         (),
@@ -156,7 +156,7 @@ let make = (~config, ~update, ~wasm: Rust.wasm, ~width) => {
           Js.Float.toString(
             float_of_int(width)
             *.
-            min(1.0, config##rendering##exposure##max),
+            min(1.0, max_v),
           )
           ++ "px",
         (),
