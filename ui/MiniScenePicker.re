@@ -17,7 +17,6 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~
           flexDirection(`row),
           // maxHeight(px(300)),
           maxWidth(px(1024)),
-          overflow(`auto),
         ])
       )>
       <div
@@ -60,6 +59,17 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~
           color="currentcolor"
         />
       </div>
+      <div
+      className=Css.(
+        style([
+          flex(1),
+          display(`flex),
+          alignSelf(`stretch),
+          alignItems(`center),
+          flexDirection(`row),
+          overflow(`auto),
+        ])
+      )>
       {React.array(
          directory.scenes
          ->Belt.Map.String.toArray
@@ -80,6 +90,6 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~
          ->Belt.List.toArray,
        )}
     </div>
-  // </div>;
+  </div>;
 
 };
