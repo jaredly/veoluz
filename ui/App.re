@@ -303,6 +303,19 @@ module Router = {
   };
 };
 
+let downloadCanvas: (string, Web.canvas) => unit = [%bs.raw
+  {|
+(function(title, canvas) {
+  var a = document.createElement('a');
+  a.download = title + ".png";
+  a.href = canvas.toDataURL('image/png')
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+})
+|}
+];
+
 let downloadFile: (string, string) => unit = [%bs.raw
   {|
 (function(title, data) {
@@ -575,10 +588,6 @@ module Inner = {
               ->Router.permalink(wasm##serialize_url_config(state.config))
             }
             onDownload={() => {
-              let data = Js.Json.stringifyAny(state.config);
-              switch (data) {
-              | None => ()
-              | Some(data) =>
                 let title =
                   switch (currentScene) {
                   | Some({title: Some(title)}) => title
@@ -586,8 +595,14 @@ module Inner = {
                     Js.Date.toISOString(Js.Date.fromFloat(created))
                   | _ => Js.Date.toISOString(Js.Date.make())
                   };
-                downloadFile(title, data);
-              };
+
+              // let data = Js.Json.stringifyAny(state.config);
+              // switch (data) {
+              // | None => ()
+              // | Some(data) =>
+              //   downloadFile(title, data);
+              // };
+              downloadCanvas(title, Web.documentGetElementById("drawing")->Web.asCanvas);
             }}
             onSave={scene => onSaveScene(scene)}
             key={
