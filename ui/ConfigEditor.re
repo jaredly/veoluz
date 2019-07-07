@@ -86,7 +86,6 @@ let make = (~config: Rust.config, ~wasm, ~update, ~onSaveScene) => {
 
   <div>
     <div>
-      <ExposureControl wasm config update />
       <ExposureFunction config update />
       <TransformEditor config update />
     </div>

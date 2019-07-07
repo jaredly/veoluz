@@ -34,3 +34,13 @@ module Document = {
   [@bs.module ][@react.component]
   external make: (~className: string=?, ~fontSize: string=?, ~color: string=?, ~onClick: 'event=>unit =?) => React.element = "react-ionicons/lib/MdDocument";
 }
+
+module ArrowDown = {
+  [@bs.module ][@react.component]
+  external make: (~className: string=?, ~fontSize: string=?, ~color: string=?, ~onClick: 'event=>unit =?) => React.element = "react-ionicons/lib/MdArrowDropdown";
+}
+
+module ArrowRight = {
+  [@bs.module ][@react.component]
+  external make: (~className: string=?, ~fontSize: string=?, ~color: string=?, ~onClick: 'event=>unit =?) => React.element = "react-ionicons/lib/MdArrowDropright";
+}

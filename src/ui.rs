@@ -42,7 +42,6 @@ pub struct UiState {
     pub selection: Option<Selection>,
     pub show_lasers: bool,
     pub mouse_over: bool,
-    pub show_hist: bool,
     pub hovered: Option<(usize, Handle)>,
     pub last_mouse_pos: Point2<float>,
 }
@@ -52,7 +51,6 @@ impl Default for UiState {
         UiState {
             selection: None,
             show_lasers: false,
-            show_hist: false,
             mouse_over: false,
             hovered: None,
             last_mouse_pos: Point2::new(0.0, 0.0)
@@ -400,28 +398,42 @@ pub fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 //     }
 // }
 
-pub fn draw_histogram(state: &crate::state::State) {
+pub fn draw_histogram(canvas: &web_sys::HtmlCanvasElement, state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
     let min = state.config.rendering.exposure.min as f64;
     let max = (state.config.rendering.exposure.max as f64).max(min + 0.01);
     let dx = max - min;
-    let full_width = state.config.rendering.width as f64;
+
+    let full_width = canvas.width() as f64;
+
+    // let full_width = state.config.rendering.width as f64;
     let x0 = full_width * min;
     let x1 = full_width * max;
     let bin_count = (200.0 * dx) as usize;
     let w = (x1 - x0) / bin_count as f64;
     let histogram = shared::render::histogram(&state.config, &state.buffer, bin_count);
-    let height = state.config.rendering.height as f64 / 3.0;
-    // let w = full_width / bin_count as f64;
+
+    let height = canvas.height() as f64;
+
+    // let height = state.config.rendering.height as f64 / 3.0;
+
+    // log!("Ok {} x {}", height, full_width);
+
     let max = *histogram.iter().max().unwrap() as f64;
-    state.ctx.set_fill_style(&"#f00".into());
+
+    let ctx = canvas.get_context("2d").unwrap().unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>().unwrap();
+
+    ctx.clear_rect(0.0, 0.0, full_width, height);
+
+    ctx.set_fill_style(&"#f00".into());
     for (i, count) in histogram.iter().enumerate() {
         let count = *count;
         if count < 10 {
             continue;
         }
         let h = (count as f64 / max).sqrt() * height;
-        state.ctx.fill_rect(x0 + i as f64 * w, state.config.rendering.height as f64 - h, w, h);
+        ctx.fill_rect(x0 + i as f64 * w, height as f64 - h, w, h);
     }
 }
 
@@ -430,8 +442,8 @@ pub fn draw(state: &crate::state::State) -> Result<(), JsValue> {
     if state.ui.mouse_over {
         draw_walls(state, &state.ui, state.ui.hovered.clone())?;
     }
-    if state.ui.show_hist {
-        draw_histogram(state);
+    if let Some(canvas) = &state.hist_canvas {
+        draw_histogram(&canvas, state);
     }
     Ok(())
 }

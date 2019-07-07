@@ -106,7 +106,6 @@ type ui = {
     "Multiple": option((array(int), Js.null((array((float, float)), (float, float)))))
   }),
   "mouse_over": bool,
-  "show_hist": bool,
   "hovered": Js.null((int, handle)),
   "last_mouse_pos": (float, float)
 }
@@ -129,7 +128,6 @@ let blankUi: ui = {
   "show_lasers": false,
   "selection": Js.null,
   "mouse_over": false,
-  "show_hist": false,
   "hovered": Js.null,
   "last_mouse_pos": (0.0, 0.0)
 }
@@ -144,7 +142,7 @@ type wasm = {
   "update": [@bs.meth] ((config, bool) => unit),
   "update_ui": [@bs.meth] (ui => unit),
   "blank_config": [@bs.meth] (unit => config),
-  "show_hist": [@bs.meth] (unit => unit),
+  "show_hist": [@bs.meth] (Web.canvas => unit),
   "hide_hist": [@bs.meth] (unit => unit),
   "set_active_wall": [@bs.meth] (int => unit),
   "set_active_light": [@bs.meth] (int => unit),
