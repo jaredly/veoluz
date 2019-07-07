@@ -51,6 +51,11 @@ type config = {
       },
       "hide": bool,
     }),
+  "light_formation": {
+    .
+    "Line": option((int, float)),
+    "Circle": option((int, float)),
+  },
   "transform": {
     .
     "rotational_symmetry": int,
@@ -79,8 +84,7 @@ type config = {
     "exposure": {
       .
       "curve": string,
-      "min": float,
-      "max": float,
+      "limits": Js.null((float, float))
     },
     "height": int,
     "width": int,

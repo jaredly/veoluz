@@ -2,8 +2,8 @@ use wasm_bindgen::prelude::*;
 // use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
-use crate::state::State;
 use crate::state;
+use crate::state::State;
 use line::float;
 use shared::line;
 use shared::Wall;
@@ -53,7 +53,7 @@ impl Default for UiState {
             show_lasers: false,
             mouse_over: false,
             hovered: None,
-            last_mouse_pos: Point2::new(0.0, 0.0)
+            last_mouse_pos: Point2::new(0.0, 0.0),
         }
     }
 }
@@ -290,7 +290,11 @@ fn find_wall_hover(
     return close.map(|(wid, _, pdiff)| (wid, pdiff));
 }
 
-fn find_collision(zoom: f32, walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
+fn find_collision(
+    zoom: f32,
+    walls: &[Wall],
+    pos: &Point2<shared::line::float>,
+) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
         if wall.hide {
             continue;
@@ -321,17 +325,24 @@ pub fn set_location_hash(val: &str) {
 
 pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
     bincode::deserialize::<shared::Config>(&encoded)
-        .or_else(|_| bincode::deserialize::<shared::v3::Config>(&encoded).map(shared::from_v3))
+        .or_else(|_| bincode::deserialize::<shared::v4::Config>(&encoded).map(shared::from_v4))
+        .or_else(|_| {
+            bincode::deserialize::<shared::v3::Config>(&encoded)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
+        })
         .or_else(|_| {
             bincode::deserialize::<shared::v2::Config>(&encoded)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
         .or_else(|_| {
             bincode::deserialize::<shared::v1::Config>(&encoded)
                 .map(shared::v2::from_v1)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
 }
 
@@ -402,7 +413,7 @@ pub fn draw_histogram(canvas: &web_sys::HtmlCanvasElement, state: &crate::state:
     // let _ = shared::Timer::new("histogram");
     let (min, max) = match state.config.rendering.exposure.limits {
         None => return,
-        Some((min, max)) => (min, max)
+        Some((min, max)) => (min, max),
     };
     let min = min as f64;
     let max = (max as f64).max(min + 0.01);
@@ -425,8 +436,12 @@ pub fn draw_histogram(canvas: &web_sys::HtmlCanvasElement, state: &crate::state:
 
     let max = *histogram.iter().max().unwrap() as f64;
 
-    let ctx = canvas.get_context("2d").unwrap().unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>().unwrap();
+    let ctx = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
 
     ctx.clear_rect(0.0, 0.0, full_width, height);
 
@@ -503,15 +518,15 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-                state.ui.mouse_over = true;
-                draw(state)
+            state.ui.mouse_over = true;
+            draw(state)
         })
     });
 
     listen!(canvas, "mouseleave", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-                state.ui.mouse_over = false;
-                draw(state)
+            state.ui.mouse_over = false;
+            draw(state)
         })
     });
 
@@ -526,80 +541,83 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
-                state.maybe_save_history();
-                let pos = mouse_pos(&state.config.rendering, &evt);
-                use std::ops::Deref;
-                evt.deref().prevent_default();
+            state.maybe_save_history();
+            let pos = mouse_pos(&state.config.rendering, &evt);
+            use std::ops::Deref;
+            evt.deref().prevent_default();
 
-                if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
-                    state.config.walls.push(Wall::new(
-                        match kind {
-                            AddKindName::Light => unimplemented!(),
-                            AddKindName::Line => shared::WallType::line(
-                                pos.clone(),
-                                pos
-                            ),
-                            AddKindName::Circle => shared::WallType::circle(
-                                pos.clone(), 5.0, -shared::line::PI, shared::line::PI),
-                            AddKindName::Parabola => shared::WallType::parabola(
-                                pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
-                        }
-                    ));
-                    state.ui.selection = Some(Selection::Wall(state.config.walls.len() - 1, Some((Handle::Handle(0), pos))));
-                    update_cursor(&state.ui)?;
-                    return draw(state)
-                }
-
-                match find_collision(state.config.rendering.zoom, &state.config.walls, &pos) {
-                    None => {
-                        state.ui.selection = Some(Selection::Pan {
-                            grab: pos,
-                            center: state.config.rendering.center,
-                        });
-                        state.ui.hovered = None;
-                        // hide_wall_ui()?;
+            if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
+                state.config.walls.push(Wall::new(match kind {
+                    AddKindName::Light => unimplemented!(),
+                    AddKindName::Line => shared::WallType::line(pos.clone(), pos),
+                    AddKindName::Circle => shared::WallType::circle(
+                        pos.clone(),
+                        5.0,
+                        -shared::line::PI,
+                        shared::line::PI,
+                    ),
+                    AddKindName::Parabola => {
+                        shared::WallType::parabola(pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
                     }
-                    Some((wid, id)) => {
-                        if evt.shift_key() {
-                            let mut walls = match &state.ui.selection {
-                                Some(Selection::Multiple(walls, _)) => walls.clone(),
-                                Some(Selection::Wall(wid, _)) => vec![*wid],
-                                _ => vec![],
-                            };
-                            // TODO allow removing
+                }));
+                state.ui.selection = Some(Selection::Wall(
+                    state.config.walls.len() - 1,
+                    Some((Handle::Handle(0), pos)),
+                ));
+                update_cursor(&state.ui)?;
+                return draw(state);
+            }
+
+            match find_collision(state.config.rendering.zoom, &state.config.walls, &pos) {
+                None => {
+                    state.ui.selection = Some(Selection::Pan {
+                        grab: pos,
+                        center: state.config.rendering.center,
+                    });
+                    state.ui.hovered = None;
+                    // hide_wall_ui()?;
+                }
+                Some((wid, id)) => {
+                    if evt.shift_key() {
+                        let mut walls = match &state.ui.selection {
+                            Some(Selection::Multiple(walls, _)) => walls.clone(),
+                            Some(Selection::Wall(wid, _)) => vec![*wid],
+                            _ => vec![],
+                        };
+                        // TODO allow removing
+                        walls.push(wid);
+                        let pdiffs = walls
+                            .iter()
+                            .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
+                            .collect();
+                        state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
+                    // hide_wall_ui()?;
+                    } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
+                        if walls.contains(&wid) {
+                            let mut walls = walls.clone();
                             walls.push(wid);
                             let pdiffs = walls
                                 .iter()
                                 .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
                                 .collect();
-                            state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                            // hide_wall_ui()?;
-                        } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
-                            if walls.contains(&wid) {
-                                let mut walls = walls.clone();
-                                walls.push(wid);
-                                let pdiffs = walls
-                                    .iter()
-                                    .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
-                                    .collect();
-                                state.ui.selection =
-                                    Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                                // hide_wall_ui()?;
-                            } else {
-                                state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
-                                state.ui.hovered = None;
-                            }
-                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                            state.ui.selection =
+                                Some(Selection::Multiple(walls, Some((pdiffs, pos))));
+                        // hide_wall_ui()?;
                         } else {
                             state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
                             state.ui.hovered = None;
-                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         }
+                    // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                    } else {
+                        state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
+                        state.ui.hovered = None;
+                        // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                     }
-                };
-                update_cursor(&state.ui)?;
-                state.send_on_change();
-                draw(state)
+                }
+            };
+            update_cursor(&state.ui)?;
+            state.send_on_change();
+            draw(state)
         })
     });
 
@@ -625,53 +643,53 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             // use_ui(|ui| -> Result<(), JsValue> {
-                let mut pos = mouse_pos(&state.config.rendering, &evt);
-                state.ui.last_mouse_pos = pos.clone();
-                match &mut state.ui.selection {
-                    Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        state.config.walls[*wid].kind.set_point_base(pos + *pdiff);
-                        state.async_render(true)
+            let mut pos = mouse_pos(&state.config.rendering, &evt);
+            state.ui.last_mouse_pos = pos.clone();
+            match &mut state.ui.selection {
+                Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Wall(wid, Some((Handle::Handle(id), original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        state.config.walls[*wid].kind.move_handle(*id, &pos);
-                        state.async_render(true)
+                    state.config.walls[*wid].kind.set_point_base(pos + *pdiff);
+                    state.async_render(true)
+                }
+                Some(Selection::Wall(wid, Some((Handle::Handle(id), original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Pan { grab, center }) => {
-                        let pos = pos + (*center - state.config.rendering.center);
-                        state.config.rendering.center = *center - (pos - *grab);
-                        state.async_render(true)
+                    state.config.walls[*wid].kind.move_handle(*id, &pos);
+                    state.async_render(true)
+                }
+                Some(Selection::Pan { grab, center }) => {
+                    let pos = pos + (*center - state.config.rendering.center);
+                    state.config.rendering.center = *center - (pos - *grab);
+                    state.async_render(true)
+                }
+                Some(Selection::Multiple(wids, Some((pdiffs, original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Multiple(wids, Some((pdiffs, original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
-                            state.config.walls[*wid].kind.set_point_base(pos + pdiff);
-                        }
-                        state.async_render(true)
+                    for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
+                        state.config.walls[*wid].kind.set_point_base(pos + pdiff);
                     }
-                    _ => {
-                        match find_collision(
-                            state.config.rendering.zoom,
-                            &state.config.walls,
-                            &mouse_pos(&state.config.rendering, &evt),
-                        ) {
-                            Some((wid, id)) => state.ui.hovered = Some((wid, id)),
-                            None => state.ui.hovered = None,
-                        }
-                        Ok(())
+                    state.async_render(true)
+                }
+                _ => {
+                    match find_collision(
+                        state.config.rendering.zoom,
+                        &state.config.walls,
+                        &mouse_pos(&state.config.rendering, &evt),
+                    ) {
+                        Some((wid, id)) => state.ui.hovered = Some((wid, id)),
+                        None => state.ui.hovered = None,
                     }
-                }?;
-                use std::ops::Deref;
-                evt.deref().prevent_default();
-                update_cursor(&state.ui)?;
-                draw(state)?;
+                    Ok(())
+                }
+            }?;
+            use std::ops::Deref;
+            evt.deref().prevent_default();
+            update_cursor(&state.ui)?;
+            draw(state)?;
             // })?;
             Ok(())
         })
