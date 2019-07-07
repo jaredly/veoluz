@@ -105,6 +105,8 @@ module LightEditor = {
       onMouseOver={evt =>
         // wasm##hover_wall(index)
         ()}
+      >
+      <div className=Css.(style([fontWeight(`medium), fontSize(px(12))]))
       onClick={evt => {
         if (selected) {
           updateUi([%js.deep ui["selection"].replace(Js.null)]);
@@ -112,8 +114,8 @@ module LightEditor = {
           wasm##set_active_light(index);
         };
         ();
-      }}>
-      <div className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
+      }}
+      >
         {React.string("Light #" ++ string_of_int(index))}
       </div>
       {selected
@@ -352,7 +354,104 @@ module WallEditor = {
   };
 };
 
+let formationType = kind =>
+switch ([%js.deep kind["Single"]]) {
+  | Some(_) => `Single
+  | None => switch ([%js.deep kind["Circle"]]) {
+    | Some((count, dist, center)) => `Circle(count, dist, center)
+    | None => switch ([%js.deep kind["Line"]]) {
+      | Some((count, dist)) => `Line(count, dist)
+      | None => `Other
+    }
+  }
+};
+
 let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
+
+module FormationEditor = {
+  [@react.component]
+  let make = (~wasm, ~update, ~config) => {
+    <div className=Styles.column>
+      <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
+        {React.string("Light formation")}
+      </div>
+      {Styles.spacer(8)}
+      <div className=Styles.row>
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Single"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": Some(Js.Null.empty), "Line": None, "Circle": None})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Single")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Circle"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((3, 50.0, false))})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Circle")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Line"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": None, "Line": Some((3, 50.0)), "Circle": None})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Line")}
+        </button>
+      </div>
+      {Styles.spacer(8)}
+      {switch (formationType(config##light_formation)) {
+        | `Circle(count, dist, center) => <div className=Styles.row>
+          <button
+            className=Css.style([
+              Css.backgroundColor(center ? Colors.accent : Colors.button)
+            ])
+            onClick={_evt => {
+                let config = [%js.deep
+                  config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((count, dist, !center))})
+                ];
+                update(config, false);
+            }}>
+            {React.string("Center dot")}
+          </button>
+          {React.string("Count:")}
+          <input
+            type_="number"
+            min=2
+            max="30"
+            step=1.0
+            value={string_of_int(count)}
+            onChange={evt => {
+              let v = int_of_string(evt->ReactEvent.Form.target##value);
+              let config = [%js.deep
+                config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((v, dist, center))})
+              ];
+              update(config, false);
+            }}
+          />
+        </div>
+        | `Line(count, dist) => <div className=Styles.row>
+        </div>
+        | _ => React.null
+      }}
+    </div>
+
+  }
+}
 
 [@react.component]
 let make =
@@ -399,49 +498,7 @@ let make =
          )
        ->React.array}
     </div>
-    <div className=Styles.column>
-      <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
-        {React.string("Light formation")}
-      </div>
-      {Styles.spacer(8)}
-      <div className=Styles.row>
-        <button
-        className=btn
-          disabled={[%js.deep config##light_formation["Single"]] != None}
-          onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": Some(Js.Null.empty), "Line": None, "Circle": None})
-               ];
-               update(config, false);
-          }}>
-          {React.string("Single")}
-        </button>
-        {Styles.spacer(4)}
-        <button
-        className=btn
-          disabled={[%js.deep config##light_formation["Circle"]] != None}
-          onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((3, 50.0, false))})
-               ];
-               update(config, false);
-          }}>
-          {React.string("Circle")}
-        </button>
-        {Styles.spacer(4)}
-        <button
-        className=btn
-          disabled={[%js.deep config##light_formation["Line"]] != None}
-          onClick={_evt => {
-               let config = [%js.deep
-                 config["light_formation"].replace({ "Single": None, "Line": Some((3, 50.0)), "Circle": None})
-               ];
-               update(config, false);
-          }}>
-          {React.string("Line")}
-        </button>
-      </div>
-    </div>
+    <FormationEditor wasm config update />
     {Styles.spacer(8)}
     <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
       {React.string("Walls")}
