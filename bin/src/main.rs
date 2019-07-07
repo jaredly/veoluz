@@ -36,17 +36,20 @@ fn run(config: shared::Config, outfile: String, count: usize) {
 
 pub fn deserialize(encoded: &str) -> Result<shared::Config, serde_json::Error> {
     serde_json::from_str::<shared::Config>(encoded)
-        .or_else(|_| serde_json::from_str::<shared::v3::Config>(encoded).map(shared::from_v3))
+        .or_else(|_| serde_json::from_str::<shared::v4::Config>(encoded).map(shared::from_v4))
+        .or_else(|_| serde_json::from_str::<shared::v3::Config>(encoded).map(shared::v4::from_v3).map(shared::from_v4))
         .or_else(|_| {
             serde_json::from_str::<shared::v2::Config>(encoded)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
         .or_else(|_| {
             serde_json::from_str::<shared::v1::Config>(encoded)
                 .map(shared::v2::from_v1)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
 }
 

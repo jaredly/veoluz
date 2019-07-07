@@ -239,7 +239,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
 
     if ui.show_lasers {
         let count = 30;
-        for light in state.config.lights.iter() {
+        for light in state.config.all_lights().iter() {
             for i in 0..count {
                 draw_laser(&state, i as f32 / count as f32, &light)?;
             }

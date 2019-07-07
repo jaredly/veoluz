@@ -575,7 +575,7 @@ impl Lerp for LightFormation {
 }
 
 impl Default for LightFormation {
-    fn default() -> Self { LightFormation::Line(1, 0.0) }
+    fn default() -> Self { LightFormation::Line(1, 50.0) }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]

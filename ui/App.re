@@ -290,6 +290,7 @@ module Inner = {
           // Js.log("Router log");
           // This upgrades the schema if needed
           let config = wasm##restore(config);
+          Js.log2("Loading config", config);
           dispatch(`Route((id, config)));
         },
       );

@@ -78,6 +78,12 @@ impl LightKind {
     }
 }
 
+impl LightSource {
+    pub fn translate(&mut self, by: &Vector2<line::float>) {
+        self.kind.translate(by);
+    }
+}
+
 impl Config {
     pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
         Config {
@@ -296,6 +302,37 @@ impl Config {
         all_walls(self)
     }
 
+    pub fn all_lights(&self) -> Vec<LightSource> {
+        match self.light_formation {
+            LightFormation::Line(count, spacing) => {
+                let base = self.lights[0].clone();
+                let mut lights = self.lights.clone();
+                if count < 2 {
+                    return lights;
+                }
+                let x0 = -spacing * (count - 1) as f32 / 2.0;
+                for i in 0..count.max(1) {
+                    let mut light = base.clone();
+                        light.translate(&Vector2::new(x0 + spacing * i as f32, 0.0));
+                    lights.push( light);
+                }
+                lights
+            },
+            LightFormation::Circle(count, spacing) => {
+                let base = self.lights[0].clone();
+                let mut lights = self.lights.clone();
+                let x0 = spacing * (count - 1) as f32 / 2.0;
+                let r = std::f32::consts::PI * 2.0 / count.min(2) as f32;
+                for i in 0..count.min(2) {
+                    let mut light = base.clone();
+                    light.translate(&Vector2::new(spacing * (i as f32 * r).cos(), spacing * (r * i as f32).sin()));
+                    lights.push(light)
+                }
+                lights
+            }
+        }
+    }
+
     pub fn main_walls(&self) -> Vec<Wall> {
         self.walls.clone()
     }
@@ -306,9 +343,9 @@ impl Config {
         extras
     }
 
-    fn all_lights(&self) -> Vec<LightSource> {
-        self.lights.clone()
-    }
+    // fn all_lights(&self) -> Vec<LightSource> {
+    //     self.lights.clone()
+    // }
 }
 
 pub struct Timer<'a> {

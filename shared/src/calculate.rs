@@ -286,7 +286,9 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
 
     let mut brightness_data = vec![0; width * height];
 
-    let total_light: f32 = { config.lights.iter().map(|l| l.brightness).sum() };
+    let lights = config.all_lights();
+
+    let total_light: f32 = { lights.iter().map(|l| l.brightness).sum() };
     let walls = config.all_walls().into_iter().filter(|w| !w.hide).collect::<Vec<Wall>>();
     let boundaries = boundaries(config);
 
@@ -294,7 +296,7 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
 
     let transform = config.transform();
 
-    for light in config.all_lights().iter() {
+    for light in lights.iter() {
         let amount = light.brightness / total_light;
         let rrr: f32 = rays as f32 * amount;
         let rays = rrr as usize;
@@ -335,7 +337,9 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
 
     let mut brightness_data = vec![0; width * height];
 
-    let total_light: f32 = { config.lights.iter().map(|l| l.brightness).sum() };
+    let lights = config.all_lights();
+
+    let total_light: f32 = { lights.iter().map(|l| l.brightness).sum() };
     let walls = config.all_walls().into_iter().filter(|w| !w.hide).collect::<Vec<Wall>>();
     let boundaries = boundaries(config);
 
@@ -344,18 +348,18 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
     let transform = config.transform();
 
     // TODO support multiple lights
-    let light = &config.all_lights()[0];
+    // let light = &config.all_lights()[0];
 
     // for light in config.all_lights().iter() {
-    let amount = light.brightness / total_light;
-    let rrr: f32 = rays as f32 * amount;
-    let rays = rrr as usize;
+    // let amount = light.brightness / total_light;
+    // let rrr: f32 = rays as f32 * amount;
+    // let rays = rrr as usize;
 
     let start = now();
     let mut rendered = rays;
 
     for r in 0..rays {
-        let mut ray = light.kind.spawn(rand());
+        let mut ray = lights[(rand() * lights.len() as f32) as usize].kind.spawn(rand());
 
         for _ in 0..30 {
             if run_ray(

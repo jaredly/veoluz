@@ -39,7 +39,7 @@ module ExposureFunction = {
       >
         {isOpen ? <IonIcons.ArrowDown fontSize="14px" /> : <IonIcons.ArrowRight fontSize="14px" />}
         {Styles.spacer(4)}
-        {React.string("Contrast")}
+        {React.string("Contrast & Colors")}
       </div>
       <div
         style={ReactDOMRe.Style.make(~display=isOpen ? "flex" : "none", ())}
