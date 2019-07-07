@@ -564,8 +564,9 @@ impl Rendering {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum LightFormation {
+    Single(()),
     Line(u8, float),
-    Circle(u8, float)
+    Circle(u8, float, bool)
 }
 
 impl Lerp for LightFormation {
@@ -575,7 +576,8 @@ impl Lerp for LightFormation {
 }
 
 impl Default for LightFormation {
-    fn default() -> Self { LightFormation::Line(1, 50.0) }
+    fn default() -> Self { LightFormation::Single(()) }
+    // fn default() -> Self { LightFormation::Circle(6, 100.0) }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]

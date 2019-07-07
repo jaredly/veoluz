@@ -304,6 +304,7 @@ impl Config {
 
     pub fn all_lights(&self) -> Vec<LightSource> {
         match self.light_formation {
+            LightFormation::Single(()) => self.lights.clone(),
             LightFormation::Line(count, spacing) => {
                 let base = self.lights[0].clone();
                 let mut lights = self.lights.clone();
@@ -318,14 +319,15 @@ impl Config {
                 }
                 lights
             },
-            LightFormation::Circle(count, spacing) => {
+            LightFormation::Circle(count, spacing, center) => {
                 let base = self.lights[0].clone();
-                let mut lights = self.lights.clone();
-                let x0 = spacing * (count - 1) as f32 / 2.0;
-                let r = std::f32::consts::PI * 2.0 / count.min(2) as f32;
-                for i in 0..count.min(2) {
+                let mut lights = if center { self.lights.clone() } else { self.lights[1..].to_vec() };
+                let offset =  -std::f32::consts::PI / 2.0;
+                let r = std::f32::consts::PI * 2.0 / count.max(2) as f32;
+                for i in 0..count.max(2) {
                     let mut light = base.clone();
-                    light.translate(&Vector2::new(spacing * (i as f32 * r).cos(), spacing * (r * i as f32).sin()));
+                    let angle = (i as f32 * r) + offset;
+                    light.translate(&Vector2::new(spacing * angle.cos(), spacing * angle.sin()));
                     lights.push(light)
                 }
                 lights

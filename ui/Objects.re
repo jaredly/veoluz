@@ -86,7 +86,7 @@ module Slider = {
 
 module LightEditor = {
   [@react.component]
-  let make = (~wasm, ~selected, ~light, ~index, ~onChange) => {
+  let make = (~wasm, ~selected, ~light, ~index, ~onChange, ~updateUi, ~ui) => {
     <div
       className=Css.(
         style(
@@ -106,7 +106,11 @@ module LightEditor = {
         // wasm##hover_wall(index)
         ()}
       onClick={evt => {
-        wasm##set_active_light(index);
+        if (selected) {
+          updateUi([%js.deep ui["selection"].replace(Js.null)]);
+        } else {
+          wasm##set_active_light(index);
+        };
         ();
       }}>
       <div className=Css.(style([fontWeight(`medium), fontSize(px(12))]))>
@@ -356,7 +360,7 @@ let make =
   // Js.log(ui);
   // Js.log2("Config", config);
   <div
-    className=Styles.join([Styles.control , Css.(style([flexShrink(1), overflow(`auto)]))])
+    className=Styles.join([Styles.control, Styles.column, Css.(style([flexShrink(1), overflow(`auto)]))])
     // onMouseOver={evt => wasm##show_ui()}
     // onMouseOut={evt => wasm##hide_ui()}
     >
@@ -365,6 +369,8 @@ let make =
       {config##lights
        ->Belt.Array.mapWithIndex((i, light) =>
            <LightEditor
+             ui
+             updateUi
              wasm
              key={string_of_int(i)}
              light
@@ -392,6 +398,53 @@ let make =
            />
          )
        ->React.array}
+    </div>
+    <div className=Styles.column>
+      <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
+        {React.string("Light formation")}
+      </div>
+      {Styles.spacer(8)}
+      <div className=Styles.row>
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Single"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": Some(Js.Null.empty), "Line": None, "Circle": None})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Single")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Circle"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": None, "Line": None, "Circle": Some((3, 50.0, false))})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Circle")}
+        </button>
+        {Styles.spacer(4)}
+        <button
+        className=btn
+          disabled={[%js.deep config##light_formation["Line"]] != None}
+          onClick={_evt => {
+               let config = [%js.deep
+                 config["light_formation"].replace({ "Single": None, "Line": Some((3, 50.0)), "Circle": None})
+               ];
+               update(config, false);
+          }}>
+          {React.string("Line")}
+        </button>
+      </div>
+    </div>
+    {Styles.spacer(8)}
+    <div className=Css.(style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)]))>
+      {React.string("Walls")}
     </div>
     <div className=Styles.row>
       <button
@@ -453,9 +506,6 @@ let make =
         }>
         {React.string("Add arc")}
       </button>
-    </div>
-    <div className=Css.(style([fontWeight(`bold), padding(px(8))]))>
-      {React.string("Walls")}
     </div>
     <div
     onMouseEnter={_evt => wasm##show_ui()}

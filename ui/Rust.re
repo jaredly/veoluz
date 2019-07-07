@@ -53,8 +53,9 @@ type config = {
     }),
   "light_formation": {
     .
+    "Single": option(Js.null(unit)),
     "Line": option((int, float)),
-    "Circle": option((int, float)),
+    "Circle": option((int, float, bool)),
   },
   "transform": {
     .
