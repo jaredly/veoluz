@@ -232,7 +232,14 @@ let make =
         if (selected) {
           updateUi([%js.deep ui["selection"].replace(Js.null)]);
         } else {
-          wasm##set_active_wall(index);
+          // wasm##set_active_wall(index);
+          updateUi(
+            [%js.deep
+              ui["selection"].replace(
+                Js.Null.return(Rust.selectWall(index)),
+              )
+            ],
+          );
         }
       }>
       {selected

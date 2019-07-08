@@ -183,9 +183,9 @@ module ExposureFunction = {
              | Some(rgb) =>
                //  className="color-picker-wrapper"
                <div
-                 style={ReactDOMRe.Style.make//  ~marginLeft="-13px",
-                                             //  ~marginTop="2px",
-                                             () //  ~width="10px",
+                 style={ReactDOMRe.Style.make//  ~marginTop="2px",
+                                             () //  ~marginLeft="-13px",
+ //  ~width="10px",
                                              //  ~height="30px",
 }>
                  <ExposureControl.Colorpickr
@@ -216,9 +216,9 @@ module ExposureFunction = {
              | Some(rgb) =>
                //  className="color-picker-wrapper"
                <div
-                 style={ReactDOMRe.Style.make//  ~marginLeft="-13px",
-                                             //  ~marginTop="2px",
-                                             () //  ~width="10px",
+                 style={ReactDOMRe.Style.make//  ~marginTop="2px",
+                                             () //  ~marginLeft="-13px",
+ //  ~width="10px",
                                              //  ~height="30px",
 }>
                  <ExposureControl.Colorpickr
@@ -274,7 +274,7 @@ module TransformEditor = {
         />
       </div>
       {Styles.spacer(8)}
-      <div>
+      <div className=Styles.row>
         <input
           type_="checkbox"
           checked={config##transform##reflection}
@@ -286,7 +286,17 @@ module TransformEditor = {
             update(config, false);
           }}
         />
-        {React.string(" Reflect over y axis")}
+        <div
+          onClick={_ => {
+            let config = [%js.deep
+              config["transform"]["reflection"].replace(
+                !config##transform##reflection,
+              )
+            ];
+            update(config, false);
+          }}>
+          {React.string(" Reflect over y axis")}
+        </div>
       </div>
       {Styles.spacer(8)}
       <div>
