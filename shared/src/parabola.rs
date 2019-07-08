@@ -16,17 +16,13 @@ pub struct Parabola {
 
 impl crate::types::Lerp for nalgebra::UnitComplex<line::float> {
     fn lerp_(&self, other: &Self, amount: f32) -> Self {
-        nalgebra::UnitComplex::from_angle(
-            self.angle().lerp(&other.angle(), amount)
-        )
+        nalgebra::UnitComplex::from_angle(self.angle().lerp(&other.angle(), amount))
     }
 }
 
 impl crate::types::Lerp for nalgebra::geometry::Translation2<line::float> {
     fn lerp_(&self, other: &Self, amount: f32) -> Self {
-        nalgebra::geometry::Translation2::from_vector(
-            self.vector.lerp(&other.vector, amount)
-        )
+        nalgebra::geometry::Translation2::from_vector(self.vector.lerp(&other.vector, amount))
     }
 }
 
@@ -34,7 +30,7 @@ impl crate::types::Lerp for nalgebra::geometry::Isometry2<line::float> {
     fn lerp_(&self, other: &Self, amount: f32) -> Self {
         nalgebra::geometry::Isometry2::from_parts(
             self.translation.lerp(&other.translation, amount),
-            self.rotation.lerp(&other.rotation, amount)
+            self.rotation.lerp(&other.rotation, amount),
         )
     }
 }
@@ -49,7 +45,6 @@ impl crate::types::Lerp for Parabola {
         }
     }
 }
-
 
 impl Parabola {
     pub fn new(
@@ -77,6 +72,7 @@ impl Parabola {
 // y = mx^2 # the parabola
 // (a, b) # the point
 // D = (mx^2 - b)^2 + (x - a)^2
+//
 // # wolfram alpha gives me this as the derivative
 // D' = -2 a + 2 x - 4 b m x + 4 m^2 x^3
 // # Real root found by wolfram alpha

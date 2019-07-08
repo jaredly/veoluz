@@ -10,6 +10,7 @@ use wasm_bindgen::JsCast;
 #[macro_use]
 mod utils;
 mod draw;
+mod line_algos;
 mod scenes;
 mod state;
 mod ui;
@@ -280,6 +281,84 @@ pub fn setup(config: &JsValue, on_change: &js_sys::Function) {
     } else {
         panic!("Invalid config provided")
     }
+}
+
+#[wasm_bindgen]
+pub fn test_run(canvas: web_sys::HtmlCanvasElement) {
+    // ok, here we go
+    let width = canvas.width() as f32;
+    let height = canvas.height() as f32;
+    let ctx = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
+    let cx = width / 2.0;
+    let cy = height / 2.0;
+    ctx.begin_path();
+    ctx.ellipse(
+        cx as f64,
+        cy as f64,
+        100.0,
+        100.0,
+        0.0,
+        0.0,
+        std::f32::consts::PI as f64 * 2.0,
+    )
+    .unwrap();
+    ctx.set_fill_style(&"#f00".into());
+    ctx.fill();
+
+    let width = 100;
+    let height = 100;
+    let mut brightness_data = vec![0; width * height];
+    let num = 800;
+    for i in 0..num {
+        let angle = i as f32 / num as f32 * std::f32::consts::PI * 2.0;
+        let dx = angle.cos() * 40.0;
+        let dy = angle.sin() * 40.0;
+        shared::line::draw_line(
+            (50.0 + dx / 2.0, 50.0 + dy / 2.0),
+            (50.0 + dx, 50.0 + dy),
+            &mut brightness_data,
+            width,
+            height,
+            255.0,
+        );
+    }
+    let mut top = 0u32;
+    for x in 0..width {
+        for y in 0..height {
+            top = top.max(brightness_data[y * width + x])
+        }
+    }
+    let scale = 5;
+    let mut colored = vec![0u8; width * height * 4 * scale * scale];
+    for x in 0..width {
+        for y in 0..height {
+            let brightness = brightness_data[y * width + x];
+            for x0 in 0..scale {
+                for y0 in 0..scale {
+                    let i = ((y * scale + y0) * width * scale + x * scale + x0) * 4;
+                    colored[i + 0] = 255;
+                    colored[i + 1] = 255;
+                    colored[i + 2] = 255;
+                    colored[i + 3] = (brightness as f32 / top as f32 * 255.0) as u8;
+                }
+            }
+        }
+    }
+
+    let mut clamped = wasm_bindgen::Clamped(colored.clone());
+    // let mut clamped = Clamped(state.buffer.clone());
+    let data = web_sys::ImageData::new_with_u8_clamped_array_and_sh(
+        wasm_bindgen::Clamped(clamped.as_mut_slice()),
+        (width * scale) as u32,
+        (height * scale) as u32,
+    )
+    .unwrap();
+    ctx.put_image_data(&data, 0.0, 0.0).unwrap();
 }
 
 #[wasm_bindgen]

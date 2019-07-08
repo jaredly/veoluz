@@ -145,9 +145,6 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     let (zoom, dx, dy) = state.config.transform();
-    // state.ctx.save();
-    // state.ctx.translate(dx as f64, dy as f64)?;
-    // state.ctx.scale(zoom as f64, zoom as f64)?;
 
     let dashes = js_sys::Array::new();
     dashes.push(&JsValue::from(2.0f64));
@@ -238,14 +235,17 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     }
 
     if ui.show_lasers {
+        state.ctx.save();
+        state.ctx.translate(dx as f64, dy as f64)?;
+        state.ctx.scale(zoom as f64, zoom as f64)?;
         let count = 30;
         for light in state.config.all_lights().iter() {
             for i in 0..count {
                 draw_laser(&state, i as f32 / count as f32, &light)?;
             }
         }
+        state.ctx.restore();
     }
-    // state.ctx.restore();
 
     Ok(())
 }

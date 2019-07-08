@@ -412,6 +412,7 @@ module Inner = {
             };
 
           <SceneForm
+            ui={state.ui}
             directory={state.directory}
             onUpdateTags={tags => dispatch(`UpdateTags(tags))}
             scene=?currentScene
@@ -489,12 +490,31 @@ module App = {
   };
 };
 
+module CanvasTest = {
+  [@react.component]
+  let make = (~wasm) => {
+    let r = React.useRef(Js.Nullable.null);
+    React.useEffect1(
+      () => {
+        switch (React.Ref.current(r)->Js.Nullable.toOption) {
+        | None => ()
+        | Some(canvas) => wasm##test_run(canvas->Web.asCanvas)
+        };
+        None;
+      },
+      [|r|],
+    );
+    <canvas width="500" height="500" ref={ReactDOMRe.Ref.domRef(r)} />;
+  };
+};
+
 Rust.withModule(wasm
   // wasm##run();
   // let config = wasm##save();
   =>
     ReactDOMRe.renderToElementWithId(
-      <App wasm />,
+      // <App wasm />,
+      <CanvasTest wasm />,
       // <WallEditor.TriangleTester />,
       "reason-root",
       // Js.log2("Config we got", config);

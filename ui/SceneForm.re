@@ -218,6 +218,7 @@ let make =
     (
       ~directory,
       ~onUpdateTags,
+      ~ui: Rust.ui,
       ~scene=Types.emptyScene,
       ~onSave,
       ~onPermalink,
@@ -225,19 +226,13 @@ let make =
       ~wasm: Rust.wasm,
     ) => {
   let (scene, update) = Hooks.useState(scene);
+  // Styles.control
+  // ++ " "
+  // ++
   <div
-    className={
-      // Styles.control
-      // ++ " "
-      // ++
-      Css.(
-           style([
-             flexDirection(`column),
-             display(`flex),
-             alignItems(`stretch),
-           ])
-         )
-    }>
+    className=Css.(
+      style([flexDirection(`column), display(`flex), alignItems(`stretch)])
+    )>
     // <div className=Styles.title>
     //   {React.string(
     //      scene.id == ""
@@ -285,14 +280,30 @@ let make =
         <button onClick={_ => onPermalink()}>
           // className={Styles.flatButton(Colors.text)}
            <IonIcons.Link /> </button>
-      {Styles.spacer(4)}
+        {Styles.spacer(4)}
         <button onClick={_ => onDownload()}>
           // className={Styles.flatButton(Colors.text)}
            <IonIcons.Download /> </button>
-      {Styles.spacer(4)}
+        {Styles.spacer(4)}
         <button onClick={_evt => wasm##undo()}> <IonIcons.Undo /> </button>
-      {Styles.spacer(4)}
+        {Styles.spacer(4)}
         <button onClick={_evt => wasm##redo()}> <IonIcons.Redo /> </button>
+        {Styles.spacer(4)}
+        <button
+          className=Css.(
+            style([
+              backgroundColor(
+                ui##show_lasers ? Colors.accent : Colors.button,
+              ),
+            ])
+          )
+          onClick={_evt =>
+            wasm##update_ui(
+              [%js.deep ui["show_lasers"].replace(!ui##show_lasers)],
+            )
+          }>
+          <IonIcons.Flashlight />
+        </button>
       </div>
     </div>;
 };
