@@ -68,7 +68,7 @@ let posTriangle = (~pos as (x, y), ~size) => {
   let fullSize = dist(bottomPoint(size), farPoint);
   let partSize = dist((x, y), bottomPoint(size));
 
-  (partSize /. fullSize, ew);
+  (max(0.0, min(1.0, partSize /. fullSize)), max(0.0, min(1.0, ew)));
 };
 
 let trianglePos = ((se, ew), ~size) => {
@@ -107,6 +107,7 @@ module TriangleEditor = {
       });
 
     let (x, y) = trianglePos((ns, se), ~size=100.0);
+    let y = 100.0 -. y;
 
     <div
       ref={ReactDOMRe.Ref.domRef(node)}
