@@ -105,9 +105,17 @@ let trianglePos = ((se, ew), ~size) => {
   (x, y)
 };
 
+let toPair = ((first ,second)) => {
+  // second = se /. (1.0 -. first);
+  // second *. (1.0 -. first)
+  (first, second *. (1.0 -. first))
+};
+
+let fromPair = ((ns, se)) => (ns, ns === 1.0 ? 0.0 : se /. (1.0 -. ns));
+
 module TriangleEditor = {
   [@react.component]
-  let make = (~ns, ~se, ~onChange) => {
+  let make = (~pair, ~onChange) => {
     let node = React.useRef(Js.Nullable.null);
     let size = 100.0;
     let (_, onMouseDown) =
@@ -128,7 +136,7 @@ module TriangleEditor = {
         }
       });
 
-    let (x, y) = trianglePos((ns, se), ~size);
+    let (x, y) = trianglePos(pair, ~size);
     // let y = 100.0 -. y;
 
     <div
@@ -158,15 +166,15 @@ module TriangleEditor = {
   };
 };
 
-module TriangleTester = {
-  [@react.component]
-  let make = () => {
-    let ((ns, se), onChange) = Hooks.useState((0.0, 0.0));
-    <div className=Css.(style([backgroundColor(white), padding(px(100))]))>
-      <TriangleEditor ns se onChange />
-    </div>;
-  };
-};
+// module TriangleTester = {
+//   [@react.component]
+//   let make = () => {
+//     let ((ns, se), onChange) = Hooks.useState((0.0, 0.0));
+//     <div className=Css.(style([backgroundColor(white), padding(px(100))]))>
+//       <TriangleEditor ns se onChange />
+//     </div>;
+//   };
+// };
 
 let wallType = kind =>
   if ([%js.deep kind["Line"]] != None) {
@@ -243,7 +251,58 @@ let make =
              Styles.column,
              Css.(style([padding2(~v=`zero, ~h=px(8))])),
            ])}>
-           <div> <Triangle size=100 padding=10 /> </div>
+           <div>
+             {React.string("Index of Refraction")}
+             <LogSlider
+               min=0
+               max=5.0
+               step=0.01
+               value={wall##properties##refraction}
+               onChange={value => {
+                 let wall = [%js.deep
+                   wall["properties"]["refraction"].replace(value)
+                 ];
+                 onChange(wall);
+               }}
+             />
+           </div>
+           {Styles.spacer(8)}
+           <div>
+           {React.string("Refract")}
+           <TriangleEditor
+            pair={toPair((
+              wall##properties##absorb,
+              wall##properties##reflect
+            ))}
+            onChange={(pair) => {
+              let (absorb, reflect) = fromPair(pair);
+              let reflect = Js.Float.isNaN(reflect) ? 0.0 : reflect;
+              // Js.log3("Triangle Editor", (absorb, reflect), pair);
+              let wall = [%js.deep
+                wall["properties"].map(properties => properties["absorb"].replace(absorb)["reflect"].replace(reflect))
+              ];
+              Js.log(wall##properties)
+              onChange(wall);
+            }}
+           />
+           {React.string("Absorb")}
+           </div>
+           {Styles.spacer(8)}
+           <div>
+             {React.string("Roughness")}
+             <Slider
+               min=0
+               max=1.0
+               step=0.01
+               value={wall##properties##roughness}
+               onChange={value => {
+                 let wall = [%js.deep
+                   wall["properties"]["roughness"].replace(value)
+                 ];
+                 onChange(wall);
+               }}
+             />
+           </div>
            {Styles.spacer(8)}
            <div>
              {React.string("Absorb")}
@@ -271,38 +330,6 @@ let make =
                onChange={reflect => {
                  let wall = [%js.deep
                    wall["properties"]["reflect"].replace(reflect)
-                 ];
-                 onChange(wall);
-               }}
-             />
-           </div>
-           {Styles.spacer(8)}
-           <div>
-             {React.string("Index of Refraction")}
-             <LogSlider
-               min=0
-               max=5.0
-               step=0.01
-               value={wall##properties##refraction}
-               onChange={value => {
-                 let wall = [%js.deep
-                   wall["properties"]["refraction"].replace(value)
-                 ];
-                 onChange(wall);
-               }}
-             />
-           </div>
-           {Styles.spacer(8)}
-           <div>
-             {React.string("Roughness")}
-             <Slider
-               min=0
-               max=1.0
-               step=0.01
-               value={wall##properties##roughness}
-               onChange={value => {
-                 let wall = [%js.deep
-                   wall["properties"]["roughness"].replace(value)
                  ];
                  onChange(wall);
                }}
