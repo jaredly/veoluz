@@ -139,6 +139,7 @@ module TriangleEditor = {
         onMouseDown
         className=Css.(
           style([
+            borderRadius(px(4)),
             width(px(10)),
             height(px(10)),
             marginLeft(px(-5)),
