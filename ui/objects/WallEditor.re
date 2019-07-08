@@ -59,16 +59,29 @@ let rightPoint = size => (triWidth(size), size /. 2.0);
 
 let posTriangle = (~pos as (x, y), ~size) => {
   let ew = x /. triWidth(size);
+  let point2 = toLine((0.0, 0.0), rightPoint(size));
   let farPoint =
+    x == 0.0
+    ? {
+      let x = 0.0;
+      let (m, b) = point2;
+      (x, b)
+    }
+    :
     lineIntersect(
       toLine((x, y), bottomPoint(size)),
       // the top right line
-      toLine((0.0, 0.0), rightPoint(size)),
+      point2
     );
   let fullSize = dist(bottomPoint(size), farPoint);
   let partSize = dist((x, y), bottomPoint(size));
 
-  (max(0.0, min(1.0, partSize /. fullSize)), max(0.0, min(1.0, ew)));
+  let first = 1.0 -. max(0.0, min(1.0, partSize /. fullSize));
+  let second = max(0.0, min(1.0, ew));
+
+  let second = min(1.0 -. first, second);
+
+  (first, second);
 };
 
 let trianglePos = ((se, ew), ~size) => {
@@ -84,10 +97,19 @@ let trianglePos = ((se, ew), ~size) => {
   // (ns *. size, ew *. size);
 };
 
+let trianglePos = ((se, ew), ~size) => {
+  let x = ew *. triWidth(size);
+  let y = se *. size;
+  let y = se *. size +. ew *. size /. 2.0;
+  // (x, y)
+  (x, y)
+};
+
 module TriangleEditor = {
   [@react.component]
   let make = (~ns, ~se, ~onChange) => {
     let node = React.useRef(Js.Nullable.null);
+    let size = 100.0;
     let (_, onMouseDown) =
       ExposureControl.useDraggable(~onMove=((x, y)) => {
         switch (Js.Nullable.toOption(node->React.Ref.current)) {
@@ -98,16 +120,16 @@ module TriangleEditor = {
             let y = float_of_int(y) -. rect##top -. 10.0;
             let (ns, se) =
               posTriangle(
-                ~pos=(x, y),
-                ~size=100.0,
+                ~pos=(max(0.0, x), max(0.0, min(size, y))),
+                ~size,
               );
-            Js.log3("Pos", (x, y), (ns, se));
+            // Js.log4("Pos", (x, y), (ns, se), (ns, se /. (1.0 -. ns)));
             onChange((ns, se));
         }
       });
 
-    let (x, y) = trianglePos((ns, se), ~size=100.0);
-    let y = 100.0 -. y;
+    let (x, y) = trianglePos((ns, se), ~size);
+    // let y = 100.0 -. y;
 
     <div
       ref={ReactDOMRe.Ref.domRef(node)}
