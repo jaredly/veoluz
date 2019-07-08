@@ -1,5 +1,6 @@
 use crate::arc::angle_norm;
 use crate::line;
+use crate::line_algos;
 use crate::types::*;
 use crate::Timer;
 
@@ -192,7 +193,7 @@ pub fn run_ray(
     match find_collision(walls, &ray) {
         None => {
             let toi = hit_boundary(boundaries, ray);
-            line::draw_line(
+            line_algos::wu(
                 xy(&ray.origin, transform),
                 xy(&ray.point_at(toi), transform),
                 brightness_data,
@@ -207,7 +208,7 @@ pub fn run_ray(
             // if (new_origin.x > 10_000.0 || new_origin.y < -10_000.0) {
             //     log!("Bad {:?} {:?} toi {}, normal {:?}", new_origin, ray, toi, normal)
             // }
-            line::draw_line(
+            line_algos::wu(
                 xy(&ray.origin, transform),
                 xy(&new_origin, transform),
                 brightness_data,
@@ -289,7 +290,11 @@ pub fn calculate(config: &Config, rays: usize) -> Vec<line::uint> {
     let lights = config.all_lights();
 
     let total_light: f32 = { lights.iter().map(|l| l.brightness).sum() };
-    let walls = config.all_walls().into_iter().filter(|w| !w.hide).collect::<Vec<Wall>>();
+    let walls = config
+        .all_walls()
+        .into_iter()
+        .filter(|w| !w.hide)
+        .collect::<Vec<Wall>>();
     let boundaries = boundaries(config);
 
     // if we don't draw at all, we're still getting only 400k/sec
@@ -340,7 +345,11 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
     let lights = config.all_lights();
 
     let total_light: f32 = { lights.iter().map(|l| l.brightness).sum() };
-    let walls = config.all_walls().into_iter().filter(|w| !w.hide).collect::<Vec<Wall>>();
+    let walls = config
+        .all_walls()
+        .into_iter()
+        .filter(|w| !w.hide)
+        .collect::<Vec<Wall>>();
     let boundaries = boundaries(config);
 
     // if we don't draw at all, we're still getting only 400k/sec
@@ -359,7 +368,9 @@ pub fn timed(config: &Config, rays: usize, limit: f64) -> (Vec<line::uint>, usiz
     let mut rendered = rays;
 
     for r in 0..rays {
-        let mut ray = lights[(rand() * lights.len() as f32) as usize].kind.spawn(rand());
+        let mut ray = lights[(rand() * lights.len() as f32) as usize]
+            .kind
+            .spawn(rand());
 
         for _ in 0..30 {
             if run_ray(

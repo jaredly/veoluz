@@ -10,7 +10,6 @@ use wasm_bindgen::JsCast;
 #[macro_use]
 mod utils;
 mod draw;
-mod line_algos;
 mod scenes;
 mod state;
 mod ui;
@@ -319,7 +318,7 @@ pub fn test_run(canvas: web_sys::HtmlCanvasElement) {
         let dx = angle.cos() * 40.0;
         let dy = angle.sin() * 40.0;
 
-        line_algos::wu(
+        shared::line_algos::wu(
             (50.0 + dx / 2.0, 50.0 + dy / 2.0),
             (50.0 + dx, 50.0 + dy),
             &mut brightness_data,

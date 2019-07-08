@@ -10,6 +10,7 @@ pub use wall_type::WallType;
 pub mod types;
 pub use types::*;
 pub mod render;
+pub mod line_algos;
 pub use render::*;
 pub mod calculate;
 pub use calculate::calculate;
