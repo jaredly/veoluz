@@ -1,5 +1,3 @@
-
-
 let formationType = kind =>
   switch ([%js.deep kind["Single"]]) {
   | Some(_) => `Single
@@ -77,114 +75,109 @@ let make = (~wasm, ~update, ~config) => {
     </div>
     {Styles.spacer(8)}
     {switch (formationType(config##light_formation)) {
-      | `Circle(count, dist, center) =>
-      <div className=Styles.column>
-        <div className=Styles.row>
-          {React.string("Count")}
-          {Styles.spacer(4)}
-          <input
-            type_="number"
-            min=2
-            max="30"
-            step=1.0
-            value={string_of_int(count)}
-            onChange={evt => {
-              let v = int_of_string(evt->ReactEvent.Form.target##value);
-              let config = [%js.deep
-                config["light_formation"].replace({
-                  "Single": None,
-                  "Line": None,
-                  "Circle": Some((v, dist, center)),
-                })
-              ];
-              update(config, false);
-            }}
-          />
-          {Styles.spacer(8)}
-          {React.string("Radius")}
-          {Styles.spacer(4)}
-          <input
-            type_="number"
-            min=0
-            max="300"
-            step=5.0
-            value={Js.Float.toString(dist)}
-            onChange={evt => {
-              let v = float_of_string(evt->ReactEvent.Form.target##value);
-              let config = [%js.deep
-                config["light_formation"].replace({
-                  "Single": None,
-                  "Line": None,
-                  "Circle": Some((count, v, center)),
-                })
-              ];
-              update(config, false);
-            }}
-          />
-        </div>
-          {Styles.spacer(8)}
-          <button
-            className={Css.style([
-              Css.backgroundColor(center ? Colors.accent : Colors.button),
-              Css.alignSelf(`flexStart)
-            ])}
-            onClick={_evt => {
-              let config = [%js.deep
-                config["light_formation"].replace({
-                  "Single": None,
-                  "Line": None,
-                  "Circle": Some((count, dist, !center)),
-                })
-              ];
-              update(config, false);
-            }}>
-            {React.string("Center dot")}
-          </button>
-        </div>
-      | `Line(count, dist) => <div className=Styles.row>
-          {React.string("Count")}
-          {Styles.spacer(4)}
-          <input
-            type_="number"
-            min=2
-            max="30"
-            step=1.0
-            value={string_of_int(count)}
-            onChange={evt => {
-              let v = int_of_string(evt->ReactEvent.Form.target##value);
-              let config = [%js.deep
-                config["light_formation"].replace({
-                  "Single": None,
-                  "Circle": None,
-                  "Line": Some((v, dist)),
-                })
-              ];
-              update(config, false);
-            }}
-          />
-          {Styles.spacer(8)}
-          {React.string("Spacing")}
-          {Styles.spacer(4)}
-          <input
-            type_="number"
-            min=0
-            max="300"
-            step=5.0
-            value={Js.Float.toString(dist)}
-            onChange={evt => {
-              let v = float_of_string(evt->ReactEvent.Form.target##value);
-              let config = [%js.deep
-                config["light_formation"].replace({
-                  "Single": None,
-                  "Circle": None,
-                  "Line": Some((count, v)),
-                })
-              ];
-              update(config, false);
-            }}
-          />
-      </div>
-      | _ => React.null
-      }}
+     | `Circle(count, dist, center) =>
+       <div className=Styles.column>
+         <div className=Styles.row>
+           {React.string("Count")}
+           {Styles.spacer(4)}
+           <Ui.NumInput
+             min=2
+             max=30.0
+             step=1.0
+             value={float_of_int(count)}
+             onChange={v => {
+               let v = int_of_float(v);
+               let config = [%js.deep
+                 config["light_formation"].replace({
+                   "Single": None,
+                   "Line": None,
+                   "Circle": Some((v, dist, center)),
+                 })
+               ];
+               update(config, false);
+             }}
+           />
+           {Styles.spacer(8)}
+           {React.string("Radius")}
+           {Styles.spacer(4)}
+           <Ui.NumInput
+             min=0
+             max=300.0
+             step=5.0
+             value=dist
+             onChange={v => {
+               let config = [%js.deep
+                 config["light_formation"].replace({
+                   "Single": None,
+                   "Line": None,
+                   "Circle": Some((count, v, center)),
+                 })
+               ];
+               update(config, false);
+             }}
+           />
+         </div>
+         {Styles.spacer(8)}
+         <button
+           className={Css.style([
+             Css.backgroundColor(center ? Colors.accent : Colors.button),
+             Css.alignSelf(`flexStart),
+           ])}
+           onClick={_evt => {
+             let config = [%js.deep
+               config["light_formation"].replace({
+                 "Single": None,
+                 "Line": None,
+                 "Circle": Some((count, dist, !center)),
+               })
+             ];
+             update(config, false);
+           }}>
+           {React.string("Center dot")}
+         </button>
+       </div>
+     | `Line(count, dist) =>
+       <div className=Styles.row>
+         {React.string("Count")}
+         {Styles.spacer(4)}
+         <Ui.NumInput
+           min=2
+           max=30.0
+           step=1.0
+           value={float_of_int(count)}
+           onChange={v => {
+             let v = int_of_float(v);
+             let config = [%js.deep
+               config["light_formation"].replace({
+                 "Single": None,
+                 "Circle": None,
+                 "Line": Some((v, dist)),
+               })
+             ];
+             update(config, false);
+           }}
+         />
+         {Styles.spacer(8)}
+         {React.string("Spacing")}
+         {Styles.spacer(4)}
+         <Ui.NumInput
+           min=0
+           max=300.0
+           step=5.0
+           value=dist
+           onChange={v => {
+             let config = [%js.deep
+               config["light_formation"].replace({
+                 "Single": None,
+                 "Circle": None,
+                 "Line": Some((count, v)),
+               })
+             ];
+             update(config, false);
+           }}
+         />
+       </div>
+     | _ => React.null
+     }}
   </div>;
 };
