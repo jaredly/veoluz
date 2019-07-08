@@ -54,6 +54,7 @@ let make =
       {React.string("Walls")}
     </div>
     <AddWall ui updateUi />
+    {Styles.spacer(8)}
     <div
       onMouseEnter={_evt => wasm##show_ui()}
       onMouseLeave={_evt => wasm##hide_ui()}>

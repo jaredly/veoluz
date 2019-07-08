@@ -19,11 +19,12 @@ module NumInput = {
 
 module LogSlider = {
   [@react.component]
-  let make = (~value, ~min, ~max, ~step, ~onChange) => {
+  let make = (~value, ~disabled=?, ~min, ~max, ~step, ~onChange) => {
     <div className=Styles.row>
       <input
         type_="range"
         min
+        ?disabled
         max={Js.Float.toString(max)}
         // value={Js.Float.toString(Js.Math.log(value))}
         value={Js.Float.toString(
@@ -40,6 +41,7 @@ module LogSlider = {
       <input
         type_="number"
         step
+        ?disabled
         className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
         value={Js.Float.toString(value)}
@@ -54,13 +56,18 @@ module LogSlider = {
 
 module Slider = {
   [@react.component]
-  let make = (~value, ~min, ~max, ~step, ~onChange) => {
-    <div className=Styles.row>
+  let make = (~vertical=false, ~disabled=?, ~width=?, ~value, ~min, ~max, ~step, ~onChange) => {
+    <div className=(vertical ? Styles.column : Styles.row)>
       <input
         type_="range"
         min
+        ?disabled
         max={Js.Float.toString(max)}
         value={Js.Float.toString(value)}
+        style=?(switch width {
+          | None => None
+          | Some(num) => Some(ReactDOMRe.Style.make(~width=string_of_int(num) ++ "px", ()))
+        })
         step
         onChange={evt => {
           let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
@@ -71,6 +78,7 @@ module Slider = {
       <input
         type_="number"
         step
+        ?disabled
         className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
         value={Js.Float.toString(value)}

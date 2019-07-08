@@ -105,13 +105,22 @@ let trianglePos = ((se, ew), ~size) => {
   (x, y)
 };
 
+// currently absorb, reflect
+
+// take the ordered 0-1, return the triangleEditor domain
 let toPair = ((first ,second)) => {
   // second = se /. (1.0 -. first);
   // second *. (1.0 -. first)
+
   (first, second *. (1.0 -. first))
 };
 
+// go from triangleeditor domain to the config domain
 let fromPair = ((ns, se)) => (ns, ns === 1.0 ? 0.0 : se /. (1.0 -. ns));
+
+// config domain are going to be absorb, reflect
+// I want the triangle domain to be refract, reflect
+
 
 module TriangleEditor = {
   [@react.component]
@@ -193,7 +202,7 @@ let make =
       style(
         [
           // cursor(`pointer),
-          padding2(~v=px(8), ~h=`zero),
+          // padding2(~v=px(8), ~h=`zero),
           borderBottom(px(1), `solid, hex("ddd")),
           hover([backgroundColor(Colors.buttonHover)]),
         ]
@@ -212,7 +221,9 @@ let make =
       className=Css.(
         style([
           display(`flex),
-          paddingRight(px(8)),
+          // paddingRight(px(8)),
+          padding(px(4)),
+          // paddingLeft(px(8)),
           cursor(`pointer),
           // justifyContent(`spaceBetween),
           alignItems(`center),
@@ -249,7 +260,7 @@ let make =
        ? <div
            className={Styles.join([
              Styles.column,
-             Css.(style([padding2(~v=`zero, ~h=px(8))])),
+             Css.(style([padding2(~v=px(8), ~h=px(8))])),
            ])}>
            <div>
              {React.string("Index of Refraction")}
@@ -258,6 +269,7 @@ let make =
                max=5.0
                step=0.01
                value={wall##properties##refraction}
+              disabled={wall##properties##reflect == 1.0 || wall##properties##absorb == 1.0}
                onChange={value => {
                  let wall = [%js.deep
                    wall["properties"]["refraction"].replace(value)
@@ -269,6 +281,7 @@ let make =
            {Styles.spacer(8)}
            <div>
            {React.string("Refract")}
+           <div className=Styles.row>
            <TriangleEditor
             pair={toPair((
               wall##properties##absorb,
@@ -276,7 +289,9 @@ let make =
             ))}
             onChange={(pair) => {
               let (absorb, reflect) = fromPair(pair);
-              let reflect = Js.Float.isNaN(reflect) ? 0.0 : reflect;
+              // absorb, reflect
+              // refract / absorb / reflect
+              // let reflect = Js.Float.isNaN(reflect) ? 0.0 : reflect;
               // Js.log3("Triangle Editor", (absorb, reflect), pair);
               let wall = [%js.deep
                 wall["properties"].map(properties => properties["absorb"].replace(absorb)["reflect"].replace(reflect))
@@ -285,12 +300,15 @@ let make =
               onChange(wall);
             }}
            />
-           {React.string("Absorb")}
-           </div>
+            <div className=Styles.join([Styles.column, Css.(style([alignSelf(`flexEnd)]))])>
+            {React.string("Reflect")}
            {Styles.spacer(8)}
            <div>
-             {React.string("Roughness")}
+             {React.string("Scatter")}
              <Slider
+              vertical=true
+              width=50
+              disabled={wall##properties##reflect == 0.0 || wall##properties##absorb == 1.0}
                min=0
                max=1.0
                step=0.01
@@ -303,38 +321,42 @@ let make =
                }}
              />
            </div>
-           {Styles.spacer(8)}
-           <div>
-             {React.string("Absorb")}
-             <Slider
-               min=0
-               max=1.0
-               step=0.01
-               value={wall##properties##absorb}
-               onChange={absorb => {
-                 let wall = [%js.deep
-                   wall["properties"]["absorb"].replace(absorb)
-                 ];
-                 onChange(wall);
-               }}
-             />
+            </div>
            </div>
-           {Styles.spacer(8)}
-           <div>
-             {React.string("Reflect vs Refract")}
-             <Slider
-               min=0
-               max=1.0
-               step=0.01
-               value={wall##properties##reflect}
-               onChange={reflect => {
-                 let wall = [%js.deep
-                   wall["properties"]["reflect"].replace(reflect)
-                 ];
-                 onChange(wall);
-               }}
-             />
+           {React.string("Absorb")}
            </div>
+          //  {Styles.spacer(8)}
+          //  <div>
+          //    {React.string("Absorb")}
+          //    <Slider
+          //      min=0
+          //      max=1.0
+          //      step=0.01
+          //      value={wall##properties##absorb}
+          //      onChange={absorb => {
+          //        let wall = [%js.deep
+          //          wall["properties"]["absorb"].replace(absorb)
+          //        ];
+          //        onChange(wall);
+          //      }}
+          //    />
+          //  </div>
+          //  {Styles.spacer(8)}
+          //  <div>
+          //    {React.string("Reflect vs Refract")}
+          //    <Slider
+          //      min=0
+          //      max=1.0
+          //      step=0.01
+          //      value={wall##properties##reflect}
+          //      onChange={reflect => {
+          //        let wall = [%js.deep
+          //          wall["properties"]["reflect"].replace(reflect)
+          //        ];
+          //        onChange(wall);
+          //      }}
+          //    />
+          //  </div>
            {Styles.spacer(8)}
            <button onClick={evt => onRemove()}>
              {React.string("Delete")}
