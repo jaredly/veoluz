@@ -85,7 +85,7 @@ type config = {
     "exposure": {
       .
       "curve": string,
-      "limits": Js.null((float, float))
+      "limits": Js.null((float, float)),
     },
     "height": int,
     "width": int,
@@ -96,24 +96,31 @@ type config = {
 type handle = {
   .
   "Handle": option(int),
-  "Move": option((float, float))
-}
+  "Move": option((float, float)),
+};
 
 type ui = {
   .
   "show_lasers": bool,
-  "selection": Js.null({
-    .
-    "Wall": option((int, Js.null((handle, (float, float))))),
-    "Light": option((int, bool)),
-    "Adding": option(string),
-    // TODO fill in
-    "Multiple": option((array(int), Js.null((array((float, float)), (float, float)))))
-  }),
+  "selection":
+    Js.null({
+      .
+      "Wall": option((int, Js.null((handle, (float, float))))),
+      "Light": option((int, bool)),
+      "Adding": option(string),
+      // TODO fill in
+      "Multiple":
+        option(
+          (
+            array(int),
+            Js.null((array((float, float)), (float, float))),
+          ),
+        ),
+    }),
   "mouse_over": bool,
   "hovered": Js.null((int, handle)),
-  "last_mouse_pos": (float, float)
-}
+  "last_mouse_pos": (float, float),
+};
 
 let selectWall = (idx: int) => {
   "Wall": Some((idx, Js.null)),
@@ -134,8 +141,8 @@ let blankUi: ui = {
   "selection": Js.null,
   "mouse_over": false,
   "hovered": Js.null,
-  "last_mouse_pos": (0.0, 0.0)
-}
+  "last_mouse_pos": (0.0, 0.0),
+};
 
 type wasm = {
   .
@@ -149,8 +156,6 @@ type wasm = {
   "blank_config": [@bs.meth] (unit => config),
   "show_hist": [@bs.meth] (Web.canvas => unit),
   "hide_hist": [@bs.meth] (unit => unit),
-  "set_active_wall": [@bs.meth] (int => unit),
-  "set_active_light": [@bs.meth] (int => unit),
   "hover_wall": [@bs.meth] (int => unit),
   "show_ui": [@bs.meth] (unit => unit),
   "hide_ui": [@bs.meth] (unit => unit),

@@ -53,24 +53,6 @@ fn make_worker(wid: usize) -> Result<web_sys::Worker, JsValue> {
 // pub fn
 
 #[wasm_bindgen]
-pub fn set_active_wall(idx: usize) {
-    let _ = state::with(|state| {
-        state.ui.selection = Some(ui::Selection::Wall(idx, None));
-        ui::draw(state);
-        state.send_on_change();
-    });
-}
-
-#[wasm_bindgen]
-pub fn set_active_light(idx: usize) {
-    let _ = state::with(|state| {
-        state.ui.selection = Some(ui::Selection::Light(idx, false));
-        ui::draw(state);
-        state.send_on_change();
-    });
-}
-
-#[wasm_bindgen]
 pub fn hover_wall(idx: usize) {
     state::maybe_with(|state| {
         state.ui.hovered = Some((idx, ui::Handle::Move(nalgebra::zero())));
