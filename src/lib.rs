@@ -315,8 +315,8 @@ pub fn test_run(canvas: web_sys::HtmlCanvasElement) {
     let num = 800;
     for i in 0..num {
         let angle = i as f32 / num as f32 * std::f32::consts::PI * 2.0;
-        let dx = angle.cos() * 40.0;
-        let dy = angle.sin() * 40.0;
+        let dx = angle.cos() * 60.0;
+        let dy = angle.sin() * 60.0;
 
         shared::line_algos::wu(
             (50.0 + dx / 2.0, 50.0 + dy / 2.0),
