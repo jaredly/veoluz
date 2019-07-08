@@ -25,6 +25,7 @@
     "rc-color-picker": "^1.2.6",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-ionicons": "^3.0.1",
     "reason-react": "^0.7.0"
   }
 }

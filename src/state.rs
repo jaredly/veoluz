@@ -13,6 +13,7 @@ pub struct State {
     pub last_rendered_config: Option<shared::Config>,
     pub buffer: Vec<u32>,
     pub ui: crate::ui::UiState,
+    pub hist_canvas: Option<web_sys::HtmlCanvasElement>,
     pub on_change: js_sys::Function,
     pub workers: Vec<(web_sys::Worker, bool, Option<shared::messaging::Message>)>,
 }
@@ -27,6 +28,7 @@ impl State {
     pub fn new(config: shared::Config, on_change: js_sys::Function) -> Self {
         State {
             render_id: 0,
+            hist_canvas: None,
             last_rendered: 0,
             ctx: crate::ui::init(&config).expect("Unable to setup canvas"),
             image_data: web_sys::ImageData::new_with_sw(
@@ -305,6 +307,13 @@ pub fn with<R, F: FnOnce(&mut State) -> R>(f: F) -> R {
             log!("!!! Error: tried to handle state, but no state found");
             panic!("No state found, must set state first")
         }
+    }
+}
+
+pub fn maybe_with<F: FnOnce(&mut State)>(f: F) {
+    match STATE.lock().unwrap().as_mut() {
+        Some(mut state) => f(&mut state),
+        None => ()
     }
 }
 

@@ -2,8 +2,8 @@ use wasm_bindgen::prelude::*;
 // use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 // use web_sys::ImageData;
-use crate::state::State;
 use crate::state;
+use crate::state::State;
 use line::float;
 use shared::line;
 use shared::Wall;
@@ -42,7 +42,6 @@ pub struct UiState {
     pub selection: Option<Selection>,
     pub show_lasers: bool,
     pub mouse_over: bool,
-    pub show_hist: bool,
     pub hovered: Option<(usize, Handle)>,
     pub last_mouse_pos: Point2<float>,
 }
@@ -52,10 +51,9 @@ impl Default for UiState {
         UiState {
             selection: None,
             show_lasers: false,
-            show_hist: false,
             mouse_over: false,
             hovered: None,
-            last_mouse_pos: Point2::new(0.0, 0.0)
+            last_mouse_pos: Point2::new(0.0, 0.0),
         }
     }
 }
@@ -147,9 +145,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_fill_style(&JsValue::from_str("#aaa"));
 
     let (zoom, dx, dy) = state.config.transform();
-    state.ctx.save();
-    state.ctx.translate(dx as f64, dy as f64)?;
-    state.ctx.scale(zoom as f64, zoom as f64)?;
+    // state.ctx.save();
+    // state.ctx.translate(dx as f64, dy as f64)?;
+    // state.ctx.scale(zoom as f64, zoom as f64)?;
 
     let dashes = js_sys::Array::new();
     dashes.push(&JsValue::from(2.0f64));
@@ -158,33 +156,52 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_line_width(1.0);
     state.ctx.set_stroke_style(&JsValue::from_str("#aaa"));
 
-    let extras = state.config.extra_walls();
-    for wall in extras {
-        if wall.hide {
-            continue;
+    let hovered_wall = if let Some(Selection::Wall(wid, Some(_))) = ui.selection {
+        Some(wid)
+    } else if let Some((wid, _)) = hover {
+        Some(wid)
+    } else {
+        None
+    };
+
+    if let Some(wid) = hovered_wall {
+        if let Some(wall) = state.config.walls.get(wid) {
+            let mut extras = vec![];
+            shared::extra_walls(vec![wall.clone()], &mut extras, &state.config);
+            for wall in extras {
+                let mut kind = wall.kind.clone();
+                kind.scale(zoom);
+                kind.translate(&Vector2::new(dx, dy));
+                crate::draw::draw(&kind, &state.ctx, false);
+            }
         }
-        crate::draw::draw(&wall.kind, &state.ctx, false);
     }
 
     let dashes = js_sys::Array::new();
     state.ctx.set_line_dash(&dashes)?;
 
     for (i, wall) in state.config.main_walls().iter().enumerate() {
-        let w = match &ui.selection {
-            Some(Selection::Wall(wid, _)) if *wid == i => 3.0,
-            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => 3.0,
+        let selected = match &ui.selection {
+            Some(Selection::Wall(wid, _)) if *wid == i => true,
+            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => true,
             _ => match hover {
-                Some((wid, _)) if wid == i => 2.0,
-                _ => {
-                    // if not hovered/selected, don't draw
-                    if wall.hide {
-                        continue
-                    }
-                    1.0
-                },
+                Some((wid, _)) if wid == i => true,
+                _ => false,
             },
         };
-        state.ctx.set_line_width(w);
+
+        let mut kind = wall.kind.clone();
+        kind.scale(zoom);
+        kind.translate(&Vector2::new(dx, dy));
+
+        if selected {
+            state.ctx.set_line_width(3.0);
+            state.ctx.set_stroke_style(&JsValue::from_str("#fff"));
+            crate::draw::draw(&kind, &state.ctx, true);
+        } else if wall.hide {
+            continue;
+        }
+        state.ctx.set_line_width(1.0);
         if wall.properties.reflect == 1.0 {
             state.ctx.set_stroke_style(&JsValue::from_str("#faf"));
         } else if wall.properties.absorb == 1.0 {
@@ -194,10 +211,9 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         } else {
             state.ctx.set_stroke_style(&JsValue::from_str("#aaf"));
         }
-        crate::draw::draw(&wall.kind, &state.ctx, true);
-        state.ctx.set_line_width(1.0);
+        crate::draw::draw(&kind, &state.ctx, true);
         crate::draw::draw_handles(
-            &wall.kind,
+            &kind,
             &state.ctx,
             5.0,
             match hover {
@@ -223,13 +239,13 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
 
     if ui.show_lasers {
         let count = 30;
-        for light in state.config.lights.iter() {
+        for light in state.config.all_lights().iter() {
             for i in 0..count {
                 draw_laser(&state, i as f32 / count as f32, &light)?;
             }
         }
     }
-    state.ctx.restore();
+    // state.ctx.restore();
 
     Ok(())
 }
@@ -254,13 +270,17 @@ fn mouse_pos(rendering: &shared::Rendering, evt: &web_sys::MouseEvent) -> Point2
 }
 
 fn find_wall_hover(
+    zoom: f32,
     walls: &[Wall],
     pos: &Point2<shared::line::float>,
 ) -> Option<(usize, Vector2<float>)> {
     let mut close = None;
     for (wid, wall) in walls.iter().enumerate() {
+        if wall.hide {
+            continue;
+        }
         let dist = wall.kind.point_dist(pos);
-        if dist < 15.0 {
+        if dist < 15.0 / zoom {
             match close {
                 Some((_, d, _)) if d < dist => (),
                 _ => close = Some((wid, dist, wall.kind.point_base() - pos)),
@@ -270,14 +290,21 @@ fn find_wall_hover(
     return close.map(|(wid, _, pdiff)| (wid, pdiff));
 }
 
-fn find_collision(walls: &[Wall], pos: &Point2<shared::line::float>) -> Option<(usize, Handle)> {
+fn find_collision(
+    zoom: f32,
+    walls: &[Wall],
+    pos: &Point2<shared::line::float>,
+) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
-        match wall.kind.check_handle(pos, 5.0) {
+        if wall.hide {
+            continue;
+        }
+        match wall.kind.check_handle(pos, 5.0 / zoom) {
             None => (),
             Some(id) => return Some((wid, Handle::Handle(id))),
         }
     }
-    return find_wall_hover(walls, pos).map(|(wid, pdiff)| (wid, Handle::Move(pdiff)));
+    return find_wall_hover(zoom, walls, pos).map(|(wid, pdiff)| (wid, Handle::Move(pdiff)));
 }
 
 #[wasm_bindgen]
@@ -298,17 +325,24 @@ pub fn set_location_hash(val: &str) {
 
 pub fn deserialize_bincode(encoded: &[u8]) -> Result<shared::Config, bincode::Error> {
     bincode::deserialize::<shared::Config>(&encoded)
-        .or_else(|_| bincode::deserialize::<shared::v3::Config>(&encoded).map(shared::from_v3))
+        .or_else(|_| bincode::deserialize::<shared::v4::Config>(&encoded).map(shared::from_v4))
+        .or_else(|_| {
+            bincode::deserialize::<shared::v3::Config>(&encoded)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
+        })
         .or_else(|_| {
             bincode::deserialize::<shared::v2::Config>(&encoded)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
         .or_else(|_| {
             bincode::deserialize::<shared::v1::Config>(&encoded)
                 .map(shared::v2::from_v1)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
 }
 
@@ -375,28 +409,50 @@ pub fn get_input(id: &str) -> Result<web_sys::HtmlInputElement, JsValue> {
 //     }
 // }
 
-pub fn draw_histogram(state: &crate::state::State) {
+pub fn draw_histogram(canvas: &web_sys::HtmlCanvasElement, state: &crate::state::State) {
     // let _ = shared::Timer::new("histogram");
-    let min = state.config.rendering.exposure.min as f64;
-    let max = (state.config.rendering.exposure.max as f64).max(min + 0.01);
+    let (min, max) = match state.config.rendering.exposure.limits {
+        None => return,
+        Some((min, max)) => (min, max),
+    };
+    let min = min as f64;
+    let max = (max as f64).max(min + 0.01);
     let dx = max - min;
-    let full_width = state.config.rendering.width as f64;
+
+    let full_width = canvas.width() as f64;
+
+    // let full_width = state.config.rendering.width as f64;
     let x0 = full_width * min;
     let x1 = full_width * max;
     let bin_count = (200.0 * dx) as usize;
     let w = (x1 - x0) / bin_count as f64;
     let histogram = shared::render::histogram(&state.config, &state.buffer, bin_count);
-    let height = state.config.rendering.height as f64 / 3.0;
-    // let w = full_width / bin_count as f64;
+
+    let height = canvas.height() as f64;
+
+    // let height = state.config.rendering.height as f64 / 3.0;
+
+    // log!("Ok {} x {}", height, full_width);
+
     let max = *histogram.iter().max().unwrap() as f64;
-    state.ctx.set_fill_style(&"#f00".into());
+
+    let ctx = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
+
+    ctx.clear_rect(0.0, 0.0, full_width, height);
+
+    ctx.set_fill_style(&"#f00".into());
     for (i, count) in histogram.iter().enumerate() {
         let count = *count;
         if count < 10 {
             continue;
         }
         let h = (count as f64 / max).sqrt() * height;
-        state.ctx.fill_rect(x0 + i as f64 * w, state.config.rendering.height as f64 - h, w, h);
+        ctx.fill_rect(x0 + i as f64 * w, height as f64 - h, w, h);
     }
 }
 
@@ -405,8 +461,8 @@ pub fn draw(state: &crate::state::State) -> Result<(), JsValue> {
     if state.ui.mouse_over {
         draw_walls(state, &state.ui, state.ui.hovered.clone())?;
     }
-    if state.ui.show_hist {
-        draw_histogram(state);
+    if let Some(canvas) = &state.hist_canvas {
+        draw_histogram(&canvas, state);
     }
     Ok(())
 }
@@ -462,15 +518,15 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-                state.ui.mouse_over = true;
-                draw(state)
+            state.ui.mouse_over = true;
+            draw(state)
         })
     });
 
     listen!(canvas, "mouseleave", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
-                state.ui.mouse_over = false;
-                draw(state)
+            state.ui.mouse_over = false;
+            draw(state)
         })
     });
 
@@ -485,80 +541,83 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mousedown", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
-                state.maybe_save_history();
-                let pos = mouse_pos(&state.config.rendering, &evt);
-                use std::ops::Deref;
-                evt.deref().prevent_default();
+            state.maybe_save_history();
+            let pos = mouse_pos(&state.config.rendering, &evt);
+            use std::ops::Deref;
+            evt.deref().prevent_default();
 
-                if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
-                    state.config.walls.push(Wall::new(
-                        match kind {
-                            AddKindName::Light => unimplemented!(),
-                            AddKindName::Line => shared::WallType::line(
-                                pos.clone(),
-                                pos
-                            ),
-                            AddKindName::Circle => shared::WallType::circle(
-                                pos.clone(), 5.0, -shared::line::PI, shared::line::PI),
-                            AddKindName::Parabola => shared::WallType::parabola(
-                                pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
-                        }
-                    ));
-                    state.ui.selection = Some(Selection::Wall(state.config.walls.len() - 1, Some((Handle::Handle(0), pos))));
-                    update_cursor(&state.ui)?;
-                    return draw(state)
-                }
-
-                match find_collision(&state.config.walls, &pos) {
-                    None => {
-                        state.ui.selection = Some(Selection::Pan {
-                            grab: pos,
-                            center: state.config.rendering.center,
-                        });
-                        state.ui.hovered = None;
-                        // hide_wall_ui()?;
+            if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
+                state.config.walls.push(Wall::new(match kind {
+                    AddKindName::Light => unimplemented!(),
+                    AddKindName::Line => shared::WallType::line(pos.clone(), pos),
+                    AddKindName::Circle => shared::WallType::circle(
+                        pos.clone(),
+                        5.0,
+                        -shared::line::PI,
+                        shared::line::PI,
+                    ),
+                    AddKindName::Parabola => {
+                        shared::WallType::parabola(pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
                     }
-                    Some((wid, id)) => {
-                        if evt.shift_key() {
-                            let mut walls = match &state.ui.selection {
-                                Some(Selection::Multiple(walls, _)) => walls.clone(),
-                                Some(Selection::Wall(wid, _)) => vec![*wid],
-                                _ => vec![],
-                            };
-                            // TODO allow removing
+                }));
+                state.ui.selection = Some(Selection::Wall(
+                    state.config.walls.len() - 1,
+                    Some((Handle::Handle(0), pos)),
+                ));
+                update_cursor(&state.ui)?;
+                return draw(state);
+            }
+
+            match find_collision(state.config.rendering.zoom, &state.config.walls, &pos) {
+                None => {
+                    state.ui.selection = Some(Selection::Pan {
+                        grab: pos,
+                        center: state.config.rendering.center,
+                    });
+                    state.ui.hovered = None;
+                    // hide_wall_ui()?;
+                }
+                Some((wid, id)) => {
+                    if evt.shift_key() {
+                        let mut walls = match &state.ui.selection {
+                            Some(Selection::Multiple(walls, _)) => walls.clone(),
+                            Some(Selection::Wall(wid, _)) => vec![*wid],
+                            _ => vec![],
+                        };
+                        // TODO allow removing
+                        walls.push(wid);
+                        let pdiffs = walls
+                            .iter()
+                            .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
+                            .collect();
+                        state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
+                    // hide_wall_ui()?;
+                    } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
+                        if walls.contains(&wid) {
+                            let mut walls = walls.clone();
                             walls.push(wid);
                             let pdiffs = walls
                                 .iter()
                                 .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
                                 .collect();
-                            state.ui.selection = Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                            // hide_wall_ui()?;
-                        } else if let Some(Selection::Multiple(walls, _)) = &state.ui.selection {
-                            if walls.contains(&wid) {
-                                let mut walls = walls.clone();
-                                walls.push(wid);
-                                let pdiffs = walls
-                                    .iter()
-                                    .map(|wid| state.config.walls[*wid].kind.point_base() - pos)
-                                    .collect();
-                                state.ui.selection =
-                                    Some(Selection::Multiple(walls, Some((pdiffs, pos))));
-                                // hide_wall_ui()?;
-                            } else {
-                                state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
-                                state.ui.hovered = None;
-                            }
-                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                            state.ui.selection =
+                                Some(Selection::Multiple(walls, Some((pdiffs, pos))));
+                        // hide_wall_ui()?;
                         } else {
                             state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
                             state.ui.hovered = None;
-                            // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                         }
+                    // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
+                    } else {
+                        state.ui.selection = Some(Selection::Wall(wid, Some((id, pos))));
+                        state.ui.hovered = None;
+                        // old_ui::show_wall_ui(wid, &state.config.walls[wid])?;
                     }
-                };
-                update_cursor(&state.ui)?;
-                state.send_on_change();
-                draw(state)
+                }
+            };
+            update_cursor(&state.ui)?;
+            state.send_on_change();
+            draw(state)
         })
     });
 
@@ -584,52 +643,53 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
             // use_ui(|ui| -> Result<(), JsValue> {
-                let mut pos = mouse_pos(&state.config.rendering, &evt);
-                state.ui.last_mouse_pos = pos.clone();
-                match &mut state.ui.selection {
-                    Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        state.config.walls[*wid].kind.set_point_base(pos + *pdiff);
-                        state.async_render(true)
+            let mut pos = mouse_pos(&state.config.rendering, &evt);
+            state.ui.last_mouse_pos = pos.clone();
+            match &mut state.ui.selection {
+                Some(Selection::Wall(wid, Some((Handle::Move(pdiff), original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Wall(wid, Some((Handle::Handle(id), original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        state.config.walls[*wid].kind.move_handle(*id, &pos);
-                        state.async_render(true)
+                    state.config.walls[*wid].kind.set_point_base(pos + *pdiff);
+                    state.async_render(true)
+                }
+                Some(Selection::Wall(wid, Some((Handle::Handle(id), original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Pan { grab, center }) => {
-                        let pos = pos + (*center - state.config.rendering.center);
-                        state.config.rendering.center = *center - (pos - *grab);
-                        state.async_render(true)
+                    state.config.walls[*wid].kind.move_handle(*id, &pos);
+                    state.async_render(true)
+                }
+                Some(Selection::Pan { grab, center }) => {
+                    let pos = pos + (*center - state.config.rendering.center);
+                    state.config.rendering.center = *center - (pos - *grab);
+                    state.async_render(true)
+                }
+                Some(Selection::Multiple(wids, Some((pdiffs, original_point)))) => {
+                    if evt.meta_key() {
+                        pos = *original_point + (pos - *original_point) / 10.0;
                     }
-                    Some(Selection::Multiple(wids, Some((pdiffs, original_point)))) => {
-                        if evt.meta_key() {
-                            pos = *original_point + (pos - *original_point) / 10.0;
-                        }
-                        for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
-                            state.config.walls[*wid].kind.set_point_base(pos + pdiff);
-                        }
-                        state.async_render(true)
+                    for (wid, pdiff) in wids.iter().zip(pdiffs.clone()) {
+                        state.config.walls[*wid].kind.set_point_base(pos + pdiff);
                     }
-                    _ => {
-                        match find_collision(
-                            &state.config.walls,
-                            &mouse_pos(&state.config.rendering, &evt),
-                        ) {
-                            Some((wid, id)) => state.ui.hovered = Some((wid, id)),
-                            None => state.ui.hovered = None,
-                        }
-                        Ok(())
+                    state.async_render(true)
+                }
+                _ => {
+                    match find_collision(
+                        state.config.rendering.zoom,
+                        &state.config.walls,
+                        &mouse_pos(&state.config.rendering, &evt),
+                    ) {
+                        Some((wid, id)) => state.ui.hovered = Some((wid, id)),
+                        None => state.ui.hovered = None,
                     }
-                }?;
-                use std::ops::Deref;
-                evt.deref().prevent_default();
-                update_cursor(&state.ui)?;
-                draw(state)?;
+                    Ok(())
+                }
+            }?;
+            use std::ops::Deref;
+            evt.deref().prevent_default();
+            update_cursor(&state.ui)?;
+            draw(state)?;
             // })?;
             Ok(())
         })

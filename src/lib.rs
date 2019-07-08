@@ -72,7 +72,7 @@ pub fn set_active_light(idx: usize) {
 
 #[wasm_bindgen]
 pub fn hover_wall(idx: usize) {
-    let _ = state::with(|state| {
+    state::maybe_with(|state| {
         state.ui.hovered = Some((idx, ui::Handle::Move(nalgebra::zero())));
         ui::draw(state);
         state.send_on_change();
@@ -81,33 +81,33 @@ pub fn hover_wall(idx: usize) {
 
 #[wasm_bindgen]
 pub fn show_ui() {
-    let _ = state::with(|state| {
+    state::maybe_with(|state| {
         state.ui.mouse_over = true;
-        ui::draw(state)
+        ui::draw(state);
     });
 }
 
 #[wasm_bindgen]
 pub fn hide_ui() {
-    let _ = state::with(|state| {
+    state::maybe_with(|state| {
         state.ui.mouse_over = false;
-        ui::draw(state)
+        ui::draw(state);
     });
 }
 
 #[wasm_bindgen]
-pub fn show_hist() {
-    let _ = state::with(|state| {
-        state.ui.show_hist = true;
-        ui::draw(state)
+pub fn show_hist(canvas: web_sys::HtmlCanvasElement) {
+    state::maybe_with(|state| {
+        state.hist_canvas = Some(canvas);
+        ui::draw(state);
     });
 }
 
 #[wasm_bindgen]
 pub fn hide_hist() {
-    let _ = state::with(|state| {
-        state.ui.show_hist = false;
-        ui::draw(state)
+    state::maybe_with(|state| {
+        state.hist_canvas = None;
+        ui::draw(state);
     });
 }
 
@@ -121,21 +121,29 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
         .into_serde::<shared::Config>()
         .or_else(|_| {
             encoded
+                .into_serde::<shared::v4::Config>()
+                .map(shared::from_v4)
+        })
+        .or_else(|_| {
+            encoded
                 .into_serde::<shared::v3::Config>()
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
         .or_else(|_| {
             encoded
                 .into_serde::<shared::v2::Config>()
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
         .or_else(|_| {
             encoded
                 .into_serde::<shared::v1::Config>()
                 .map(shared::v2::from_v1)
                 .map(shared::v3::from_v2)
-                .map(shared::from_v3)
+                .map(shared::v4::from_v3)
+                .map(shared::from_v4)
         })
 }
 

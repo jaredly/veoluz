@@ -78,10 +78,17 @@ impl LightKind {
     }
 }
 
+impl LightSource {
+    pub fn translate(&mut self, by: &Vector2<line::float>) {
+        self.kind.translate(by);
+    }
+}
+
 impl Config {
     pub fn new(walls: Vec<Wall>, width: usize, height: usize) -> Self {
         Config {
             walls,
+            light_formation: Default::default(),
             lights: vec![LightSource {
                 kind: LightKind::Point {
                     origin: Point2::origin(),
@@ -247,10 +254,10 @@ impl Wall {
 //     Finished(JsValue)
 // }
 
-fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
-    let mut orig_walls = config.walls.clone();
+pub fn extra_walls(mut orig_walls: Vec<Wall>, walls: &mut Vec<Wall>, config: &Config) {
+    // let mut orig_walls = config.walls.clone();
     if config.transform.reflection {
-        for wall in config.walls.iter() {
+        for wall in orig_walls.clone().iter() {
             let mut wall = wall.clone();
             wall.kind.reflect_across(0.0);
             walls.push(wall.clone());
@@ -272,7 +279,7 @@ fn extra_walls(walls: &mut Vec<Wall>, config: &Config) {
 
 fn all_walls(config: &Config) -> Vec<Wall> {
     let mut walls = config.walls.clone();
-    extra_walls(&mut walls, config);
+    extra_walls(walls.clone(), &mut walls, config);
     walls
 }
 
@@ -295,30 +302,69 @@ impl Config {
         all_walls(self)
     }
 
+    pub fn all_lights(&self) -> Vec<LightSource> {
+        match self.light_formation {
+            LightFormation::Single(()) => self.lights.clone(),
+            LightFormation::Line(count, spacing) => {
+                let base = self.lights[0].clone();
+                let mut lights = self.lights.clone();
+                if count < 2 {
+                    return lights;
+                }
+                let x0 = -spacing * (count - 1) as f32 / 2.0;
+                for i in 0..count.max(1) {
+                    let mut light = base.clone();
+                        light.translate(&Vector2::new(x0 + spacing * i as f32, 0.0));
+                    lights.push( light);
+                }
+                lights
+            },
+            LightFormation::Circle(count, spacing, center) => {
+                let base = self.lights[0].clone();
+                let mut lights = if center { self.lights.clone() } else { self.lights[1..].to_vec() };
+                let offset =  -std::f32::consts::PI / 2.0;
+                let r = std::f32::consts::PI * 2.0 / count.max(2) as f32;
+                for i in 0..count.max(2) {
+                    let mut light = base.clone();
+                    let angle = (i as f32 * r) + offset;
+                    light.translate(&Vector2::new(spacing * angle.cos(), spacing * angle.sin()));
+                    lights.push(light)
+                }
+                lights
+            }
+        }
+    }
+
     pub fn main_walls(&self) -> Vec<Wall> {
         self.walls.clone()
     }
 
     pub fn extra_walls(&self) -> Vec<Wall> {
         let mut extras = vec![];
-        extra_walls(&mut extras, self);
+        extra_walls(self.walls.clone(), &mut extras, self);
         extras
     }
 
-    fn all_lights(&self) -> Vec<LightSource> {
-        self.lights.clone()
-    }
+    // fn all_lights(&self) -> Vec<LightSource> {
+    //     self.lights.clone()
+    // }
 }
 
 pub struct Timer<'a> {
     name: &'a str,
+    #[cfg(not(target_arch = "wasm32"))]
+    initial: std::time::SystemTime,
 }
 
 impl<'a> Timer<'a> {
     pub fn new(name: &'a str) -> Timer<'a> {
         #[cfg(target_arch = "wasm32")]
-        web_sys::console::time_with_label(name);
-        Timer { name }
+        {
+            web_sys::console::time_with_label(name);
+            return Timer { name };
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        Timer { name, initial: std::time::SystemTime::now() }
     }
 }
 
@@ -326,5 +372,10 @@ impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
         #[cfg(target_arch = "wasm32")]
         web_sys::console::time_end_with_label(self.name);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let diff = std::time::SystemTime::now().duration_since(self.initial).unwrap();
+            println!("Timer {}: {}s", self.name, diff.as_secs());
+        }
     }
 }

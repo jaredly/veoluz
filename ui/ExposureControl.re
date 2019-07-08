@@ -85,8 +85,8 @@ let handleStyle =
       marginLeft(px(-5)),
       borderRadius(`percent(20.0)),
       cursor(`grab),
-      backgroundColor(hex("000")),
-      border(px(2), `solid, hex("fff")),
+      backgroundColor(hex("fff")),
+      border(px(1), `solid, hex("000")),
     ])
   );
 
@@ -96,7 +96,7 @@ bottom(px(0))
 ]));
 
 [@react.component]
-let make = (~config, ~update, ~wasm) => {
+let make = (~config, ~limits as (min_v, max_v), ~update, ~wasm: Rust.wasm, ~width) => {
   let containerRef = React.useRef(Js.Nullable.null);
 
   let (_, onMin) =
@@ -107,7 +107,7 @@ let make = (~config, ~update, ~wasm) => {
       let y = float_of_int(y) -. box##top;
       let xPercent = x /. box##width;
       let config = [%js.deep
-        config["rendering"]["exposure"]["min"].replace(xPercent)
+        config["rendering"]["exposure"]["limits"].replace(Js.Null.return((xPercent, max_v)))
       ];
       update(config, false);
     });
@@ -120,29 +120,19 @@ let make = (~config, ~update, ~wasm) => {
       let y = float_of_int(y) -. box##top;
       let xPercent = x /. box##width;
       let config = [%js.deep
-        config["rendering"]["exposure"]["max"].replace(xPercent)
+        config["rendering"]["exposure"]["limits"].replace(Js.Null.return((min_v, xPercent)))
       ];
       update(config, false);
     });
 
   <div
     ref={ReactDOMRe.Ref.domRef(containerRef)}
-    onMouseOver={evt => wasm##show_hist()}
-    onMouseOut={evt => wasm##hide_hist()}
     className=Css.(
       style([position(`absolute), bottom(px(0)), left(px(0)),
-        selector(".color-picker-wrapper", [
-          visibility(`hidden)
-        ]),
-      hover([
-        selector(".color-picker-wrapper", [
-          visibility(`visible)
-        ])
-      ])
       ])
     )
     style={ReactDOMRe.Style.make(
-      ~width=Js.Int.toString(config##rendering##width) ++ "px",
+      ~width=Js.Int.toString(width) ++ "px",
       ~height="40px",
       (),
     )}>
@@ -150,88 +140,28 @@ let make = (~config, ~update, ~wasm) => {
       style={ReactDOMRe.Style.make(
         ~left=
           Js.Float.toString(
-            float_of_int(config##rendering##width)
+            float_of_int(width)
             *.
-            max(0.0, config##rendering##exposure##min),
+            max(0.0, min_v),
           )
           ++ "px",
         (),
       )}
       className=handleWrapperStyle>
-      {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-       | None => React.string("not rgb")
-       | Some(rgb) =>
-         <div
-          className="color-picker-wrapper"
-           style={ReactDOMRe.Style.make(
-             ~width="10px",
-             ~marginLeft="-13px",
-             ~marginTop="2px",
-             ~height="30px",
-             (),
-           )}>
-           <Colorpickr
-             color={rgbToColor(rgb##background)}
-             onChange={color => {
-               Js.log2("Color", color);
-               let config = [%js.deep
-                 config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                   switch (rgb) {
-                   | None => None
-                   | Some(v) =>
-                     Some(v["background"].replace(colorToRgb(color##color)))
-                   }
-                 )
-               ];
-               update(config, false);
-             }}
-           />
-         </div>
-       }}
       <div onMouseDown=onMin className=handleStyle />
     </div>
     <div
       style={ReactDOMRe.Style.make(
         ~left=
           Js.Float.toString(
-            float_of_int(config##rendering##width)
+            float_of_int(width)
             *.
-            min(1.0, config##rendering##exposure##max),
+            min(1.0, max_v),
           )
           ++ "px",
         (),
       )}
       className=handleWrapperStyle>
-      {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-       | None => React.string("not rgb")
-       | Some(rgb) =>
-         <div
-          className="color-picker-wrapper"
-           style={ReactDOMRe.Style.make(
-             ~width="10px",
-             ~marginLeft="-13px",
-             ~marginTop="2px",
-             ~height="30px",
-             (),
-           )}>
-           <Colorpickr
-             color={rgbToColor(rgb##highlight)}
-             onChange={color => {
-               Js.log2("Color", color);
-               let config = [%js.deep
-                 config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                   switch (rgb) {
-                   | None => None
-                   | Some(v) =>
-                     Some(v["highlight"].replace(colorToRgb(color##color)))
-                   }
-                 )
-               ];
-               update(config, false);
-             }}
-           />
-         </div>
-       }}
       <div onMouseDown=onMax className=handleStyle />
     </div>
   </div>;

@@ -28,6 +28,39 @@ pub enum WallType {
     Parabola(Parabola),
 }
 
+use crate::types::LerpEq;
+
+impl crate::types::LerpEq for Segment<line::float> {
+    fn lerp(&self, other: &Self, amount: f32) -> Self {
+        Segment::new(
+            self.a().lerp(other.a(), amount),
+            self.b().lerp(other.b(), amount),
+        )
+    }
+}
+
+impl crate::types::Lerp for WallType {
+    fn lerp_(&self, other: &Self, amount: f32) -> Self {
+        match (self, other) {
+            (WallType::Line(line1), WallType::Line(line2)) => {
+                WallType::Line(line1.lerp(line2, amount))
+            }
+            (WallType::Circle(ball, pos, t0, t1), WallType::Circle(ball2, pos2, t02, t12)) => {
+                WallType::Circle(
+                    Ball::new(ball.radius().lerp(&ball2.radius(), amount)),
+                    pos.lerp(&pos2, amount),
+                    t0.lerp(&t12, amount),
+                    t1.lerp(&t02, amount),
+                )
+            }
+            (WallType::Parabola(p1), WallType::Parabola(p2)) => {
+                WallType::Parabola(p1.lerp(p2, amount))
+            }
+            _ => panic!("Cannot lerp between wall types")
+        }
+    }
+}
+
 impl WallType {
     pub fn rand_circle(width: usize, height: usize) -> WallType {
         WallType::Circle(
@@ -138,17 +171,20 @@ impl WallType {
         }
     }
 
-    pub fn scale(&mut self, by: usize) {
+    pub fn scale(&mut self, by: f32) {
         match self {
             WallType::Line(wall) => {
-                *wall = Segment::new(wall.a() * by as f32, wall.b() * by as f32)
+                *wall = Segment::new(wall.a() * by, wall.b() * by )
             }
             WallType::Circle(ball, center, _, _) => {
-                *ball = Ball::new(ball.radius() * by as f32);
-                *center = *center * by as f32;
+                *ball = Ball::new(ball.radius() * by );
+                *center = *center * by ;
             }
             WallType::Parabola(parabola) => {
-                parabola.transform.translation.vector *= by as f32;
+                parabola.transform.translation.vector *= by ;
+                parabola.a /= by ;
+                parabola.left *= by ;
+                parabola.right *= by ;
             }
         }
     }
@@ -338,10 +374,13 @@ impl WallType {
                 // 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 0 => {
                     let dist = transform.translation.vector - pos.coords;
-                    *a = -1.0 / (4.0 * dist.norm_squared().sqrt());
-                    transform.rotation = nalgebra::UnitComplex::from_angle(
-                        dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
-                    );
+                    let det = 4.0 * dist.norm_squared().sqrt();
+                    if det != 0.0 {
+                        *a = -1.0 / det;
+                        transform.rotation = nalgebra::UnitComplex::from_angle(
+                            dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
+                        );
+                    }
                 }
                 1 => {
                     let pos = transform.inverse_transform_point(pos);

@@ -31,7 +31,6 @@ var blankUi = {
   show_lasers: false,
   selection: null,
   mouse_over: false,
-  show_hist: false,
   hovered: null,
   last_mouse_pos: /* tuple */[
     0.0,
