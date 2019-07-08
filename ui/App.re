@@ -494,7 +494,8 @@ Rust.withModule(wasm
   // let config = wasm##save();
   =>
     ReactDOMRe.renderToElementWithId(
-      <App wasm />,
+      // <App wasm />,
+      <WallEditor.TriangleTester />,
       "reason-root",
       // Js.log2("Config we got", config);
     )
