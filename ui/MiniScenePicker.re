@@ -1,6 +1,27 @@
 open Types;
 // open ScenePicker;
 
+let iconButton =
+  Css.(
+    style([
+      width(px(50)),
+      height(px(50)),
+      flexShrink(0),
+      display(`flex),
+      alignItems(`center),
+      justifyContent(`center),
+      cursor(`pointer),
+      color(rgba(255, 255, 255, 0.7)),
+      Css.hover([
+        color(white),
+        backgroundColor(
+          // Colors.button
+          hex("335"),
+        ),
+      ]),
+    ])
+  );
+
 [@react.component]
 let make =
     (
@@ -27,62 +48,28 @@ let make =
         maxWidth(px(1024)),
       ])
     )>
-    <div className=Styles.column>
-      <button onClick={_ => toggleGallery(true)}>
-        {React.string("Gallery")}
-      </button>
-      {Styles.spacer(8)}
-      {gallery
-         ? ReactDOMRe.createPortal(
-             <Gallery
-               onClose={_ => toggleGallery(false)}
-               onUpdateTags
-               directory
-               onChangeScene
-             />,
-             portal,
-           )
-         : React.null}
-      <div className=Styles.row>
-        <div
-          className=Css.(
-            style([
-              width(px(50)),
-              height(px(50)),
-              flexShrink(0),
-              display(`flex),
-              alignItems(`center),
-              justifyContent(`center),
-              cursor(`pointer),
-              color(rgba(255, 255, 255, 0.7)),
-              Css.hover([color(white)]),
-            ])
-          )
-          onClick={_evt => onClearScene()}>
-          <IonIcons.Document color="currentcolor" />
-        </div>
-        <div
-          className=Css.(
-            style([
-              width(px(50)),
-              height(px(50)),
-              flexShrink(0),
-              display(`flex),
-              alignItems(`center),
-              justifyContent(`center),
-              cursor(`pointer),
-              color(rgba(255, 255, 255, 0.7)),
-              Css.hover([color(white)]),
-            ])
-          )
-          onClick={_evt => onSaveScene(Types.emptyScene)}>
-          <IonIcons.Camera color="currentcolor" />
-        </div>
+    {gallery
+       ? ReactDOMRe.createPortal(
+           <Gallery
+             onClose={_ => toggleGallery(false)}
+             onUpdateTags
+             directory
+             onChangeScene
+           />,
+           portal,
+         )
+       : React.null}
+    <div className=Styles.row>
+      <div className=iconButton onClick={_evt => toggleGallery(true)}>
+        <IonIcons.Gallery color="currentcolor" />
       </div>
-      {Styles.spacer(8)}
-      <button className=Css.(style([visibility(`hidden)]))>
-        {React.string("Hidden")}
-      </button>
+      <div className=iconButton onClick={_evt => onClearScene()}>
+        <IonIcons.Document color="currentcolor" />
+      </div>
+      <div
+        className=iconButton onClick={_evt => onSaveScene(Types.emptyScene)}>
+        <IonIcons.Camera color="currentcolor" />
+      </div>
     </div>
     <div
       className=Css.(

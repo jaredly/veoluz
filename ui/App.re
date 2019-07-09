@@ -458,7 +458,7 @@ module Inner = {
           />;
         }
         {Styles.spacer(8)}
-        <ExposureFunction.TransformEditor
+        <TransformEditor
           wasm
           config={state.config}
           update={(config, checkpoint) => {

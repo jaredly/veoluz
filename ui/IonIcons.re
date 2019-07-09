@@ -153,3 +153,16 @@ module Tag = {
     React.element =
     "react-ionicons/lib/MdPricetag";
 };
+
+module Gallery = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdApps";
+};

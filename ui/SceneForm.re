@@ -94,6 +94,7 @@ module DropDown = {
           style([
             backgroundColor(`transparent),
             color(white),
+            padding(px(8)),
             borderStyle(`none),
           ])
         )
@@ -114,6 +115,8 @@ module DropDown = {
                zIndex(1000),
                position(`absolute),
                top(`percent(100.0)),
+               maxHeight(px(200)),
+               overflow(`auto),
                backgroundColor(white),
                boxShadow(~blur=px(5), Colors.accent),
                padding(px(8)),

@@ -12,7 +12,7 @@ module NumInput = {
         }
       }
       value=tmp
-      className={Css.style([Css.width(Css.px(50))])}
+      className={Css.style([Css.width(Css.px(width))])}
       ?step
       onChange={evt => {
         let text = evt->ReactEvent.Form.target##value;

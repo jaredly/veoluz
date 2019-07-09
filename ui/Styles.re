@@ -9,11 +9,7 @@ let title =
   ]);
 
 let titleNoMargin =
-  style([
-    fontSize(px(12)),
-    fontWeight(`num(600)),
-    color(Colors.accent),
-  ]);
+  style([fontSize(px(12)), fontWeight(`num(600)), color(Colors.accent)]);
 
 let join = styles => String.concat(" ", styles);
 
@@ -31,11 +27,14 @@ let column = style([display(`flex), flexDirection(`column)]);
 
 let controlColumn = join([control, column]);
 
-let spacer = v => <div style=ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ()) />;
+let spacer = v =>
+  <div
+    style={ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ())}
+  />;
+let fullSpace = <div style={ReactDOMRe.Style.make(~flex="1", ())} />;
 
-let row = style([display(`flex), flexDirection(`row), alignItems(`center)])
+let row =
+  style([display(`flex), flexDirection(`row), alignItems(`center)]);
 
-let flatButton = textColor => style([
-  backgroundColor(`transparent),
-  color(textColor)
-]);
+let flatButton = textColor =>
+  style([backgroundColor(`transparent), color(textColor)]);

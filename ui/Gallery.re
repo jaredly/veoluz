@@ -2,7 +2,7 @@ module Scene = {
   [@react.component]
   let make = (~scene: Types.scene, ~onChangeScene, ~tags, ~onUpdateTags) => {
     let (title, updateTitle) = Hooks.useUpdatingState(scene.title);
-    let url = ScenePicker.useSceneImage(scene);
+    let url = ScenePicker.useCachedSceneImage(scene);
     <div
       style={ReactDOMRe.Style.make(
         ~backgroundImage=
@@ -120,9 +120,13 @@ type filter = {
   tags: [ | `All(Belt.Set.String.t) | `None],
 };
 
+open Belt;
+
 [@react.component]
 let make =
     (~onClose, ~directory: Types.directory, ~onChangeScene, ~onUpdateTags) => {
+  let (filter, setFilter) =
+    Hooks.useState({star: false, tags: `All(Set.String.empty)});
   <div
     className=Css.(
       style([
@@ -151,6 +155,23 @@ let make =
         )>
         {React.string("Veo Luz Gallery")}
       </div>
+      {Styles.spacer(8)}
+      <button
+        className={Styles.flatButton(Css.white)}
+        onClick={_ => setFilter({...filter, star: !filter.star})}>
+        {React.string(filter.star ? "Show all" : "Starred")}
+      </button>
+      <button
+        className={Styles.flatButton(Css.white)}
+        onClick={_ =>
+          setFilter({
+            ...filter,
+            tags: filter.tags == `None ? `All(Set.String.empty) : `None,
+          })
+        }>
+        {React.string("Untagged")}
+      </button>
+      Styles.fullSpace
       <div
         className=Css.(
           style([
@@ -175,11 +196,27 @@ let make =
       {React.array(
          directory.scenes
          ->Belt.Map.String.valuesToArray
+         ->Array.keep(scene =>
+             (filter.star ? scene.starred : true)
+             && (
+               switch (filter.tags) {
+               | `All(tags) =>
+                 tags->Set.String.every(t => scene.tags->Set.String.has(t))
+               | `None => scene.tags->Set.String.isEmpty
+               }
+             )
+           )
          ->Js.Array2.sortInPlaceWith((a, b) =>
              int_of_float(b.created -. a.created)
            )
          ->Belt.Array.map(scene =>
-             <Scene onChangeScene scene onUpdateTags tags={directory.tags} />
+             <Scene
+               key={scene.id}
+               onChangeScene
+               scene
+               onUpdateTags
+               tags={directory.tags}
+             />
            ),
        )}
     </div>

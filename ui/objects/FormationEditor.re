@@ -12,19 +12,34 @@ let formationType = kind =>
     }
   };
 
-let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
+// let btn = Css.(style([
+//   disabled([backgroundColor(Colors.accent)])
+// ]));
+
+let btn =
+  Css.(
+    style([
+      backgroundColor(`transparent),
+      // textDecoration(`underline),
+      disabled([
+        textDecorationColor(Colors.accent),
+        // backgroundColor(Colors.accent),
+        textDecoration(`underline),
+      ]),
+    ])
+  );
 
 [@react.component]
 let make = (~wasm, ~update, ~config) => {
   <div className=Styles.column>
-    <div
-      className=Css.(
-        style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)])
-      )>
-      {React.string("Light formation")}
-    </div>
-    {Styles.spacer(8)}
     <div className=Styles.row>
+      <div
+        className=Css.(
+          style([fontWeight(`bold), padding2(~v=px(8), ~h=`zero)])
+        )>
+        {React.string("Light formation")}
+      </div>
+      {Styles.spacer(8)}
       <button
         className=btn
         disabled={[%js.deep config##light_formation["Single"]] != None}
@@ -73,10 +88,10 @@ let make = (~wasm, ~update, ~config) => {
         {React.string("Line")}
       </button>
     </div>
-    {Styles.spacer(8)}
     {switch (formationType(config##light_formation)) {
      | `Circle(count, dist, center) =>
        <div className=Styles.column>
+         {Styles.spacer(8)}
          <div className=Styles.row>
            {React.string("Count")}
            {Styles.spacer(4)}
@@ -137,7 +152,12 @@ let make = (~wasm, ~update, ~config) => {
          </button>
        </div>
      | `Line(count, dist) =>
-       <div className=Styles.row>
+       <div
+         className={Styles.join([
+           Styles.row,
+           Css.(style([marginTop(px(8))])),
+         ])}>
+         {Styles.spacer(8)}
          {React.string("Count")}
          {Styles.spacer(4)}
          <Ui.NumInput

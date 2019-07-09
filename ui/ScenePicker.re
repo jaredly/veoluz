@@ -52,30 +52,76 @@ let saveSceneInfo = directory => {
 
 [@bs.val] [@bs.scope "URL"] external createObjectURL: Web.blob => string = "";
 
-// let urlCache = Js.Obj.empty();
+let urlCache = Js.Dict.empty();
 
-let useSceneImage = (scene: scene) => {
+// let useSceneImage = (scene: scene) => {
+//   let key = scene.id ++ ":image";
+//   let getter =
+//     React.useCallback2(
+//       () => Web.LocalForage.getItem(key),
+//       (key, scene.modified),
+//     );
+//   let imageBlob = Hooks.useLoading(getter);
+//   let url =
+//     React.useMemo1(
+//       () =>
+//         switch (imageBlob) {
+//         | None => None
+//         | Some(blob) =>
+//           switch (Js.toOption(blob)) {
+//           | Some(blob) => Some(createObjectURL(blob))
+//           | None => Some("invalid")
+//           }
+//         },
+//       [|imageBlob|],
+//     );
+//   url;
+// };
+
+let useCachedSceneImage = (scene: scene) => {
   let key = scene.id ++ ":image";
   let getter =
     React.useCallback2(
       () => Web.LocalForage.getItem(key),
       (key, scene.modified),
     );
-  let imageBlob = Hooks.useLoading(getter);
-  let url =
-    React.useMemo1(
-      () =>
-        switch (imageBlob) {
-        | None => None
-        | Some(blob) =>
-          switch (Js.toOption(blob)) {
-          | Some(blob) => Some(createObjectURL(blob))
-          | None => Some("invalid")
-          }
-        },
-      [|imageBlob|],
+
+  let (data, setData) =
+    Hooks.useState(
+      switch (Js.Dict.get(urlCache, key)) {
+      | Some((modified, url)) when modified == scene.modified => Some(url)
+      | _ => None
+      },
     );
-  url;
+
+  React.useEffect3(
+    () => {
+      switch (Js.Dict.get(urlCache, key)) {
+      | Some((modified, url)) when modified == scene.modified =>
+        setData(Some(url))
+      | _ =>
+        if (data != None) {
+          setData(None);
+        };
+        getter()
+        |> Js.Promise.then_(result => {
+             switch (Js.toOption(result)) {
+             | None => ()
+             | Some(blob) =>
+               let url = createObjectURL(blob);
+               Js.Dict.set(urlCache, key, (scene.modified, url));
+               setData(Some(url));
+             };
+             Js.Promise.resolve();
+           })
+        |> ignore;
+      };
+      None;
+    },
+    (getter, key, scene.modified),
+  );
+
+  data;
 };
 
 module Scene = {
@@ -90,7 +136,7 @@ module Scene = {
         ~onChangeScene,
         ~onSaveScene,
       ) => {
-    let url = useSceneImage(scene);
+    let url = useCachedSceneImage(scene);
     switch (url) {
     | None => <div> {React.string("Loading...")} </div>
     | Some(url) =>
@@ -122,10 +168,10 @@ module Scene = {
               height(px(50)),
               backgroundSize(`cover),
               position(`relative),
+              `declaration(("background-position", "center")),
               // display(`flex),
               // justifyContent(`spaceBetween),
               // flexDirection(`column),
-              `declaration(("background-position", "center")),
               // backgroundPosition(`center, `center)
             ])
           )>
