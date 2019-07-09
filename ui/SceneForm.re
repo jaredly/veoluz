@@ -46,6 +46,7 @@ module DropDown = {
     | `Close => {...state, selection: None}
     | `Done(getList) => {...state, value: "", items: getList("")}
     };
+
   [@react.component]
   let make = (~onSelect, ~onCreate, ~getList, ~render) => {
     let (state, dispatch) =
@@ -89,6 +90,14 @@ module DropDown = {
           | _ => ()
           }
         }
+        className=Css.(
+          style([
+            backgroundColor(`transparent),
+            color(white),
+            borderStyle(`none),
+          ])
+        )
+        placeholder="Add a tag"
         onChange={evt => {
           let text = evt->ReactEvent.Form.target##value;
           dispatch(`Type((text, getList)));
@@ -102,6 +111,7 @@ module DropDown = {
          <div
            className=Css.(
              style([
+               zIndex(1000),
                position(`absolute),
                top(`percent(100.0)),
                backgroundColor(white),
@@ -142,46 +152,47 @@ module TagsEditor = {
   open Types;
 
   [@react.component]
-  let make = (~directory, ~tags, ~onChange, ~onUpdateTags) => {
+  let make = (~sceneTags, ~tags, ~onChange, ~onUpdateTags) => {
     let getList =
       React.useCallback2(
         text =>
-          directory.tags
+          tags
           ->Belt.Map.String.valuesToArray
           ->Belt.Array.keep(t =>
-              !tags->Belt.Set.String.has(t.id)
+              !sceneTags->Belt.Set.String.has(t.id)
               && t.title->Js.String2.includes(text)
             )
           ->Js.Array2.sortInPlaceWith((t1, t2) =>
               t1.title->Js.String2.indexOf(text)
               - t2.title->Js.String2.indexOf(text)
             ),
-        (directory, tags),
+        (sceneTags, tags),
       );
 
-    <div>
+    <div className=Styles.row>
+      <IonIcons.Tag color="white" className=Css.(style([margin(px(8))])) />
       <div
         className={Styles.join([
           Styles.row,
-          Css.(style([flexWrap(`wrap)])),
+          Css.(style([overflowX(`auto), flexShrink(1)])),
         ])}>
-        {tags
+        {sceneTags
          ->Belt.Set.String.toArray
          ->Belt.Array.map(tid =>
-             switch (directory.tags->Belt.Map.String.get(tid)) {
+             switch (tags->Belt.Map.String.get(tid)) {
              | None => React.null
              | Some(tag) =>
                <div
                  onClick={_ =>
-                   onChange(tags->Belt.Set.String.remove(tag.id))
+                   onChange(sceneTags->Belt.Set.String.remove(tag.id))
                  }
                  className=Css.(
                    style([
                      padding2(~v=px(4), ~h=px(8)),
                      borderRadius(px(4)),
-                     marginBottom(px(4)),
-                     marginRight(px(4)),
-                     hover([backgroundColor(Colors.button)]),
+                     marginRight(px(8)),
+                     backgroundColor(Colors.button),
+                     hover([backgroundColor(Colors.accent)]),
                    ])
                  )>
                  {React.string(tag.title)}
@@ -190,6 +201,7 @@ module TagsEditor = {
            )
          ->React.array}
       </div>
+      {Styles.spacer(8)}
       <DropDown
         getList
         render={(~selected, tag, onClick) =>
@@ -200,12 +212,11 @@ module TagsEditor = {
             {React.string(tag.title)}
           </div>
         }
-        onSelect={tag => onChange(tags->Belt.Set.String.add(tag.id))}
+        onSelect={tag => onChange(sceneTags->Belt.Set.String.add(tag.id))}
         onCreate={title => {
           let id = Types.genId();
           onUpdateTags(
-            directory.tags
-            ->Belt.Map.String.set(id, {id, color: "white", title}),
+            tags->Belt.Map.String.set(id, {id, color: "white", title}),
           );
         }}
       />

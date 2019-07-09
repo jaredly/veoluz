@@ -1,7 +1,7 @@
 module Scene = {
   [@react.component]
-  let make = (~scene, ~onChangeScene) => {
-    let (tmpScene, updateScene) = Hooks.useUpdatingState(scene);
+  let make = (~scene: Types.scene, ~onChangeScene, ~tags, ~onUpdateTags) => {
+    let (title, updateTitle) = Hooks.useUpdatingState(scene.title);
     let url = ScenePicker.useSceneImage(scene);
     <div
       style={ReactDOMRe.Style.make(
@@ -35,7 +35,7 @@ module Scene = {
         ])}>
         <input
           value={
-            switch (tmpScene.title) {
+            switch (title) {
             | None => ""
             | Some(t) => t
             }
@@ -53,7 +53,7 @@ module Scene = {
           placeholder="Title"
           onChange={evt => {
             let t = evt->ReactEvent.Form.target##value;
-            updateScene({...tmpScene, title: t == "" ? None : Some(t)});
+            updateTitle(t == "" ? None : Some(t));
           }}
         />
         {Styles.spacer(8)}
@@ -63,15 +63,34 @@ module Scene = {
            )}
         </div>
       </div>
-      <div className=Css.(style([flex(1)])) />
-      {scene != tmpScene
-         ? <button
-             className=Css.(style([alignSelf(`center)]))
-             onClick={_ => onChangeScene(tmpScene)}>
-             {React.string("Save")}
-           </button>
+      // <div className=Css.(style([flex(1)])) />
+      {scene.title != title
+         ? <div
+             className={Styles.join([
+               Styles.column,
+               Css.(style([alignItems(`center)])),
+             ])}>
+             <button
+               className=Css.(style([alignSelf(`center)]))
+               onClick={_ => onChangeScene({...scene, title})}>
+               {React.string("Save")}
+             </button>
+             {Styles.spacer(8)}
+             <button
+               className=Css.(style([alignSelf(`center)]))
+               onClick={_ => updateTitle(scene.title)}>
+               {React.string("Cancel")}
+             </button>
+           </div>
          : React.null}
       <div className=Css.(style([flex(1)])) />
+      <SceneForm.TagsEditor
+        tags
+        onUpdateTags
+        onChange={tags => onChangeScene({...scene, tags})}
+        sceneTags={scene.tags}
+      />
+      // the star thing
       <div
         className=Css.(
           style([
@@ -96,8 +115,14 @@ module Scene = {
   };
 };
 
+type filter = {
+  star: bool,
+  tags: [ | `All(Belt.Set.String.t) | `None],
+};
+
 [@react.component]
-let make = (~onClose, ~directory: Types.directory, ~onChangeScene) => {
+let make =
+    (~onClose, ~directory: Types.directory, ~onChangeScene, ~onUpdateTags) => {
   <div
     className=Css.(
       style([
@@ -153,7 +178,9 @@ let make = (~onClose, ~directory: Types.directory, ~onChangeScene) => {
          ->Js.Array2.sortInPlaceWith((a, b) =>
              int_of_float(b.created -. a.created)
            )
-         ->Belt.Array.map(scene => <Scene onChangeScene scene />),
+         ->Belt.Array.map(scene =>
+             <Scene onChangeScene scene onUpdateTags tags={directory.tags} />
+           ),
        )}
     </div>
   </div>;

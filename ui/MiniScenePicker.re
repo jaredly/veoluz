@@ -10,6 +10,7 @@ let make =
       ~hover,
       ~unHover,
       ~onChangeScene,
+      ~onUpdateTags,
       ~onSaveScene,
       ~onClearScene,
     ) => {
@@ -30,10 +31,12 @@ let make =
       <button onClick={_ => toggleGallery(true)}>
         {React.string("Gallery")}
       </button>
+      {Styles.spacer(8)}
       {gallery
          ? ReactDOMRe.createPortal(
              <Gallery
                onClose={_ => toggleGallery(false)}
+               onUpdateTags
                directory
                onChangeScene
              />,
@@ -76,6 +79,10 @@ let make =
           <IonIcons.Camera color="currentcolor" />
         </div>
       </div>
+      {Styles.spacer(8)}
+      <button className=Css.(style([visibility(`hidden)]))>
+        {React.string("Hidden")}
+      </button>
     </div>
     <div
       className=Css.(

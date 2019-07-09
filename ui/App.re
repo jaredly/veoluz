@@ -382,6 +382,7 @@ module Inner = {
           <span id="fps" />
         </div>
         <MiniScenePicker
+          onUpdateTags={tags => dispatch(`UpdateTags(tags))}
           directory={state.directory}
           onChangeScene={scene => dispatch(`SaveInPlace(scene))}
           onClearScene={() => {

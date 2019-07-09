@@ -140,3 +140,16 @@ module Close = {
     React.element =
     "react-ionicons/lib/MdClose";
 };
+
+module Tag = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdPricetag";
+};
