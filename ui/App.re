@@ -375,6 +375,12 @@ module Inner = {
              />
            }}
         </div>
+        <div className=Css.(style([color(white)]))>
+          {React.string("Rays: ")}
+          <span id="total_rays" />
+          {React.string(" Rays/second: ")}
+          <span id="fps" />
+        </div>
         <MiniScenePicker
           directory={state.directory}
           onChangeScene={scene => dispatch(`SaveInPlace(scene))}

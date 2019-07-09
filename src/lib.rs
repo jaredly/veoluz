@@ -16,19 +16,44 @@ mod ui;
 
 fn parse_worker_message(
     evt: web_sys::MessageEvent,
-) -> Result<(usize, js_sys::Uint32Array), JsValue> {
+) -> Result<(usize, js_sys::Uint32Array, usize, f64), JsValue> {
     let obj = evt.data();
     let id = js_sys::Reflect::get(&obj, &"id".into())?
         .as_f64()
         .expect("should be a number") as usize;
+    let total_rays = js_sys::Reflect::get(&obj, &"total_rays".into())?
+        .as_f64()
+        .expect("should be a number") as usize;
+    let total_seconds = js_sys::Reflect::get(&obj, &"total_seconds".into())?
+        .as_f64()
+        .expect("should be a number");
     let buffer = js_sys::Reflect::get(&obj, &"buffer".into())?;
     let buff = js_sys::ArrayBuffer::from(buffer);
     let uarr = js_sys::Uint32Array::new_with_byte_offset(&buff.dyn_into::<JsValue>()?, 0);
-    Ok((id, uarr))
+    Ok((id, uarr, total_rays, total_seconds))
 }
 
 fn on_message(wid: usize, evt: web_sys::MessageEvent) -> Result<(), JsValue> {
-    let (id, uarr) = parse_worker_message(evt)?;
+    let (id, uarr, total_rays, total_seconds) = parse_worker_message(evt)?;
+
+    if let Some(Ok(node)) = web_sys::window()
+        .and_then(|window| window.document())
+        .and_then(|document| document.get_element_by_id("total_rays"))
+        .map(|node| node.dyn_into::<web_sys::HtmlElement>())
+    {
+        node.set_inner_text(&format!("{}", total_rays))
+    }
+
+    if let Some(Ok(node)) = web_sys::window()
+        .and_then(|window| window.document())
+        .and_then(|document| document.get_element_by_id("fps"))
+        .map(|node| node.dyn_into::<web_sys::HtmlElement>())
+    {
+        node.set_inner_text(&format!(
+            "{:.2}k",
+            total_rays as f64 / total_seconds / 1000.0
+        ))
+    }
 
     state::with(|state| {
         state.handle_render(wid, id, uarr)?;

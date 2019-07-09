@@ -192,7 +192,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
         kind.translate(&Vector2::new(dx, dy));
 
         if selected {
-            state.ctx.set_line_width(3.0);
+            state.ctx.set_line_width(5.0);
             state.ctx.set_stroke_style(&JsValue::from_str("#fff"));
             crate::draw::draw(&kind, &state.ctx, true);
         } else if wall.hide {
