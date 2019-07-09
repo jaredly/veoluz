@@ -14,13 +14,7 @@ extern "C" {
 }
 
 pub fn set_timeout<T: FnOnce() + 'static>(cb: T, timeout: f64) -> TimeoutId {
-    // use wasm_bindgen::JsCast;
-    // let bb = Box::new(cb) as Box<FnOnce()>;
-    // let f = Closure::wrap(bb);
-    // let m = set_timeout_inner(f.as_ref().unchecked_ref(), timeout);
-    let m = set_timeout_inner(&Closure::once_into_js(cb), timeout);
-    // f.forget();
-    m
+    set_timeout_inner(&Closure::once_into_js(cb), timeout)
 }
 
 pub struct State {

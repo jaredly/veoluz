@@ -138,6 +138,27 @@ module Router = {
   };
 };
 
+let downloadZip: (string, Web.canvas, Rust.config) => unit = [%bs.raw
+  {|
+(function(title, canvas, config) {
+  var JSZip = require('jszip');
+  var FileSaver = require('file-saver');
+  var zip = new JSZip();
+
+  // var img = zip.folder("images");
+  // img.file("smile.gif", imgData, {base64: true});
+
+  canvas.toBlob(blob => {
+    zip.file("image.png", blob);
+    zip.file("config.json", JSON.stringify(config))
+    zip.generateAsync({type:"blob"}).then(function(content) {
+      FileSaver.saveAs(content, title + ".zip");
+    });
+  }, 'image/png')
+})
+|}
+];
+
 let downloadCanvas: (string, Web.canvas) => unit = [%bs.raw
   {|
 (function(title, canvas) {
@@ -428,6 +449,20 @@ module Inner = {
               (router^)
               ->Router.permalink(wasm##serialize_url_config(state.config))
             }
+            onDownloadZip={() => {
+              let title =
+                switch (currentScene) {
+                | Some({title: Some(title)}) => title
+                | Some({created}) =>
+                  Js.Date.toISOString(Js.Date.fromFloat(created))
+                | _ => Js.Date.toISOString(Js.Date.make())
+                };
+              downloadZip(
+                title,
+                Web.documentGetElementById("drawing")->Web.asCanvas,
+                state.config,
+              );
+            }}
             onDownload={() => {
               let title =
                 switch (currentScene) {

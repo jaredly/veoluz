@@ -237,6 +237,7 @@ let make =
       ~onSave,
       ~onPermalink,
       ~onDownload,
+      ~onDownloadZip,
       ~wasm: Rust.wasm,
     ) => {
   let (scene, update) = Hooks.useState(scene);
@@ -291,17 +292,15 @@ let make =
     // {Styles.spacer(4)}
 
       <div className=Styles.row>
-        <button onClick={_ => onPermalink()}>
-          // className={Styles.flatButton(Colors.text)}
-           <IonIcons.Link /> </button>
-        {Styles.spacer(4)}
-        <button onClick={_ => onDownload()}>
-          // className={Styles.flatButton(Colors.text)}
-           <IonIcons.Download /> </button>
-        {Styles.spacer(4)}
         <button onClick={_evt => wasm##undo()}> <IonIcons.Undo /> </button>
         {Styles.spacer(4)}
         <button onClick={_evt => wasm##redo()}> <IonIcons.Redo /> </button>
+        {Styles.spacer(4)}
+        <button onClick={_ => onPermalink()}> <IonIcons.Link /> </button>
+        {Styles.spacer(4)}
+        <button onClick={_ => onDownload()}> <IonIcons.Download /> </button>
+        {Styles.spacer(4)}
+        <button onClick={_ => onDownloadZip()}> <IonIcons.Compress /> </button>
         {Styles.spacer(4)}
         <button
           className=Css.(

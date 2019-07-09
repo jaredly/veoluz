@@ -166,3 +166,16 @@ module Gallery = {
     React.element =
     "react-ionicons/lib/MdApps";
 };
+
+module Compress = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdFiling";
+};
