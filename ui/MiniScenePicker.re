@@ -28,6 +28,7 @@ let make =
       ~directory,
       ~current,
       ~onSelect,
+      ~onExample,
       ~hover,
       ~unHover,
       ~onChangeScene,
@@ -100,6 +101,60 @@ let make =
              />
            )
          ->Belt.List.toArray,
+       )}
+      <div
+        className=Css.(
+          style([
+            color(white),
+            backgroundColor(hex("336")),
+            marginLeft(px(32)),
+            padding(px(16)),
+          ])
+        )>
+        {React.string("Examples")}
+      </div>
+      {React.array(
+         Examples.ids->Belt.Array.map(id =>
+           <div
+             key=id
+             className=Css.(
+               style([
+                 display(`flex),
+                 flexDirection(`row),
+                 padding(px(4)),
+                 cursor(`pointer),
+               ])
+             )
+             onMouseOver={_evt => hover(Examples.image(id))}
+             onMouseOut={_evt => unHover()}>
+             <div
+               style={ReactDOMRe.Style.make(
+                 ~backgroundImage="url(" ++ Examples.image(id) ++ ")",
+                 (),
+               )}
+               onClick={_evt => {
+                 let%Lets.Async.Consume res =
+                   Web.fetch(Examples.config(id), Js.Obj.empty());
+                 let%Lets.Async.Consume config = res->Web.json;
+                 onExample(config);
+               }}
+               className=Css.(
+                 style([
+                   width(px(50)),
+                   backgroundColor(black),
+                   height(px(50)),
+                   backgroundSize(`cover),
+                   position(`relative),
+                   `declaration(("background-position", "center")),
+                   // display(`flex),
+                   // justifyContent(`spaceBetween),
+                   // flexDirection(`column),
+                   // backgroundPosition(`center, `center)
+                 ])
+               )
+             />
+           </div>
+         ),
        )}
     </div>
   </div>;

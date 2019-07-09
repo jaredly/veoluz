@@ -143,7 +143,12 @@ module Scene = {
       <div
         className=Css.(
           style(
-            [display(`flex), flexDirection(`row), padding(px(4))]
+            [
+              display(`flex),
+              flexDirection(`row),
+              cursor(`pointer),
+              padding(px(4)),
+            ]
             @ (selected ? [backgroundColor(hex("5af"))] : []),
           )
         )
