@@ -52,33 +52,44 @@ let saveSceneInfo = directory => {
 
 [@bs.val] [@bs.scope "URL"] external createObjectURL: Web.blob => string = "";
 
+// let urlCache = Js.Obj.empty();
+
 let useSceneImage = (scene: scene) => {
-    let key = scene.id ++ ":image";
-    let getter =
-      React.useCallback2(
-        () => Web.LocalForage.getItem(key),
-        (key, scene.modified),
-      );
-    let imageBlob = Hooks.useLoading(getter);
-    let url =
-      React.useMemo1(
-        () =>
-          switch (imageBlob) {
-          | None => None
-          | Some(blob) =>
-            switch (Js.toOption(blob)) {
-            | Some(blob) => Some(createObjectURL(blob))
-            | None => Some("invalid")
-            }
-          },
-        [|imageBlob|],
-      );
-  url
+  let key = scene.id ++ ":image";
+  let getter =
+    React.useCallback2(
+      () => Web.LocalForage.getItem(key),
+      (key, scene.modified),
+    );
+  let imageBlob = Hooks.useLoading(getter);
+  let url =
+    React.useMemo1(
+      () =>
+        switch (imageBlob) {
+        | None => None
+        | Some(blob) =>
+          switch (Js.toOption(blob)) {
+          | Some(blob) => Some(createObjectURL(blob))
+          | None => Some("invalid")
+          }
+        },
+      [|imageBlob|],
+    );
+  url;
 };
 
 module Scene = {
   [@react.component]
-  let make = (~scene: scene, ~selected, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~onSaveScene) => {
+  let make =
+      (
+        ~scene: scene,
+        ~selected,
+        ~onSelect,
+        ~hover,
+        ~unHover,
+        ~onChangeScene,
+        ~onSaveScene,
+      ) => {
     let url = useSceneImage(scene);
     switch (url) {
     | None => <div> {React.string("Loading...")} </div>
@@ -117,51 +128,46 @@ module Scene = {
               `declaration(("background-position", "center")),
               // backgroundPosition(`center, `center)
             ])
-          )
-        >
+          )>
           <div
-            className=Css.(style([
-              color(scene.starred ? gold : white),
-              display(`inlineBlock),
-              Css.hover([
-                color(scene.starred ? white : gold),
-              ]),
-              cursor(`pointer),
-            ]))
+            className=Css.(
+              style([
+                color(scene.starred ? gold : white),
+                display(`inlineBlock),
+                Css.hover([color(scene.starred ? white : gold)]),
+                cursor(`pointer),
+              ])
+            )
             onClick={evt => {
               evt->ReactEvent.Mouse.stopPropagation;
               evt->ReactEvent.Mouse.preventDefault;
-              onChangeScene({...scene, starred: !scene.starred})
-            }}
-          >
+              onChangeScene({...scene, starred: !scene.starred});
+            }}>
             {React.string(scene.starred ? {j|✭|j} : {j|☆|j})}
           </div>
-
-          {selected ? <div
-            className=Css.(style([
-              cursor(`pointer),
-              color(rgba(255,255,255,0.7)),
-              backgroundColor(black),
-              borderRadius(px(4)),
-              position(`absolute),
-              top(px(0)),
-              right(px(0)),
-              alignSelf(`center),
-              margin2(~v=px(0), ~h=`auto),
-              Css.hover([
-                color(hex("fff"))
-              ])
-            ]))
-              onClick={(evt) => {
-                ReactEvent.Mouse.stopPropagation(evt);
-                onSaveScene(scene);
-              }}
-          >
-            <IonIcons.ReverseCamera
-              color="currentcolor"
-            />
-          </div> : React.null}
-
+          {selected
+             ? <div
+                 className=Css.(
+                   style([
+                     cursor(`pointer),
+                     color(rgba(255, 255, 255, 0.7)),
+                     backgroundColor(black),
+                     borderRadius(px(4)),
+                     position(`absolute),
+                     top(px(0)),
+                     right(px(0)),
+                     alignSelf(`center),
+                     margin2(~v=px(0), ~h=`auto),
+                     Css.hover([color(hex("fff"))]),
+                   ])
+                 )
+                 onClick={evt => {
+                   ReactEvent.Mouse.stopPropagation(evt);
+                   onSaveScene(scene);
+                 }}>
+                 <IonIcons.ReverseCamera color="currentcolor" />
+               </div>
+             : React.null}
         </div>
         {scene.children->Belt.Array.length === 0
            ? React.null
@@ -175,33 +181,43 @@ module Scene = {
   };
 };
 
-type filter = {star: bool, tags: Set.String.t};
+type filter = {
+  star: bool,
+  tags: Set.String.t,
+};
 
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~onSaveScene) => {
-  let (filter, setFilter) = Hooks.useState({star: false, tags: Set.String.empty});
+let make =
+    (
+      ~directory,
+      ~current,
+      ~onSelect,
+      ~hover,
+      ~unHover,
+      ~onChangeScene,
+      ~onSaveScene,
+    ) => {
+  let (filter, setFilter) =
+    Hooks.useState({star: false, tags: Set.String.empty});
 
   <div
     className=Css.(
       style([flex(1), display(`flex), flexDirection(`column)])
     )>
-    <div className=(Styles.row ++ " " ++ Css.(style([
-      padding(px(8))
-    ])))>
+    <div className={Styles.row ++ " " ++ Css.(style([padding(px(8))]))}>
       <div className=Styles.titleNoMargin>
         {React.string("Saved scenes")}
       </div>
       {Styles.spacer(8)}
-      <button className=Styles.flatButton(Css.white)>
+      <button className={Styles.flatButton(Css.white)}>
         {React.string("Organize scenes")}
       </button>
       {Styles.spacer(8)}
       {React.string("Filters:")}
       {Styles.spacer(8)}
       <button
-        className=Styles.flatButton(Css.white)
-        onClick={_ => setFilter({...filter, star: !filter.star})}
-      >
+        className={Styles.flatButton(Css.white)}
+        onClick={_ => setFilter({...filter, star: !filter.star})}>
         {React.string(filter.star ? "Show all" : "Starred")}
       </button>
     </div>
@@ -221,10 +237,11 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~
       {React.array(
          directory.scenes
          ->Belt.Map.String.toArray
-         ->Array.keep(((_, scene)) => {
-           (filter.star ? scene.starred : true) &&
-           (filter.tags->Set.String.every(t => scene.tags->Set.String.has(t)))
-         })
+         ->Array.keep(((_, scene)) =>
+             (filter.star ? scene.starred : true)
+             && filter.tags
+                ->Set.String.every(t => scene.tags->Set.String.has(t))
+           )
          ->Belt.List.fromArray
          ->Belt.List.sort(((k, _), (k2, _)) => compare(k2, k))
          ->Belt.List.map(((key, scene)) =>

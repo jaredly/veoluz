@@ -127,3 +127,16 @@ module Flashlight = {
     React.element =
     "react-ionicons/lib/MdFlash";
 };
+
+module Close = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdClose";
+};

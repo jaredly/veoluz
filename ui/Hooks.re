@@ -1,4 +1,3 @@
-
 let useState = initial => {
   React.useReducer((_, action) => action, initial);
 };
@@ -14,7 +13,8 @@ let useHash = () => {
   hash;
 };
 
-let hashIt: string => string = [%bs.raw {|
+let hashIt: string => string = [%bs.raw
+  {|
 function(input) {
     var hash = 0;
     if (!input || input.length == 0) {
@@ -27,11 +27,12 @@ function(input) {
     }
     return hash;
 }
-|}];
+|}
+];
 
 let anyHash = data => {
-  hashIt(Js.Json.stringify(Obj.magic(data)))
-}
+  hashIt(Js.Json.stringify(Obj.magic(data)));
+};
 
 // (unit, state) => (state, (state, state) => unit)
 // (unit, state) => (state, (state) => (state => unit))
@@ -41,20 +42,23 @@ let useOnChange = (~log=false, value, onChange) => {
   // if (log) {
   //   Js.log3("In use (new vs current)", anyHash(value), anyHash(lastValue->React.Ref.current))
   // }
-  React.useEffect2(() => {
-    // if (log) {
-    //   Js.log3("In effect (new vs current)", anyHash(value), anyHash(lastValue->React.Ref.current))
-    // };
-    if (lastValue->React.Ref.current != value) {
+  React.useEffect2(
+    () => {
       // if (log) {
-      //     Js.log3("In effect different!", anyHash(value), anyHash(lastValue->React.Ref.current))
-      // }
-      lastValue->React.Ref.setCurrent(value);
-      onChange(value)
-    };
-    None
-  }, (value, lastValue->React.Ref.current));
-  lastValue
+      //   Js.log3("In effect (new vs current)", anyHash(value), anyHash(lastValue->React.Ref.current))
+      // };
+      if (lastValue->React.Ref.current != value) {
+        // if (log) {
+        //     Js.log3("In effect different!", anyHash(value), anyHash(lastValue->React.Ref.current))
+        // }
+        lastValue->React.Ref.setCurrent(value);
+        onChange(value);
+      };
+      None;
+    },
+    (value, lastValue->React.Ref.current),
+  );
+  lastValue;
 };
 
 let useUpdatingState = initial => {
@@ -68,7 +72,7 @@ let useUpdatingState = initial => {
     },
     [|initial|],
   );
-  (current, setState)
+  (current, setState);
 };
 
 let useLoading = getter => {
@@ -89,4 +93,26 @@ let useLoading = getter => {
     [|getter|],
   );
   data;
+};
+
+let lazyRef = fn => {
+  let r = React.useRef(None);
+  switch (r->React.Ref.current) {
+  | Some(v) => v
+  | None =>
+    let v = fn();
+    React.Ref.setCurrent(r, Some(v));
+    v;
+  };
+};
+
+let usePortal = () => {
+  let rootElement = lazyRef(() => Web.document->Web.createElement("div"));
+
+  React.useEffect0(() => {
+    Web.documentEl->Web.body->Web.appendChild(rootElement);
+    Some(() => Web.documentEl->Web.body->Web.removeChild(rootElement));
+  });
+
+  rootElement;
 };

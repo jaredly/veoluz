@@ -1,65 +1,83 @@
-
 open Types;
 // open ScenePicker;
 
 [@react.component]
-let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~onSaveScene, ~onClearScene) => {
-  // <div
-  //   className=Css.(
-  //     style([flex(1), display(`flex), flexDirection(`column)])
-  //   )>
+let make =
+    (
+      ~directory,
+      ~current,
+      ~onSelect,
+      ~hover,
+      ~unHover,
+      ~onChangeScene,
+      ~onSaveScene,
+      ~onClearScene,
+    ) => {
+  let (gallery, toggleGallery) = Hooks.useState(false);
+  let portal = Hooks.usePortal();
+  <div
+    className=Css.(
+      style([
+        flex(1),
+        display(`flex),
+        alignItems(`center),
+        flexDirection(`row),
+        // maxHeight(px(300)),
+        maxWidth(px(1024)),
+      ])
+    )>
+    <div className=Styles.column>
+      <button onClick={_ => toggleGallery(true)}>
+        {React.string("Gallery")}
+      </button>
+      {gallery
+         ? ReactDOMRe.createPortal(
+             <Gallery
+               onClose={_ => toggleGallery(false)}
+               directory
+               onChangeScene
+             />,
+             portal,
+           )
+         : React.null}
+      <div className=Styles.row>
+        <div
+          className=Css.(
+            style([
+              width(px(50)),
+              height(px(50)),
+              flexShrink(0),
+              display(`flex),
+              alignItems(`center),
+              justifyContent(`center),
+              cursor(`pointer),
+              color(rgba(255, 255, 255, 0.7)),
+              Css.hover([color(white)]),
+            ])
+          )
+          onClick={_evt => onClearScene()}>
+          <IonIcons.Document color="currentcolor" />
+        </div>
+        <div
+          className=Css.(
+            style([
+              width(px(50)),
+              height(px(50)),
+              flexShrink(0),
+              display(`flex),
+              alignItems(`center),
+              justifyContent(`center),
+              cursor(`pointer),
+              color(rgba(255, 255, 255, 0.7)),
+              Css.hover([color(white)]),
+            ])
+          )
+          onClick={_evt => onSaveScene(Types.emptyScene)}>
+          <IonIcons.Camera color="currentcolor" />
+        </div>
+      </div>
+    </div>
     <div
-      className=Css.(
-        style([
-          flex(1),
-          display(`flex),
-          alignItems(`center),
-          flexDirection(`row),
-          // maxHeight(px(300)),
-          maxWidth(px(1024)),
-        ])
-      )>
-      <div
-        className=Css.(style([
-          width(px(50)),
-          height(px(50)),
-          flexShrink(0),
-          display(`flex),
-          alignItems(`center),
-          justifyContent(`center),
-          cursor(`pointer),
-              color(rgba(255,255,255,0.7)),
-              Css.hover([color(white)])
-        ]))
-          onClick={(_evt) => {
-            onClearScene()
-          }}
-      >
-        <IonIcons.Document
-          color="currentcolor"
-        />
-      </div>
-      <div
-        className=Css.(style([
-          width(px(50)),
-          height(px(50)),
-          flexShrink(0),
-          display(`flex),
-          alignItems(`center),
-          justifyContent(`center),
-          cursor(`pointer),
-              color(rgba(255,255,255,0.7)),
-              Css.hover([color(white)])
-        ]))
-          onClick={(_evt) => {
-            onSaveScene(Types.emptyScene);
-          }}
-      >
-        <IonIcons.Camera
-          color="currentcolor"
-        />
-      </div>
-      <div
       className=Css.(
         style([
           flex(1),
@@ -91,5 +109,4 @@ let make = (~directory, ~current, ~onSelect, ~hover, ~unHover, ~onChangeScene, ~
        )}
     </div>
   </div>;
-
 };
