@@ -2,7 +2,29 @@ use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
+#[wasm_bindgen]
+extern "C" {
+    pub type TimeoutId;
+
+    #[wasm_bindgen(js_name = "setTimeout")]
+    pub fn set_timeout_inner(cb: &JsValue, timeout: f64) -> TimeoutId;
+
+    #[wasm_bindgen(js_name = "clearTimeout")]
+    pub fn clear_timeout(id: &TimeoutId);
+}
+
+pub fn set_timeout<T: FnOnce() + 'static>(cb: T, timeout: f64) -> TimeoutId {
+    // use wasm_bindgen::JsCast;
+    // let bb = Box::new(cb) as Box<FnOnce()>;
+    // let f = Closure::wrap(bb);
+    // let m = set_timeout_inner(f.as_ref().unchecked_ref(), timeout);
+    let m = set_timeout_inner(&Closure::once_into_js(cb), timeout);
+    // f.forget();
+    m
+}
+
 pub struct State {
+    pub hide_timeout: Option<TimeoutId>,
     pub render_id: usize,
     pub last_rendered: usize,
     pub ctx: CanvasRenderingContext2d,
@@ -27,6 +49,7 @@ unsafe impl Send for State {}
 impl State {
     pub fn new(config: shared::Config, on_change: js_sys::Function) -> Self {
         State {
+            hide_timeout: None,
             render_id: 0,
             hist_canvas: None,
             last_rendered: 0,
@@ -162,7 +185,7 @@ impl State {
                 None => {
                     // log!("Finished a thread");
                     *busy = false
-                },
+                }
                 Some(message) => {
                     // log!("Sending a new config to render");
                     worker.post_message(&JsValue::from_serde(message).unwrap())?;
@@ -195,7 +218,7 @@ impl State {
             None => {
                 // log!("Finished a thread");
                 *busy = false
-            },
+            }
             Some(message) => {
                 // log!("Sending a new config to render");
                 worker.post_message(&JsValue::from_serde(message).unwrap())?;
@@ -238,7 +261,7 @@ impl State {
         let _res = self.on_change.call2(
             &JsValue::null(),
             &JsValue::from_serde(&self.config).unwrap(),
-            &JsValue::from_serde(&self.ui).unwrap()
+            &JsValue::from_serde(&self.ui).unwrap(),
         );
     }
 
@@ -296,7 +319,7 @@ pub fn setState(state: State) {
 pub fn has_state() -> bool {
     match STATE.lock().unwrap().as_mut() {
         Some(_) => true,
-        None => false
+        None => false,
     }
 }
 
@@ -313,7 +336,7 @@ pub fn with<R, F: FnOnce(&mut State) -> R>(f: F) -> R {
 pub fn maybe_with<F: FnOnce(&mut State)>(f: F) {
     match STATE.lock().unwrap().as_mut() {
         Some(mut state) => f(&mut state),
-        None => ()
+        None => (),
     }
 }
 

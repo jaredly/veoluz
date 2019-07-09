@@ -516,15 +516,19 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     canvas.set_width(config.rendering.width as u32);
     canvas.set_height(config.rendering.height as u32);
 
-    listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
-        crate::state::try_with(|state| {
-            state.ui.mouse_over = true;
-            draw(state)
-        })
-    });
+    // listen!(canvas, "mouseenter", web_sys::MouseEvent, move |_evt| {
+    //     crate::state::try_with(|state| {
+    //         state.ui.mouse_over = true;
+    //         draw(state)
+    //     })
+    // });
 
     listen!(canvas, "mouseleave", web_sys::MouseEvent, move |_evt| {
         crate::state::try_with(|state| {
+            match &state.hide_timeout {
+                None => (),
+                Some(tid) => crate::state::clear_timeout(tid),
+            }
             state.ui.mouse_over = false;
             draw(state)
         })
@@ -642,6 +646,25 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
 
     listen!(canvas, "mousemove", web_sys::MouseEvent, move |evt| {
         crate::state::try_with(|state| {
+            match &state.hide_timeout {
+                None => (),
+                Some(tid) => crate::state::clear_timeout(tid),
+            }
+            state.hide_timeout = Some(crate::state::set_timeout(
+                move || {
+                    crate::state::try_with(|state| {
+                        state.ui.mouse_over = false;
+                        draw(state)
+                    })
+                },
+                600.0,
+            ));
+            if !state.ui.mouse_over {
+                state.ui.mouse_over = true;
+                // draw(state)?;
+            }
+
+            // web_sys::
             // use_ui(|ui| -> Result<(), JsValue> {
             let mut pos = mouse_pos(&state.config.rendering, &evt);
             state.ui.last_mouse_pos = pos.clone();
