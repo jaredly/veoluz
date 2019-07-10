@@ -7,28 +7,72 @@ let pi = 3.1415;
 let make = (~count, ~onChange) => {
   let size = 100;
   let scale = pi *. 2.0 /. float_of_int(count);
-  <svg width={string_of_int(size)} height={string_of_int(size)}>
-    {many(count, i =>
-       <path
-         stroke="black"
-         strokeWidth="2px"
-         d={
-             let c = float_of_int(size) /. 2.0;
-             let r0 = 25.0;
-             let r1 = 40.0;
-             let a0 = float_of_int(i) *. scale -. pi /. 2.0 -. pi /. 10.0;
-             let a1 = a0 +. pi /. 10.0;
-             Printf.sprintf(
-               "M%0.2f,%0.2f L%0.2f,%0.2f",
-               c +. cos(a0) *. r0,
-               c +. sin(a0) *. r0,
-               c +. cos(a1) *. r1,
-               c +. sin(a1) *. r1,
-             );
-           }
-       />
-     )
-     ->Array.of_list
-     ->React.array}
-  </svg>;
+  <div className=Styles.row>
+    <div className=Css.(style([position(`relative)]))>
+      <svg width={string_of_int(size)} height={string_of_int(size)}>
+        {many(count, i =>
+           <path
+             stroke="black"
+             strokeWidth="2px"
+             d={
+                 let c = float_of_int(size) /. 2.0;
+                 let r0 = 25.0;
+                 let r1 = 40.0;
+                 let a0 = float_of_int(i) *. scale -. pi /. 2.0 -. pi /. 10.0;
+                 let a1 = a0 +. pi /. 10.0;
+                 Printf.sprintf(
+                   "M%0.2f,%0.2f L%0.2f,%0.2f",
+                   c +. cos(a0) *. r0,
+                   c +. sin(a0) *. r0,
+                   c +. cos(a1) *. r1,
+                   c +. sin(a1) *. r1,
+                 );
+               }
+           />
+         )
+         ->Array.of_list
+         ->React.array}
+      </svg>
+      <div
+        className=Css.(
+          style([
+            position(`absolute),
+            top(`zero),
+            bottom(`zero),
+            left(`zero),
+            right(`zero),
+            display(`flex),
+            justifyContent(`center),
+            alignItems(`center),
+          ])
+        )>
+        <input
+          value={string_of_int(count)}
+          type_="number"
+          className=Css.(
+            style([
+              marginLeft(px(15)),
+              backgroundColor(`transparent),
+              width(px(40)),
+              textAlign(`center),
+              borderStyle(`none),
+            ])
+          )
+          min=1
+          onChange={evt =>
+            onChange(int_of_string(evt->ReactEvent.Form.target##value))
+          }
+        />
+      </div>
+    </div>
+    <div className=Styles.column>
+      <button onClick={_ => onChange(count + 1)}>
+        {React.string("+")}
+      </button>
+      {Styles.spacer(8)}
+      <button onClick={_ => onChange(max(1, count + 1))}>
+        {React.string("-")}
+      </button>
+    </div>
+  </div>;
 };
