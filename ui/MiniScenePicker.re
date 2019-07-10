@@ -61,16 +61,23 @@ let make =
          )
        : React.null}
     <div className=Styles.row>
-      <div className=iconButton onClick={_evt => toggleGallery(true)}>
-        <IonIcons.Gallery color="currentcolor" />
-      </div>
-      <div className=iconButton onClick={_evt => onClearScene()}>
-        <IonIcons.Document color="currentcolor" />
-      </div>
-      <div
-        className=iconButton onClick={_evt => onSaveScene(Types.emptyScene)}>
-        <IonIcons.Camera color="currentcolor" />
-      </div>
+      <Tippy content="View gallery">
+        <div className=iconButton onClick={_evt => toggleGallery(true)}>
+          <IonIcons.Gallery color="currentcolor" />
+        </div>
+      </Tippy>
+      <Tippy content="Clear scene">
+        <div className=iconButton onClick={_evt => onClearScene()}>
+          <IonIcons.Document color="currentcolor" />
+        </div>
+      </Tippy>
+      <Tippy content="Save scene">
+        <div
+          className=iconButton
+          onClick={_evt => onSaveScene(Types.emptyScene)}>
+          <IonIcons.Camera color="currentcolor" />
+        </div>
+      </Tippy>
     </div>
     <div
       className=Css.(

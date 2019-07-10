@@ -197,27 +197,29 @@ module Scene = {
             {React.string(scene.starred ? {j|✭|j} : {j|☆|j})}
           </div>
           {selected
-             ? <div
-                 className=Css.(
-                   style([
-                     cursor(`pointer),
-                     color(rgba(255, 255, 255, 0.7)),
-                     backgroundColor(black),
-                     borderRadius(px(4)),
-                     position(`absolute),
-                     top(px(0)),
-                     right(px(0)),
-                     alignSelf(`center),
-                     margin2(~v=px(0), ~h=`auto),
-                     Css.hover([color(hex("fff"))]),
-                   ])
-                 )
-                 onClick={evt => {
-                   ReactEvent.Mouse.stopPropagation(evt);
-                   onSaveScene(scene);
-                 }}>
-                 <IonIcons.ReverseCamera color="currentcolor" />
-               </div>
+             ? <Tippy content="Update scene">
+                 <div
+                   className=Css.(
+                     style([
+                       cursor(`pointer),
+                       color(rgba(255, 255, 255, 0.7)),
+                       backgroundColor(black),
+                       borderRadius(px(4)),
+                       position(`absolute),
+                       top(px(0)),
+                       right(px(0)),
+                       alignSelf(`center),
+                       margin2(~v=px(0), ~h=`auto),
+                       Css.hover([color(hex("fff"))]),
+                     ])
+                   )
+                   onClick={evt => {
+                     ReactEvent.Mouse.stopPropagation(evt);
+                     onSaveScene(scene);
+                   }}>
+                   <IonIcons.ReverseCamera color="currentcolor" />
+                 </div>
+               </Tippy>
              : React.null}
         </div>
         {scene.children->Belt.Array.length === 0

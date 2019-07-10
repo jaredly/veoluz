@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 pub use wall_type::WallType;
 pub mod types;
 pub use types::*;
-pub mod render;
 pub mod line_algos;
+pub mod render;
 pub use render::*;
 pub mod calculate;
 pub use calculate::calculate;
@@ -52,7 +52,12 @@ impl LightKind {
     #[inline]
     pub fn spawn(&self, direction: line::float) -> Ray<line::float> {
         match self {
-            LightKind::Point { offset, origin, t0, t1 } => {
+            LightKind::Point {
+                offset,
+                origin,
+                t0,
+                t1,
+            } => {
                 let angle = direction * (t1 - t0) + t0;
                 let mut ray = Ray::new(*origin, Vector2::new(angle.cos(), angle.sin()));
                 if *offset != 0.0 {
@@ -74,6 +79,15 @@ impl LightKind {
         match self {
             LightKind::Point { origin, .. } => {
                 *origin = *origin + by;
+            }
+        }
+    }
+
+    pub fn rotate(&mut self, by: line::float) {
+        match self {
+            LightKind::Point { t0, t1, .. } => {
+                *t0 = *t0 + by;
+                *t1 = *t1 + by;
             }
         }
     }
@@ -308,27 +322,32 @@ impl Config {
             LightFormation::Single(()) => self.lights.clone(),
             LightFormation::Line(count, spacing) => {
                 let base = self.lights[0].clone();
-                let mut lights = self.lights.clone();
                 if count < 2 {
-                    return lights;
+                    return self.lights.clone();
                 }
+                let mut lights = self.lights[1..].to_vec();
                 let x0 = -spacing * (count - 1) as f32 / 2.0;
                 for i in 0..count.max(1) {
                     let mut light = base.clone();
-                        light.translate(&Vector2::new(x0 + spacing * i as f32, 0.0));
-                    lights.push( light);
+                    light.translate(&Vector2::new(x0 + spacing * i as f32, 0.0));
+                    lights.push(light);
                 }
                 lights
-            },
+            }
             LightFormation::Circle(count, spacing, center) => {
                 let base = self.lights[0].clone();
-                let mut lights = if center { self.lights.clone() } else { self.lights[1..].to_vec() };
-                let offset =  -std::f32::consts::PI / 2.0;
+                let mut lights = if center {
+                    self.lights.clone()
+                } else {
+                    self.lights[1..].to_vec()
+                };
+                let offset = -std::f32::consts::PI / 2.0;
                 let r = std::f32::consts::PI * 2.0 / count.max(2) as f32;
                 for i in 0..count.max(2) {
                     let mut light = base.clone();
                     let angle = (i as f32 * r) + offset;
                     light.translate(&Vector2::new(spacing * angle.cos(), spacing * angle.sin()));
+                    light.kind.rotate(angle);
                     lights.push(light)
                 }
                 lights
@@ -365,7 +384,10 @@ impl<'a> Timer<'a> {
             return Timer { name };
         };
         #[cfg(not(target_arch = "wasm32"))]
-        Timer { name, initial: std::time::SystemTime::now() }
+        Timer {
+            name,
+            initial: std::time::SystemTime::now(),
+        }
     }
 }
 
@@ -375,7 +397,9 @@ impl<'a> Drop for Timer<'a> {
         web_sys::console::time_end_with_label(self.name);
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let diff = std::time::SystemTime::now().duration_since(self.initial).unwrap();
+            let diff = std::time::SystemTime::now()
+                .duration_since(self.initial)
+                .unwrap();
             println!("Timer {}: {}s", self.name, diff.as_secs());
         }
     }

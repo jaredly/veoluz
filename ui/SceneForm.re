@@ -292,31 +292,46 @@ let make =
     // {Styles.spacer(4)}
 
       <div className=Styles.row>
-        <button onClick={_evt => wasm##undo()}> <IonIcons.Undo /> </button>
-        {Styles.spacer(4)}
-        <button onClick={_evt => wasm##redo()}> <IonIcons.Redo /> </button>
-        {Styles.spacer(4)}
-        <button onClick={_ => onPermalink()}> <IonIcons.Link /> </button>
-        {Styles.spacer(4)}
-        <button onClick={_ => onDownload()}> <IonIcons.Download /> </button>
-        {Styles.spacer(4)}
-        <button onClick={_ => onDownloadZip()}> <IonIcons.Compress /> </button>
-        {Styles.spacer(4)}
-        <button
-          className=Css.(
-            style([
-              backgroundColor(
-                ui##show_lasers ? Colors.accent : Colors.button,
-              ),
-            ])
-          )
-          onClick={_evt =>
-            wasm##update_ui(
-              [%js.deep ui["show_lasers"].replace(!ui##show_lasers)],
-            )
-          }>
-          <IonIcons.Flashlight />
-        </button>
-      </div>
+
+          <Tippy content="Undo">
+            <button onClick={_evt => wasm##undo()}> <IonIcons.Undo /> </button>
+          </Tippy>
+          {Styles.spacer(4)}
+          <Tippy content="Redo">
+            <button onClick={_evt => wasm##redo()}> <IonIcons.Redo /> </button>
+          </Tippy>
+          {Styles.spacer(4)}
+          <Tippy content="Permalink">
+            <button onClick={_ => onPermalink()}> <IonIcons.Link /> </button>
+          </Tippy>
+          {Styles.spacer(4)}
+          <Tippy content="Download image">
+            <button onClick={_ => onDownload()}>
+              <IonIcons.Download />
+            </button>
+          </Tippy>
+          {Styles.spacer(4)}
+          <Tippy content="Download zip">
+            <button onClick={_ => onDownloadZip()}>
+              <IonIcons.Compress />
+            </button>
+          </Tippy>
+        </div>
+        // {Styles.spacer(4)}
+        // <button
+        //   className=Css.(
+        //     style([
+        //       backgroundColor(
+        //         ui##show_lasers ? Colors.accent : Colors.button,
+        //       ),
+        //     ])
+        //   )
+        //   onClick={_evt =>
+        //     wasm##update_ui(
+        //       [%js.deep ui["show_lasers"].replace(!ui##show_lasers)],
+        //     )
+        //   }>
+        //   <IonIcons.Flashlight />
+        // </button>
     </div>;
 };

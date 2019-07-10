@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@mapbox/react-colorpickr": "^8.1.2",
+    "@tippy.js/react": "^2.2.2",
     "bs-css": "^8.0.4",
     "bs-platform": "^5.0.4",
     "file-saver": "^2.0.2",
