@@ -12,6 +12,16 @@ let make = (~update, ~updateUi, ~config: Rust.config, ~ui) => {
           )
         }
       />
+      {Styles.spacer(16)}
+      <Reflection
+        enabled={config##transform##reflection}
+        onChange={v =>
+          update(
+            [%js.deep config["transform"]["reflection"].replace(v)],
+            true,
+          )
+        }
+      />
     </div>
   </div>;
 };

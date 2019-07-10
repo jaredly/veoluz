@@ -5,7 +5,7 @@ let pi = 3.1415;
 
 [@react.component]
 let make = (~count, ~onChange) => {
-  let size = 100;
+  let size = 50;
   let scale = pi *. 2.0 /. float_of_int(count);
   <div className=Styles.row>
     <div className=Css.(style([position(`relative)]))>
@@ -16,8 +16,8 @@ let make = (~count, ~onChange) => {
              strokeWidth="2px"
              d={
                  let c = float_of_int(size) /. 2.0;
-                 let r0 = 25.0;
-                 let r1 = 40.0;
+                 let r0 = 15.0;
+                 let r1 = 25.0;
                  let a0 = float_of_int(i) *. scale -. pi /. 2.0 -. pi /. 10.0;
                  let a1 = a0 +. pi /. 10.0;
                  Printf.sprintf(
@@ -65,12 +65,13 @@ let make = (~count, ~onChange) => {
         />
       </div>
     </div>
+    {Styles.spacer(8)}
     <div className=Styles.column>
       <button onClick={_ => onChange(count + 1)}>
         {React.string("+")}
       </button>
       {Styles.spacer(8)}
-      <button onClick={_ => onChange(max(1, count + 1))}>
+      <button onClick={_ => onChange(max(1, count - 1))}>
         {React.string("-")}
       </button>
     </div>
