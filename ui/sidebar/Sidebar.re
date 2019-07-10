@@ -1,5 +1,5 @@
 [@react.component]
-let make = (~update, ~updateUi, ~config: Rust.config, ~ui) => {
+let make = (~update, ~updateUi, ~config: Rust.config, ~ui: Rust.ui) => {
   <div className={Styles.join([Styles.column, Styles.control])}>
     <div className=Styles.title> {React.string("Symmetry")} </div>
     <div className=Styles.row>

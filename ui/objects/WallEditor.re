@@ -219,13 +219,13 @@ module RefractionEditor = {
 
 module ScatterEditor = {
   [@react.component]
-  let make = (~wall, ~onChange) => {
-    <div>
+  let make = (~wall, ~onChange, ~wide=false) => {
+    <div className={wide ? Styles.row : Styles.column}>
       <div className=Css.(style([fontSize(`percent(80.0))]))>
         {React.string("Scatter")}
       </div>
       <Slider
-        vertical=true
+        vertical={!wide}
         width=50
         disabled={
           wall##properties##reflect == 0.0 || wall##properties##absorb == 1.0

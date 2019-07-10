@@ -59,66 +59,188 @@ let getStatus = properties => {
 };
 
 [@react.component]
-let make = (~wall, ~onChange) => {
+let make =
+    (
+      ~wall,
+      ~onChange,
+      ~onRemove,
+      ~selected,
+      ~onHoverOut,
+      ~onSelect,
+      ~onDeselect,
+      ~onHover,
+    ) => {
   let status = getStatus(wall##properties);
-  <div className=Styles.column>
+  <div
+    onMouseOver={_evt => onHover()}
+    onMouseOut={_evt => onHoverOut()}
+    className={Styles.join([
+      Styles.column,
+      Css.(style([marginBottom(px(8))])),
+    ])}>
     <div
       className={Styles.join([
         Styles.row,
-        Css.(style([padding2(~v=px(0), ~h=px(8)), marginBottom(px(8))])),
+        Css.(style([alignItems(`center), padding2(~v=px(0), ~h=px(8))])),
       ])}>
-      <div className=Css.(style([flex(1)]))>
+      <div
+        className=Css.(
+          style([
+            cursor(`pointer),
+            flex(1),
+            color(selected ? Colors.accent : Colors.text),
+          ])
+        )
+        onClick={evt =>
+          if (selected) {
+            onDeselect();
+          } else {
+            onSelect();
+          }
+        }>
         {React.string(WallEditor.wallType(wall##kind))}
       </div>
       {Styles.spacer(8)}
-      <button className={Styles.iconButton(status == `Reflect)}>
-        mirror
-      </button>
+      <Tippy content="Mirror">
+        <span>
+          <button
+            className=Styles.multiButton
+            disabled={status == `Reflect}
+            onClick={_evt =>
+              onChange(
+                [%js.deep
+                  wall["properties"].map(p =>
+                    p["absorb"].replace(0.0)["reflect"].replace(1.0)
+                  )
+                ],
+                true,
+              )
+            }>
+            mirror
+          </button>
+        </span>
+      </Tippy>
       {Styles.spacer(4)}
-      <button className={Styles.iconButton(status == `Refract)}>
-        prism
-      </button>
+      <Tippy content="Prism">
+        <span>
+          <button
+            className=Styles.multiButton
+            disabled={status == `Refract}
+            onClick={_evt =>
+              onChange(
+                [%js.deep
+                  wall["properties"].map(p =>
+                    p["absorb"].replace(0.0)["reflect"].replace(0.0)
+                  )
+                ],
+                true,
+              )
+            }>
+            prism
+          </button>
+        </span>
+      </Tippy>
       {Styles.spacer(4)}
-      <button className={Styles.iconButton(status == `Absorb)}>
-        block
-      </button>
+      <Tippy content="Block">
+        <span>
+          <button
+            className=Styles.multiButton
+            disabled={status == `Absorb}
+            onClick={_evt =>
+              onChange(
+                [%js.deep
+                  wall["properties"].map(p => p["absorb"].replace(1.0))
+                ],
+                true,
+              )
+            }>
+            block
+          </button>
+        </span>
+      </Tippy>
       {Styles.spacer(4)}
-      <button className={Styles.iconButton(status == `Custom)}>
-        <IonIcons.Settings fontSize="20px" />
-      </button>
+      <Tippy content="Custom behavior">
+        <span>
+          <button
+            className=Styles.multiButton
+            disabled={status == `Custom}
+            onClick={_evt =>
+              onChange(
+                [%js.deep
+                  wall["properties"].map(p =>
+                    p["absorb"].replace(0.333)["reflect"].replace(0.5)
+                  )
+                ],
+                true,
+              )
+            }>
+            <IonIcons.Settings fontSize="20px" />
+          </button>
+        </span>
+      </Tippy>
       Styles.fullSpace
       {wall##hide
-         ? <IonIcons.EyeOff
-             fontSize="20px"
-             onClick={_ =>
-               onChange([%js.deep wall["hide"].replace(false)], true)
-             }
-           />
-         : <IonIcons.Eye
-             fontSize="20px"
-             onClick={_ =>
-               onChange([%js.deep wall["hide"].replace(true)], true)
-             }
-           />}
-      <IonIcons.Close fontSize="20px" />
+         ? <Tippy content="Show">
+             <button
+               onClick={_ =>
+                 onChange([%js.deep wall["hide"].replace(false)], true)
+               }
+               className=Styles.multiButton>
+               <IonIcons.EyeOff fontSize="20px" />
+             </button>
+           </Tippy>
+         : <Tippy content="Hide">
+             <button
+               className=Styles.multiButton
+               onClick={_ =>
+                 onChange([%js.deep wall["hide"].replace(true)], true)
+               }>
+               <IonIcons.Eye fontSize="20px" />
+             </button>
+           </Tippy>}
+      {Styles.spacer(8)}
+      <Tippy content="Delete">
+        <button onClick={_ => onRemove()} className=Styles.multiButton>
+          <IonIcons.Close fontSize="20px" />
+        </button>
+      </Tippy>
     </div>
-    {switch (status) {
-     | `Absorb => React.null
-     | `Reflect =>
-       <WallEditor.ScatterEditor
-         wall
-         onChange={wall => onChange(wall, false)}
-       />
-     | `Refract =>
-       <WallEditor.RefractionEditor
-         wall
-         onChange={wall => onChange(wall, false)}
-       />
-     | `Custom =>
-       <WallEditor.PropertiesTriangle
-         wall
-         onChange={wall => onChange(wall, false)}
-       />
-     }}
+    {
+      let s =
+        Css.(
+          style([
+            padding(px(16)),
+            border(px(2), `solid, Colors.accent),
+            margin(px(8)),
+          ])
+        );
+      selected
+        ? switch (status) {
+          | `Absorb => React.null
+          | `Reflect =>
+            <div className=s>
+              <WallEditor.ScatterEditor
+                wall
+                wide=true
+                onChange={wall => onChange(wall, false)}
+              />
+            </div>
+          | `Refract =>
+            <div className=s>
+              <WallEditor.RefractionEditor
+                wall
+                onChange={wall => onChange(wall, false)}
+              />
+            </div>
+          | `Custom =>
+            <div className=s>
+              <WallEditor.PropertiesTriangle
+                wall
+                onChange={wall => onChange(wall, false)}
+              />
+            </div>
+          }
+        : React.null;
+    }
   </div>;
 };

@@ -61,3 +61,13 @@ let iconButton = active =>
     backgroundColor(active ? Colors.accent : Colors.button),
     hover(active ? [backgroundColor(Colors.accent)] : []),
   ]);
+
+let multiButton =
+  style([
+    padding(px(4)),
+    backgroundColor(`transparent),
+    disabled([
+      backgroundColor(Colors.accent),
+      hover([backgroundColor(Colors.accent)]),
+    ]),
+  ]);

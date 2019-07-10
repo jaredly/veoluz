@@ -115,7 +115,7 @@ module AddWall = {
 };
 
 [@react.component]
-let make = (~config: Rust.config, ~ui, ~update, ~updateUi) => {
+let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
   <div className=Styles.column>
     <div className=Styles.title> {React.string("Add Wall")} </div>
     {Styles.spacer(8)}
@@ -126,6 +126,63 @@ let make = (~config: Rust.config, ~ui, ~update, ~updateUi) => {
     {config##walls
      ->Belt.Array.mapWithIndex((i, wall) =>
          <Wall
+           selected={
+             switch (ui##selection->Js.nullToOption) {
+             | None => false
+             | Some(selection) =>
+               switch ([%js.deep selection["Wall"]]) {
+               | None => false
+               | Some((wid, _)) => i == wid
+               }
+             }
+           }
+           onSelect={() =>
+             updateUi(
+               [%js.deep
+                 ui["selection"].replace(Js.Null.return(Rust.selectWall(i)))
+               ],
+             )
+           }
+           onDeselect={() =>
+             updateUi([%js.deep ui["selection"].replace(Js.null)])
+           }
+           onHoverOut={() =>
+             updateUi(
+               [%js.deep
+                 ui["hovered"].replace(Js.Null.empty)["mouse_over"].replace(
+                   false,
+                 )
+               ],
+             )
+           }
+           onHover={() =>
+             updateUi(
+               [%js.deep
+                 ui["hovered"].replace(
+                   Js.Null.return((
+                     i,
+                     {"Move": Some((0.0, 0.0)), "Handle": None},
+                   )),
+                 )["mouse_over"].
+                   replace(
+                   true,
+                 )
+               ],
+             )
+           }
+           onRemove={() =>
+             update(
+               [%js.deep
+                 config["walls"].map(walls => {
+                   let walls = Js.Array.copy(walls);
+                   Js.Array.removeCountInPlace(~pos=i, ~count=1, walls)
+                   ->ignore;
+                   walls;
+                 })
+               ],
+               true,
+             )
+           }
            onChange={(wall, checkpoint) =>
              update(
                [%js.deep
