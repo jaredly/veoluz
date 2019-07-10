@@ -280,20 +280,69 @@ impl WallType {
                 // x = (c - b) / (m - n)
                 let wd = wall.b() - wall.a();
                 if wd.x == 0.0 {
-                    return std::f32::INFINITY;
+                    let (top, bottom) = if wall.a().y < wall.b().y {
+                        (wall.a(), wall.b())
+                    } else {
+                        (wall.b(), wall.a())
+                    };
+                    if point.y >= top.y && point.y <= bottom.y {
+                        return (wall.a().x - point.x).abs();
+                    }
+                    if point.y < top.y {
+                        return (top - point).norm_squared().sqrt();
+                    } else {
+                        return (bottom - point).norm_squared().sqrt();
+                    }
+                }
+
+                let (left, right) = if wall.a().x < wall.b().x {
+                    (wall.a(), wall.b())
+                } else {
+                    (wall.b(), wall.a())
+                };
+                let wd = right - left;
+                if wd.y == 0.0 {
+                    if point.x >= left.x && point.x <= right.x {
+                        return (wall.a().y - point.y).abs();
+                    }
+                    if point.x < left.x {
+                        return (left - point).norm_squared().sqrt();
+                    } else {
+                        return (right - point).norm_squared().sqrt();
+                    }
                 }
                 let m = wd.y / wd.x;
-                let b = wall.b().y - m * wall.b().x;
+                // b = y - mx
+                let b = left.y - m * left.x;
+                // n = perpendicular line
                 let n = 1.0 / m;
+                // b = y - mx
                 let c = point.y - n * point.x;
+                // y = mx + b
+                // (y - b) / m = x
+
+                // y = mx + b
+                // y = nx + c
+                // mx + b = nx + c
+                // (m - n)x = c - b
+                // x = (c - b)/(m - n)
+
                 let x = (c - b) / (m - n);
                 let y = m * x + b;
-                let x0 = wall.a().x.min(wall.b().x);
-                let x1 = wall.a().x.max(wall.b().x);
-                if x0 <= x && x <= x1 {
+                // let x0 = wall.a().x.min(wall.b().x);
+                // let x1 = wall.a().x.max(wall.b().x);
+                // (point - Point2::new(x, y))
+                //     .norm_squared()
+                //     .sqrt()
+                //     .min((point - left).norm_squared().sqrt())
+                //     .min((point - right).norm_squared().sqrt())
+
+                if left.x <= x && x <= right.x {
                     (point - Point2::new(x, y)).norm_squared().sqrt()
+                } else if x < left.x {
+                    (point - left).norm_squared().sqrt()
                 } else {
-                    std::f32::INFINITY
+                    (point - right).norm_squared().sqrt()
                 }
             }
             WallType::Circle(circle, center, t0, t1) => {

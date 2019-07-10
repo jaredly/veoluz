@@ -65,7 +65,7 @@ let make = (~count, ~onChange) => {
         />
       </div>
     </div>
-    {Styles.spacer(8)}
+    <div className=Css.(style([flexBasis(px(8)), flexShrink(0)])) />
     <div className=Styles.column>
       <button onClick={_ => onChange(count + 1)}>
         {React.string("+")}

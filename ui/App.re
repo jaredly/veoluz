@@ -448,16 +448,6 @@ module Inner = {
             minHeight(px(200)),
           ])
         )>
-        <Sidebar
-          update
-          updateUi={ui => {
-            Js.log2("New ui", ui);
-            wasm##update_ui(ui);
-            dispatch(`Update((state.config, ui)));
-          }}
-          config={state.config}
-          ui={state.ui}
-        />
         {
           let currentScene =
             switch (state.current) {
@@ -519,6 +509,16 @@ module Inner = {
           />;
         }
         {Styles.spacer(8)}
+        <Sidebar
+          update
+          updateUi={ui => {
+            Js.log2("New ui", ui);
+            wasm##update_ui(ui);
+            dispatch(`Update((state.config, ui)));
+          }}
+          config={state.config}
+          ui={state.ui}
+        />
         <TransformEditor
           wasm
           config={state.config}

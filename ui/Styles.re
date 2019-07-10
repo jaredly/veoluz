@@ -54,3 +54,10 @@ let row =
 
 let flatButton = textColor =>
   style([backgroundColor(`transparent), color(textColor)]);
+
+let iconButton = active =>
+  style([
+    padding(px(4)),
+    backgroundColor(active ? Colors.accent : Colors.button),
+    hover(active ? [backgroundColor(Colors.accent)] : []),
+  ]);

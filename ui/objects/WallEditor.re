@@ -175,6 +175,153 @@ module TriangleEditor = {
   };
 };
 
+let progressBar = percent => {
+  <div
+    style={ReactDOMRe.Style.make(
+      ~width=Js.Float.toString(percent *. 50.0) ++ "px",
+      (),
+    )}
+    className=Css.(
+      style([
+        backgroundColor(Colors.accent),
+        height(px(2)),
+        alignSelf(`flexStart),
+      ])
+    )
+  />;
+};
+
+module RefractionEditor = {
+  [@react.component]
+  let make = (~wall, ~onChange) => {
+    <div>
+      <div className=Css.(style([fontSize(`percent(80.0))]))>
+        {React.string("Index of Refraction")}
+      </div>
+      <LogSlider
+        min=0
+        max=5.0
+        step=0.01
+        value={wall##properties##refraction}
+        disabled={
+          wall##properties##reflect == 1.0 || wall##properties##absorb == 1.0
+        }
+        onChange={value => {
+          let wall = [%js.deep
+            wall["properties"]["refraction"].replace(value)
+          ];
+          onChange(wall);
+        }}
+      />
+    </div>;
+  };
+};
+
+module ScatterEditor = {
+  [@react.component]
+  let make = (~wall, ~onChange) => {
+    <div>
+      <div className=Css.(style([fontSize(`percent(80.0))]))>
+        {React.string("Scatter")}
+      </div>
+      <Slider
+        vertical=true
+        width=50
+        disabled={
+          wall##properties##reflect == 0.0 || wall##properties##absorb == 1.0
+        }
+        min=0
+        max=1.0
+        step=0.01
+        value={wall##properties##roughness}
+        onChange={value => {
+          let wall = [%js.deep
+            wall["properties"]["roughness"].replace(value)
+          ];
+          onChange(wall);
+        }}
+      />
+    </div>;
+  };
+};
+
+module PropertiesTriangle = {
+  [@react.component]
+  let make = (~wall, ~onChange) => {
+    <div>
+      <div
+        className=Css.(
+          Styles.join([
+            Styles.column,
+            style(
+              (1.0 -. wall##properties##absorb)
+              *. (1.0 -. wall##properties##reflect) == 0.0
+                ? [color(hex("999"))] : [],
+            ),
+          ])
+        )>
+        <RefractionEditor wall onChange />
+      </div>
+      <div>
+        {Styles.spacer(8)}
+        {React.string("Refract")}
+        {progressBar(
+           (1.0 -. wall##properties##absorb)
+           *. (1.0 -. wall##properties##reflect),
+         )}
+        <div className=Styles.row>
+          <TriangleEditor
+            pair={toPair((
+              wall##properties##absorb,
+              wall##properties##reflect,
+            ))}
+            onChange={pair => {
+              let (absorb, reflect) = fromPair(pair);
+              let wall = [%js.deep
+                wall["properties"].map(properties =>
+                  properties["absorb"].replace(absorb)["reflect"].replace(
+                    reflect,
+                  )
+                )
+              ];
+              onChange(wall);
+            }}
+          />
+          <div
+            className={Styles.join([
+              Styles.column,
+              Css.(
+                style(
+                  (1.0 -. wall##properties##absorb)
+                  *.
+                  wall##properties##reflect == 0.0
+                    ? [color(hex("999"))] : [],
+                )
+              ),
+              Css.(style([alignSelf(`flexEnd)])),
+            ])}>
+            <div className=Css.(style([]))> {React.string("Reflect")} </div>
+            {progressBar(
+               (1.0 -. wall##properties##absorb) *. wall##properties##reflect,
+             )}
+            {Styles.spacer(8)}
+            <ScatterEditor wall onChange />
+          </div>
+        </div>
+        <div
+          className=Css.(
+            style(
+              wall##properties##absorb == 0.0 ? [color(hex("999"))] : [],
+            )
+          )>
+          {React.string("Absorb")}
+        </div>
+        {progressBar(wall##properties##absorb)}
+      </div>
+    </div>;
+  };
+};
+
 // module TriangleTester = {
 //   [@react.component]
 //   let make = () => {
@@ -193,22 +340,6 @@ let wallType = kind =>
   } else {
     "Arc";
   };
-
-let progressBar = percent => {
-  <div
-    style={ReactDOMRe.Style.make(
-      ~width=Js.Float.toString(percent *. 50.0) ++ "px",
-      (),
-    )}
-    className=Css.(
-      style([
-        backgroundColor(Colors.accent),
-        height(px(2)),
-        alignSelf(`flexStart),
-      ])
-    )
-  />;
-};
 
 [@react.component]
 let make =
@@ -289,122 +420,7 @@ let make =
              Styles.column,
              Css.(style([padding2(~v=px(8), ~h=px(8))])),
            ])}>
-           <div
-             className=Css.(
-               Styles.join([
-                 Styles.column,
-                 style(
-                   (1.0 -. wall##properties##absorb)
-                   *. (1.0 -. wall##properties##reflect) == 0.0
-                     ? [color(hex("999"))] : [],
-                 ),
-               ])
-             )>
-             <div className=Css.(style([fontSize(`percent(80.0))]))>
-               {React.string("Index of Refraction")}
-             </div>
-             <LogSlider
-               min=0
-               max=5.0
-               step=0.01
-               value={wall##properties##refraction}
-               disabled={
-                 wall##properties##reflect == 1.0
-                 ||
-                 wall##properties##absorb == 1.0
-               }
-               onChange={value => {
-                 let wall = [%js.deep
-                   wall["properties"]["refraction"].replace(value)
-                 ];
-                 onChange(wall);
-               }}
-             />
-             {Styles.spacer(8)}
-             {React.string("Refract")}
-           </div>
-           <div>
-             {progressBar(
-                (1.0 -. wall##properties##absorb)
-                *. (1.0 -. wall##properties##reflect),
-              )}
-             <div className=Styles.row>
-               <TriangleEditor
-                 pair={toPair((
-                   wall##properties##absorb,
-                   wall##properties##reflect,
-                 ))}
-                 onChange={pair => {
-                   let (absorb, reflect) = fromPair(pair);
-                   let wall = [%js.deep
-                     wall["properties"].map(properties =>
-                       properties["absorb"].replace(absorb)["reflect"].replace(
-                         reflect,
-                       )
-                     )
-                   ];
-                   onChange(wall);
-                 }}
-               />
-               <div
-                 className={Styles.join([
-                   Styles.column,
-                   Css.(
-                     style(
-                       (1.0 -. wall##properties##absorb)
-                       *.
-                       wall##properties##reflect == 0.0
-                         ? [color(hex("999"))] : [],
-                     )
-                   ),
-                   Css.(style([alignSelf(`flexEnd)])),
-                 ])}>
-                 <div className=Css.(style([]))>
-                   {React.string("Reflect")}
-                 </div>
-                 {progressBar(
-                    (1.0 -. wall##properties##absorb)
-                    *.
-                    wall##properties##reflect,
-                  )}
-                 {Styles.spacer(8)}
-                 <div>
-                   <div className=Css.(style([fontSize(`percent(80.0))]))>
-                     {React.string("Scatter")}
-                   </div>
-                   <Slider
-                     vertical=true
-                     width=50
-                     disabled={
-                       wall##properties##reflect == 0.0
-                       ||
-                       wall##properties##absorb == 1.0
-                     }
-                     min=0
-                     max=1.0
-                     step=0.01
-                     value={wall##properties##roughness}
-                     onChange={value => {
-                       let wall = [%js.deep
-                         wall["properties"]["roughness"].replace(value)
-                       ];
-                       onChange(wall);
-                     }}
-                   />
-                 </div>
-               </div>
-             </div>
-             <div
-               className=Css.(
-                 style(
-                   wall##properties##absorb == 0.0
-                     ? [color(hex("999"))] : [],
-                 )
-               )>
-               {React.string("Absorb")}
-             </div>
-             {progressBar(wall##properties##absorb)}
-           </div>
+           <PropertiesTriangle wall onChange />
            {Styles.spacer(8)}
            <button onClick={evt => onRemove()}>
              {React.string("Delete")}

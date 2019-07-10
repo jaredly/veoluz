@@ -179,3 +179,42 @@ module Compress = {
     React.element =
     "react-ionicons/lib/MdFiling";
 };
+
+module Eye = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdEye";
+};
+
+module EyeOff = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdEyeOff";
+};
+
+module Settings = {
+  [@bs.module] [@react.component]
+  external make:
+    (
+      ~className: string=?,
+      ~fontSize: string=?,
+      ~color: string=?,
+      ~onClick: 'event => unit=?
+    ) =>
+    React.element =
+    "react-ionicons/lib/MdSettings";
+};

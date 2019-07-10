@@ -116,7 +116,7 @@ impl Config {
             }],
             rendering: Rendering::new(width, height),
             transform: Transform {
-                rotational_symmetry: 1,
+                rotational_symmetry: 3,
                 reflection: false,
             },
         }

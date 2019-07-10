@@ -2,10 +2,7 @@
 let make = (~enabled, ~onChange) => {
   // <div className=Styles.button>
   <button
-    className={Css.style([
-      Css.backgroundColor(enabled ? Colors.accent : Colors.button),
-    ])}
-    onClick={_ => onChange(!enabled)}>
+    className={Styles.iconButton(enabled)} onClick={_ => onChange(!enabled)}>
     <svg width="50" height="50">
       <path stroke="black" strokeWidth="2px" d="M25,0 L25,50" />
       <path stroke="black" strokeWidth="2px" d="M10,50 L20,30" />
