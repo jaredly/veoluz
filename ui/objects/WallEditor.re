@@ -149,7 +149,8 @@ module TriangleEditor = {
 
     <div
       ref={ReactDOMRe.Ref.domRef(node)}
-      className=Css.(style([position(`relative)]))>
+      onMouseDown
+      className=Css.(style([position(`relative), cursor(`crosshair)]))>
       <Triangle size=100 padding=10 />
       <div
         onMouseDown
@@ -161,7 +162,7 @@ module TriangleEditor = {
             marginLeft(px(-5)),
             marginTop(px(-5)),
             position(`absolute),
-            backgroundColor(red),
+            backgroundColor(Colors.accent),
           ])
         )
         style={ReactDOMRe.Style.make(
@@ -192,6 +193,22 @@ let wallType = kind =>
   } else {
     "Arc";
   };
+
+let progressBar = percent => {
+  <div
+    style={ReactDOMRe.Style.make(
+      ~width=Js.Float.toString(percent *. 50.0) ++ "px",
+      (),
+    )}
+    className=Css.(
+      style([
+        backgroundColor(Colors.accent),
+        height(px(2)),
+        alignSelf(`flexStart),
+      ])
+    )
+  />;
+};
 
 [@react.component]
 let make =
@@ -248,7 +265,11 @@ let make =
       {Styles.spacer(4)}
       <div
         className=Css.(
-          style([fontWeight(`medium), flex(1), fontSize(px(12))])
+          style([
+            fontWeight(`medium),
+            flex(1),
+            fontSize(px(Styles.Text.small)),
+          ])
         )>
         {React.string(
            "Wall #" ++ string_of_int(index) ++ " " ++ wallType(wall##kind),
@@ -268,8 +289,20 @@ let make =
              Styles.column,
              Css.(style([padding2(~v=px(8), ~h=px(8))])),
            ])}>
-           <div>
-             {React.string("Index of Refraction")}
+           <div
+             className=Css.(
+               Styles.join([
+                 Styles.column,
+                 style(
+                   (1.0 -. wall##properties##absorb)
+                   *. (1.0 -. wall##properties##reflect) == 0.0
+                     ? [color(hex("999"))] : [],
+                 ),
+               ])
+             )>
+             <div className=Css.(style([fontSize(`percent(80.0))]))>
+               {React.string("Index of Refraction")}
+             </div>
              <LogSlider
                min=0
                max=5.0
@@ -287,10 +320,14 @@ let make =
                  onChange(wall);
                }}
              />
-           </div>
-           {Styles.spacer(8)}
-           <div>
+             {Styles.spacer(8)}
              {React.string("Refract")}
+           </div>
+           <div>
+             {progressBar(
+                (1.0 -. wall##properties##absorb)
+                *. (1.0 -. wall##properties##reflect),
+              )}
              <div className=Styles.row>
                <TriangleEditor
                  pair={toPair((
@@ -299,10 +336,6 @@ let make =
                  ))}
                  onChange={pair => {
                    let (absorb, reflect) = fromPair(pair);
-                   // absorb, reflect
-                   // refract / absorb / reflect
-                   // let reflect = Js.Float.isNaN(reflect) ? 0.0 : reflect;
-                   // Js.log3("Triangle Editor", (absorb, reflect), pair);
                    let wall = [%js.deep
                      wall["properties"].map(properties =>
                        properties["absorb"].replace(absorb)["reflect"].replace(
@@ -310,19 +343,35 @@ let make =
                        )
                      )
                    ];
-                   Js.log(wall##properties);
                    onChange(wall);
                  }}
                />
                <div
                  className={Styles.join([
                    Styles.column,
+                   Css.(
+                     style(
+                       (1.0 -. wall##properties##absorb)
+                       *.
+                       wall##properties##reflect == 0.0
+                         ? [color(hex("999"))] : [],
+                     )
+                   ),
                    Css.(style([alignSelf(`flexEnd)])),
                  ])}>
-                 {React.string("Reflect")}
+                 <div className=Css.(style([]))>
+                   {React.string("Reflect")}
+                 </div>
+                 {progressBar(
+                    (1.0 -. wall##properties##absorb)
+                    *.
+                    wall##properties##reflect,
+                  )}
                  {Styles.spacer(8)}
                  <div>
-                   {React.string("Scatter")}
+                   <div className=Css.(style([fontSize(`percent(80.0))]))>
+                     {React.string("Scatter")}
+                   </div>
                    <Slider
                      vertical=true
                      width=50
@@ -345,7 +394,16 @@ let make =
                  </div>
                </div>
              </div>
-             {React.string("Absorb")}
+             <div
+               className=Css.(
+                 style(
+                   wall##properties##absorb == 0.0
+                     ? [color(hex("999"))] : [],
+                 )
+               )>
+               {React.string("Absorb")}
+             </div>
+             {progressBar(wall##properties##absorb)}
            </div>
            {Styles.spacer(8)}
            <button onClick={evt => onRemove()}>

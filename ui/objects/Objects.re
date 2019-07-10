@@ -1,4 +1,3 @@
-
 let btn = Css.(style([disabled([backgroundColor(Colors.accent)])]));
 
 [@react.component]
@@ -56,6 +55,7 @@ let make =
     <AddWall ui updateUi />
     {Styles.spacer(8)}
     <div
+      className=Css.(style([flexShrink(1), overflow(`auto)]))
       onMouseEnter={_evt => wasm##show_ui()}
       onMouseLeave={_evt => wasm##hide_ui()}>
       {config##walls

@@ -47,7 +47,7 @@ module Scene = {
               borderStyle(`none),
               color(white),
               padding(px(4)),
-              fontSize(px(16)),
+              fontSize(px(Styles.Text.small)),
             ])
           )
           placeholder="Title"
@@ -151,7 +151,11 @@ let make =
       )>
       <div
         className=Css.(
-          style([fontSize(px(16)), fontWeight(`normal), color(white)])
+          style([
+            fontSize(px(Styles.Text.large)),
+            fontWeight(`normal),
+            color(white),
+          ])
         )>
         {React.string("Veo Luz Gallery")}
       </div>

@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 use ncollide2d::query::Ray;
 use ncollide2d::shape::Ball;
 
+use line::float;
 use ncollide2d::query::RayIntersection;
 use ncollide2d::shape::FeatureId;
 use ncollide2d::shape::Segment;
 use std::f32::consts::PI;
-use line::float;
 
 use nalgebra::{Point2, Vector2};
 
@@ -56,7 +56,7 @@ impl crate::types::Lerp for WallType {
             (WallType::Parabola(p1), WallType::Parabola(p2)) => {
                 WallType::Parabola(p1.lerp(p2, amount))
             }
-            _ => panic!("Cannot lerp between wall types")
+            _ => panic!("Cannot lerp between wall types"),
         }
     }
 }
@@ -82,16 +82,21 @@ impl WallType {
         WallType::Line(Segment::new(p1, p2))
     }
 
-    pub fn circle(center: Point2<line::float>, radius: line::float, t0: line::float, t1: line::float) -> Self {
-        WallType::Circle(
-            Ball::new(radius),
-            center,
-            t0,
-            t1
-        )
+    pub fn circle(
+        center: Point2<line::float>,
+        radius: line::float,
+        t0: line::float,
+        t1: line::float,
+    ) -> Self {
+        WallType::Circle(Ball::new(radius), center, t0, t1)
     }
 
-    pub fn parabola(center: Point2<float>, focus_offset: Vector2<float>, left: float, right: float) -> Self {
+    pub fn parabola(
+        center: Point2<float>,
+        focus_offset: Vector2<float>,
+        left: float,
+        right: float,
+    ) -> Self {
         WallType::Parabola(Parabola {
             a: 1.0 / (4.0 * focus_offset.norm_squared().sqrt()),
             left,
@@ -172,19 +177,22 @@ impl WallType {
     }
 
     pub fn scale(&mut self, by: f32) {
+        let by = by.max(0.001);
         match self {
-            WallType::Line(wall) => {
-                *wall = Segment::new(wall.a() * by, wall.b() * by )
-            }
+            WallType::Line(wall) => *wall = Segment::new(wall.a() * by, wall.b() * by),
             WallType::Circle(ball, center, _, _) => {
-                *ball = Ball::new(ball.radius() * by );
-                *center = *center * by ;
+                *ball = Ball::new(ball.radius() * by);
+                *center = *center * by;
             }
             WallType::Parabola(parabola) => {
-                parabola.transform.translation.vector *= by ;
-                parabola.a /= by ;
-                parabola.left *= by ;
-                parabola.right *= by ;
+                parabola.transform.translation.vector *= by;
+                if by == 0.0 {
+                    parabola.a = 1.0;
+                } else {
+                    parabola.a /= by;
+                }
+                parabola.left *= by;
+                parabola.right *= by;
             }
         }
     }

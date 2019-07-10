@@ -108,7 +108,7 @@ let make =
             color(white),
             backgroundColor(hex("336")),
             marginLeft(px(32)),
-            padding(px(16)),
+            padding(px(Styles.Text.small)),
           ])
         )>
         {React.string("Examples")}

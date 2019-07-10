@@ -1,15 +1,31 @@
 open Css;
 
+module Text = {
+  let small = 16;
+  let normal = 20;
+  let large = 24;
+};
+
+module Spacing = {
+  let small = 8;
+  let medium = 16;
+  let large = 24;
+};
+
 let title =
   style([
-    fontSize(px(12)),
+    fontSize(px(Text.small)),
     fontWeight(`num(600)),
     color(Colors.accent),
     marginBottom(px(8)),
   ]);
 
 let titleNoMargin =
-  style([fontSize(px(12)), fontWeight(`num(600)), color(Colors.accent)]);
+  style([
+    fontSize(px(Text.small)),
+    fontWeight(`num(600)),
+    color(Colors.accent),
+  ]);
 
 let join = styles => String.concat(" ", styles);
 

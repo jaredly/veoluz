@@ -191,14 +191,21 @@ Css.(
     [
       backgroundColor(Colors.background),
       color(Colors.text),
-      fontSize(px(12)),
+      fontSize(px(Styles.Text.normal)),
       margin(px(0)),
     ],
   )
 );
 
 Css.(
-  global("input", [backgroundColor(Colors.control), color(Colors.text)])
+  global(
+    "input",
+    [
+      backgroundColor(Colors.control),
+      color(Colors.text),
+      fontSize(px(Styles.Text.small)),
+    ],
+  )
 );
 
 Css.(
@@ -207,6 +214,7 @@ Css.(
     [
       backgroundColor(Colors.button),
       cursor(`pointer),
+      fontSize(px(Styles.Text.small)),
       color(Colors.text),
       padding2(~v=px(4), ~h=px(8)),
       borderStyle(`none),

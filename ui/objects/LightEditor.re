@@ -26,7 +26,7 @@ let make = (~wasm, ~selected, ~light, ~index, ~onChange, ~updateUi, ~ui) => {
           display(`flex),
           alignItems(`center),
           fontWeight(`medium),
-          fontSize(px(12)),
+          fontSize(px(Styles.Text.small)),
         ])
       )
       onClick={evt => {

@@ -537,7 +537,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
     listen!(canvas, "wheel", WheelEvent, move |evt: WheelEvent| {
         crate::state::try_with(|state| {
             state.config.rendering.zoom =
-                (evt.delta_y() as f32 * -0.01 + state.config.rendering.zoom).max(0.0);
+                (evt.delta_y() as f32 * -0.01 + state.config.rendering.zoom).max(0.1);
             evt.prevent_default();
             state.async_render(true)
         })

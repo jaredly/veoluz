@@ -34,6 +34,7 @@ let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
           update(config, false);
         }}
       />
+      {Styles.spacer(8)}
       <div
         onClick={_ => {
           let config = [%js.deep
