@@ -273,7 +273,7 @@ module LightMod = {
             onChange(
               [%js.deep
                 light["kind"]["Point"]["offset"].map(offset =>
-                  offset == 0.0 ? 1.0 : 0.0
+                  offset == 0.0 ? 10.0 : 0.0
                 )
               ],
               true,

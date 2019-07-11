@@ -531,20 +531,6 @@ module Inner = {
             dispatch(`Update((config, state.ui)));
           }}
         />
-        <Objects
-          config={state.config}
-          ui={state.ui}
-          update={(config, checkpoint) => {
-            wasm##update(config, checkpoint);
-            dispatch(`Update((config, state.ui)));
-          }}
-          wasm
-          updateUi={ui => {
-            // Js.log2("New ui", ui);
-            wasm##update_ui(ui);
-            dispatch(`Update((state.config, ui)));
-          }}
-        />
       </div>
     </div>;
   };

@@ -722,7 +722,8 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
         state::try_with(|state| {
             match &state.ui.selection {
                 Some(Selection::Wall(wid, Some((id, _)))) => {
-                    state.ui.hovered = Some((*wid, *id));
+                    // state.ui.hovered = None;
+                    state.ui.hovered = Some((*wid, Handle::Move(nalgebra::zero())));
                     state.ui.selection = Some(Selection::Wall(*wid, None));
                     state.async_render(false)?;
                 }
@@ -739,6 +740,7 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
             state.maybe_save_history();
 
             update_cursor(&state.ui)?;
+            state.send_on_change();
             Ok(())
         })
     });
