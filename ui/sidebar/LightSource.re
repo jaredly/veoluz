@@ -291,7 +291,7 @@ module LightMod = {
           </svg>
         </button>
         {kind##offset != 0.0
-           ? <div className=Css.(style([padding(px(16))]))>
+           ? <div className=Css.(style([padding(px(0))]))>
                <Ui.Slider
                  min=1
                  max=500.0
