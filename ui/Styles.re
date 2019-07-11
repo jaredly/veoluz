@@ -62,7 +62,6 @@ let colorButton =
     padding(px(4)),
     backgroundColor(`transparent),
     color(hex("aaa")),
-    // border(px(2), `solid, Colors.accent),
     hover([color(Colors.accent)]),
     disabled([color(Colors.accent), hover([color(Colors.accent)])]),
   ]);

@@ -25,5 +25,7 @@ let make = (~update, ~updateUi, ~config: Rust.config, ~ui: Rust.ui) => {
     </div>
     {Styles.spacer(16)}
     <Walls config ui update updateUi />
+    {Styles.spacer(16)}
+    <LightSource config onChange=update />
   </div>;
 };
