@@ -1,6 +1,14 @@
 module Scene = {
   [@react.component]
-  let make = (~scene: Types.scene, ~onChangeScene, ~tags, ~onUpdateTags) => {
+  let make =
+      (
+        ~scene: Types.scene,
+        ~onChangeScene,
+        ~tags,
+        ~onUpdateTags,
+        ~onClickTag,
+        ~highlightedTags,
+      ) => {
     let (title, updateTitle) = Hooks.useUpdatingState(scene.title);
     let url = ScenePicker.useCachedSceneImage(scene);
     <div
@@ -84,9 +92,11 @@ module Scene = {
            </div>
          : React.null}
       <div className=Css.(style([flex(1)])) />
-      <SceneForm.TagsEditor
+      <TagsEditor
         tags
+        highlightedTags
         onUpdateTags
+        onClickTag
         onChange={tags => onChangeScene({...scene, tags})}
         sceneTags={scene.tags}
       />
@@ -124,11 +134,32 @@ type filter = {
 
 open Belt;
 
+let reduce = (filter, action) =>
+  switch (action) {
+  | `ToggleTag(id) =>
+    let tags =
+      switch (filter.tags) {
+      | `All(t) when t->Belt.Set.String.has(id) =>
+        t->Belt.Set.String.remove(id)
+      | `All(t) => t->Belt.Set.String.add(id)
+      | _ => Belt.Set.String.empty->Belt.Set.String.add(id)
+      };
+    {...filter, tags: `All(tags)};
+  | `ToggleStarred => {...filter, star: !filter.star}
+  | `ToggleUntagged => {
+      ...filter,
+      tags: filter.tags == `None ? `All(Set.String.empty) : `None,
+    }
+  };
+
 [@react.component]
 let make =
     (~onClose, ~directory: Types.directory, ~onChangeScene, ~onUpdateTags) => {
-  let (filter, setFilter) =
-    Hooks.useState({star: false, tags: `All(Set.String.empty)});
+  let (filter, dispatch) =
+    React.useReducer(reduce, {star: false, tags: `All(Set.String.empty)});
+
+  let onClickTag = React.useCallback(id => dispatch(`ToggleTag(id)));
+
   <div
     className=Css.(
       style([
@@ -164,7 +195,7 @@ let make =
       {Styles.spacer(8)}
       <button
         className={Styles.flatButton(Css.white)}
-        onClick={_ => setFilter({...filter, star: !filter.star})}>
+        onClick={_ => dispatch(`ToggleStarred)}>
         {React.string(filter.star ? "Show all" : "Starred")}
       </button>
       <button
@@ -172,12 +203,7 @@ let make =
           Css.white,
           filter.tags == `None,
         )}
-        onClick={_ =>
-          setFilter({
-            ...filter,
-            tags: filter.tags == `None ? `All(Set.String.empty) : `None,
-          })
-        }>
+        onClick={_ => dispatch(`ToggleUntagged)}>
         {React.string("Untagged")}
       </button>
       {Styles.spacer(8)}
@@ -204,36 +230,7 @@ let make =
                      marginRight(px(4)),
                    ])
                  )
-                 onClick={_evt =>
-                   if (selected) {
-                     switch (filter.tags) {
-                     | `All(t) =>
-                       setFilter({
-                         ...filter,
-                         tags: `All(t->Belt.Set.String.remove(tag.id)),
-                       })
-                     | _ => ()
-                     };
-                   } else {
-                     switch (filter.tags) {
-                     | `All(t) =>
-                       setFilter({
-                         ...filter,
-                         tags: `All(t->Belt.Set.String.add(tag.id)),
-                       })
-                     | _ =>
-                       setFilter({
-                         ...filter,
-                         tags:
-                           `All(
-                             Belt.Set.String.empty->Belt.Set.String.add(
-                               tag.id,
-                             ),
-                           ),
-                       })
-                     };
-                   }
-                 }>
+                 onClick={_evt => dispatch(`ToggleTag(tag.id))}>
                  {React.string(tag.title)}
                </button>;
              }),
@@ -248,7 +245,11 @@ let make =
             hover([color(hex("aab"))]),
           ])
         )>
-        <IonIcons.Close color="currentcolor" onClick={_evt => onClose()} />
+        <IonIcons.Close
+          className=Css.(style([paddingLeft(px(16))]))
+          color="currentcolor"
+          onClick={_evt => onClose()}
+        />
       </div>
     </div>
     <div
@@ -282,8 +283,15 @@ let make =
              <Scene
                key={scene.id}
                onChangeScene
+               onClickTag
                scene
                onUpdateTags
+               highlightedTags={
+                 switch (filter.tags) {
+                 | `None => Belt.Set.String.empty
+                 | `All(t) => t
+                 }
+               }
                tags={directory.tags}
              />
            ),
