@@ -175,7 +175,64 @@ let make =
         }>
         {React.string("Untagged")}
       </button>
-      Styles.fullSpace
+      <div
+        className=Css.(style([flex(1), overflow(`auto), display(`flex)]))>
+        {React.array(
+           directory.tags
+           ->Belt.Map.String.valuesToArray
+           ->Js.Array2.sortInPlaceWith((a, b) => compare(a.title, b.title))
+           ->Belt.Array.map(tag => {
+               let selected =
+                 switch (filter.tags) {
+                 | `All(t) when t->Set.String.has(tag.id) => true
+                 | _ => false
+                 };
+               <button
+                 className=Css.(
+                   style([
+                     flexShrink(0),
+                     backgroundColor(
+                       selected ? Colors.accent : Colors.button,
+                     ),
+                     marginRight(px(4)),
+                   ])
+                 )
+                 onClick={_evt =>
+                   if (selected) {
+                     switch (filter.tags) {
+                     | `All(t) =>
+                       setFilter({
+                         ...filter,
+                         tags: `All(t->Belt.Set.String.remove(tag.id)),
+                       })
+                     | _ => ()
+                     };
+                   } else {
+                     switch (filter.tags) {
+                     | `All(t) =>
+                       setFilter({
+                         ...filter,
+                         tags: `All(t->Belt.Set.String.add(tag.id)),
+                       })
+                     | _ =>
+                       setFilter({
+                         ...filter,
+                         tags:
+                           `All(
+                             Belt.Set.String.empty->Belt.Set.String.add(
+                               tag.id,
+                             ),
+                           ),
+                       })
+                     };
+                   }
+                 }>
+                 {React.string(tag.title)}
+               </button>;
+             }),
+         )}
+      </div>
+      // Styles.fullSpace
       <div
         className=Css.(
           style([

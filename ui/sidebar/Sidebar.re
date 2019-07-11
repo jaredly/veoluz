@@ -1,6 +1,11 @@
 [@react.component]
-let make = (~update, ~updateUi, ~config: Rust.config, ~ui: Rust.ui) => {
-  <div className={Styles.join([Styles.column, Styles.control])}>
+let make = (~update, ~updateUi, ~config: Rust.config, ~ui: Rust.ui, ~wasm) => {
+  <div
+    className={Styles.join([
+      Styles.column,
+      Styles.control,
+      Css.(style([overflow(`auto), flexShrink(1)])),
+    ])}>
     <div className=Styles.title> {React.string("Symmetry")} </div>
     <div className=Styles.row>
       <RotationSym
@@ -27,5 +32,7 @@ let make = (~update, ~updateUi, ~config: Rust.config, ~ui: Rust.ui) => {
     <Walls config ui update updateUi />
     {Styles.spacer(16)}
     <LightSource config onChange=update />
+    {Styles.spacer(16)}
+    <ExposureFunction wasm config update />
   </div>;
 };

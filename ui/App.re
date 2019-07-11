@@ -514,6 +514,7 @@ module Inner = {
         }
         {Styles.spacer(8)}
         <Sidebar
+          wasm
           update
           updateUi={ui => {
             // Js.log2("New ui", ui);
@@ -522,14 +523,6 @@ module Inner = {
           }}
           config={state.config}
           ui={state.ui}
-        />
-        <TransformEditor
-          wasm
-          config={state.config}
-          update={(config, checkpoint) => {
-            wasm##update(config, checkpoint);
-            dispatch(`Update((config, state.ui)));
-          }}
         />
       </div>
     </div>;
