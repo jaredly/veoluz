@@ -113,6 +113,8 @@ module Scene = {
       </div>
     </div>;
   };
+
+  let make = React.memo(make);
 };
 
 type filter = {
@@ -166,7 +168,10 @@ let make =
         {React.string(filter.star ? "Show all" : "Starred")}
       </button>
       <button
-        className={Styles.flatButton(Css.white)}
+        className={Styles.flatButtonSelectable(
+          Css.white,
+          filter.tags == `None,
+        )}
         onClick={_ =>
           setFilter({
             ...filter,
@@ -175,6 +180,7 @@ let make =
         }>
         {React.string("Untagged")}
       </button>
+      {Styles.spacer(8)}
       <div
         className=Css.(style([flex(1), overflow(`auto), display(`flex)]))>
         {React.array(
@@ -188,6 +194,7 @@ let make =
                  | _ => false
                  };
                <button
+                 key={tag.id}
                  className=Css.(
                    style([
                      flexShrink(0),
@@ -252,6 +259,7 @@ let make =
           flexDirection(`row),
           overflowY(`auto),
           flexWrap(`wrap),
+          justifyContent(`center),
         ])
       )>
       {React.array(

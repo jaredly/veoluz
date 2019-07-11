@@ -415,31 +415,44 @@ module Inner = {
           <span id="fps" />
         </div>
         <MiniScenePicker
-          onUpdateTags={tags => dispatch(`UpdateTags(tags))}
+          onUpdateTags={React.useCallback(tags =>
+            dispatch(`UpdateTags(tags))
+          )}
           directory={state.directory}
-          onChangeScene={scene => dispatch(`SaveInPlace(scene))}
-          onClearScene={() => {
-            let _ = wasm##restore(wasm##blank_config());
-            ();
-          }}
+          onChangeScene={React.useCallback(scene =>
+            dispatch(`SaveInPlace(scene))
+          )}
+          onClearScene={React.useCallback1(
+            () => {
+              let _ = wasm##restore(wasm##blank_config());
+              ();
+            },
+            [|wasm|],
+          )}
           onSaveScene
           current={state.current}
-          hover={url => dispatch(`Hover(url))}
-          unHover={() => dispatch(`Unhover)}
-          onExample={config => {
-            let _ = wasm##restore(config);
-            ();
-          }}
+          hover={React.useCallback(url => dispatch(`Hover(url)))}
+          unHover={React.useCallback(() => dispatch(`Unhover))}
+          onExample={React.useCallback1(
+            config => {
+              let _ = wasm##restore(config);
+              ();
+            },
+            [|wasm|],
+          )}
           // Js.log3("Resetting", anyHash(config), config);
           // let _config = wasm##restore(config);
           // (router^)->Router.updateId(id);
           // dispatch(`Select(id));
-          onSelect={(id, config) => {
-            Js.log3("Resetting", anyHash(config), config);
-            let _config = wasm##restore(config);
-            (router^)->Router.updateId(id);
-            dispatch(`Select(id));
-          }}
+          onSelect={React.useCallback2(
+            (id, config) => {
+              Js.log3("Resetting", anyHash(config), config);
+              let _config = wasm##restore(config);
+              (router^)->Router.updateId(id);
+              dispatch(`Select(id));
+            },
+            (router^, dispatch),
+          )}
         />
       </div>
       <div

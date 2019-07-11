@@ -55,6 +55,12 @@ let row =
 let flatButton = textColor =>
   style([backgroundColor(`transparent), color(textColor)]);
 
+let flatButtonSelectable = (textColor, selected) =>
+  style([
+    backgroundColor(selected ? Colors.accent : `transparent),
+    color(textColor),
+  ]);
+
 let iconButton = style([padding(px(4)), backgroundColor(Colors.button)]);
 
 let colorButton =

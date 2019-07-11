@@ -37,6 +37,7 @@ let make =
       ~onClearScene,
     ) => {
   let (gallery, toggleGallery) = Hooks.useState(false);
+  let onCloseGallery = React.useCallback(_ => toggleGallery(false));
   let portal = Hooks.usePortal();
   <div
     className=Css.(
@@ -52,7 +53,7 @@ let make =
     {gallery
        ? ReactDOMRe.createPortal(
            <Gallery
-             onClose={_ => toggleGallery(false)}
+             onClose=onCloseGallery
              onUpdateTags
              directory
              onChangeScene
