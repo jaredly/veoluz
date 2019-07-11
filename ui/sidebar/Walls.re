@@ -1,6 +1,6 @@
 module AddWall = {
   let size = 50;
-  let color = "#555";
+  let color = "currentcolor";
   let lw = "2px";
   let line =
     <svg width={string_of_int(size)} height={string_of_int(size)}>
@@ -65,7 +65,7 @@ module AddWall = {
             ],
           )
         }
-        className={Styles.iconButton(adding == Some("Line"))}>
+        className={Styles.toggleButton(adding == Some("Line"))}>
         line
       </button>
       {Styles.spacer(8)}
@@ -86,7 +86,7 @@ module AddWall = {
             ],
           )
         }
-        className={Styles.iconButton(adding == Some("Parabola"))}>
+        className={Styles.toggleButton(adding == Some("Parabola"))}>
         parabola
       </button>
       {Styles.spacer(8)}
@@ -107,7 +107,7 @@ module AddWall = {
             ],
           )
         }
-        className={Styles.iconButton(adding == Some("Circle"))}>
+        className={Styles.toggleButton(adding == Some("Circle"))}>
         arc
       </button>
     </div>;
@@ -124,18 +124,19 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
     <div className=Styles.title> {React.string("Walls")} </div>
     {Styles.spacer(8)}
     {config##walls
-     ->Belt.Array.mapWithIndex((i, wall) =>
+     ->Belt.Array.mapWithIndex((i, wall) => {
+         let selected =
+           {switch (ui##selection->Js.nullToOption) {
+            | None => false
+            | Some(selection) =>
+              switch ([%js.deep selection["Wall"]]) {
+              | None => false
+              | Some((wid, _)) => i == wid
+              }
+            }};
+
          <Wall
-           selected={
-             switch (ui##selection->Js.nullToOption) {
-             | None => false
-             | Some(selection) =>
-               switch ([%js.deep selection["Wall"]]) {
-               | None => false
-               | Some((wid, _)) => i == wid
-               }
-             }
-           }
+           selected
            onSelect={() =>
              updateUi(
                [%js.deep
@@ -183,7 +184,17 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
                true,
              )
            }
-           onChange={(wall, checkpoint) =>
+           onChange={(wall, checkpoint) => {
+             if (!selected) {
+               updateUi(
+                 [%js.deep
+                   ui["selection"].replace(
+                     Js.Null.return(Rust.selectWall(i)),
+                   )
+                 ],
+               );
+             };
+
              update(
                [%js.deep
                  config["walls"].map(walls => {
@@ -193,12 +204,12 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
                  })
                ],
                checkpoint,
-             )
-           }
+             );
+           }}
            wall
            key={string_of_int(i)}
-         />
-       )
+         />;
+       })
      ->React.array}
   </div>;
 };

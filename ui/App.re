@@ -212,12 +212,13 @@ Css.(
   global(
     "button",
     [
-      backgroundColor(Colors.button),
+      // backgroundColor(Colors.button),
       cursor(`pointer),
       fontSize(px(Styles.Text.small)),
       color(Colors.text),
       padding2(~v=px(4), ~h=px(8)),
       borderStyle(`none),
+      backgroundColor(Colors.button),
       borderRadius(px(4)),
       hover([backgroundColor(Colors.buttonHover)]),
       disabled([backgroundColor(`transparent), cursor(`default)]),
@@ -404,7 +405,10 @@ module Inner = {
              />
            }}
         </div>
-        <div className=Css.(style([color(white)]))>
+        <div
+          className=Css.(
+            style([color(white), fontSize(px(Styles.Text.small))])
+          )>
           {React.string("Rays: ")}
           <span id="total_rays" />
           {React.string(" Rays/second: ")}
@@ -512,7 +516,7 @@ module Inner = {
         <Sidebar
           update
           updateUi={ui => {
-            Js.log2("New ui", ui);
+            // Js.log2("New ui", ui);
             wasm##update_ui(ui);
             dispatch(`Update((state.config, ui)));
           }}
@@ -536,7 +540,7 @@ module Inner = {
           }}
           wasm
           updateUi={ui => {
-            Js.log2("New ui", ui);
+            // Js.log2("New ui", ui);
             wasm##update_ui(ui);
             dispatch(`Update((state.config, ui)));
           }}

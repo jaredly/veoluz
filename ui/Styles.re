@@ -55,10 +55,23 @@ let row =
 let flatButton = textColor =>
   style([backgroundColor(`transparent), color(textColor)]);
 
-let iconButton = active =>
+let iconButton = style([padding(px(4)), backgroundColor(Colors.button)]);
+
+let colorButton =
   style([
     padding(px(4)),
-    backgroundColor(active ? Colors.accent : Colors.button),
+    backgroundColor(`transparent),
+    color(hex("aaa")),
+    // border(px(2), `solid, Colors.accent),
+    hover([color(Colors.accent)]),
+    disabled([color(Colors.accent), hover([color(Colors.accent)])]),
+  ]);
+
+let toggleButton = active =>
+  style([
+    padding(px(4)),
+    backgroundColor(active ? Colors.accent : `transparent),
+    border(px(2), `solid, Colors.accent),
     hover(active ? [backgroundColor(Colors.accent)] : []),
   ]);
 

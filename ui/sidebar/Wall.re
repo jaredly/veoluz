@@ -9,11 +9,16 @@ let mirror =
       y="0"
       width="3"
       height={string_of_int(size)}
-      fill="black"
-      stroke="black"
+      fill="currentcolor"
+      stroke="currentcolor"
       strokeWidth="0px"
     />
-    <path stroke="black" strokeWidth="1px" d="M3,3 L13,10 L3,17" fill="none" />
+    <path
+      stroke="currentcolor"
+      strokeWidth="1px"
+      d="M3,3 L13,10 L3,17"
+      fill="none"
+    />
   </svg>;
 
 let prism =
@@ -23,12 +28,12 @@ let prism =
       y="0"
       width="3"
       height={string_of_int(size)}
-      fill="black"
-      stroke="black"
+      fill="currentcolor"
+      stroke="currentcolor"
       strokeWidth="0px"
     />
     <path
-      stroke="black"
+      stroke="currentcolor"
       strokeWidth="1px"
       d="M0,3 L10,10 L20,12"
       fill="none"
@@ -42,11 +47,16 @@ let block =
       y="0"
       width="3"
       height={string_of_int(size)}
-      fill="black"
-      stroke="black"
+      fill="currentcolor"
+      stroke="currentcolor"
       strokeWidth="0px"
     />
-    <path stroke="black" strokeWidth="1px" d="M3,3 L13,10" fill="none" />
+    <path
+      stroke="currentcolor"
+      strokeWidth="1px"
+      d="M3,3 L13,10"
+      fill="none"
+    />
   </svg>;
 
 let getStatus = properties => {
@@ -81,7 +91,7 @@ let make =
     <div
       className={Styles.join([
         Styles.row,
-        Css.(style([alignItems(`center), padding2(~v=px(0), ~h=px(8))])),
+        Css.(style([alignItems(`center)])),
       ])}>
       <div
         className=Css.(
@@ -89,22 +99,29 @@ let make =
             cursor(`pointer),
             flex(1),
             color(selected ? Colors.accent : Colors.text),
+            display(`flex),
+            alignItems(`center),
+            flexDirection(`row),
           ])
         )
-        onClick={evt =>
+        onClick={_evt =>
           if (selected) {
             onDeselect();
           } else {
             onSelect();
           }
         }>
+        {selected
+           ? <IonIcons.ArrowDown fontSize="14px" />
+           : <IonIcons.ArrowRight fontSize="14px" />}
+        {Styles.spacer(4)}
         {React.string(WallEditor.wallType(wall##kind))}
       </div>
       {Styles.spacer(8)}
       <Tippy content="Mirror">
         <span>
           <button
-            className=Styles.multiButton
+            className=Styles.colorButton
             disabled={status == `Reflect}
             onClick={_evt =>
               onChange(
@@ -120,11 +137,11 @@ let make =
           </button>
         </span>
       </Tippy>
-      {Styles.spacer(4)}
+      // {Styles.spacer(4)}
       <Tippy content="Prism">
         <span>
           <button
-            className=Styles.multiButton
+            className=Styles.colorButton
             disabled={status == `Refract}
             onClick={_evt =>
               onChange(
@@ -140,11 +157,11 @@ let make =
           </button>
         </span>
       </Tippy>
-      {Styles.spacer(4)}
+      // {Styles.spacer(4)}
       <Tippy content="Block">
         <span>
           <button
-            className=Styles.multiButton
+            className=Styles.colorButton
             disabled={status == `Absorb}
             onClick={_evt =>
               onChange(
@@ -158,11 +175,11 @@ let make =
           </button>
         </span>
       </Tippy>
-      {Styles.spacer(4)}
+      // {Styles.spacer(4)}
       <Tippy content="Custom behavior">
         <span>
           <button
-            className=Styles.multiButton
+            className=Styles.colorButton
             disabled={status == `Custom}
             onClick={_evt =>
               onChange(
@@ -174,7 +191,7 @@ let make =
                 true,
               )
             }>
-            <IonIcons.Settings fontSize="20px" />
+            <IonIcons.Settings fontSize="20px" color="currentcolor" />
           </button>
         </span>
       </Tippy>
@@ -185,13 +202,13 @@ let make =
                onClick={_ =>
                  onChange([%js.deep wall["hide"].replace(false)], true)
                }
-               className=Styles.multiButton>
+               className=Styles.colorButton>
                <IonIcons.EyeOff fontSize="20px" />
              </button>
            </Tippy>
          : <Tippy content="Hide">
              <button
-               className=Styles.multiButton
+               className=Styles.colorButton
                onClick={_ =>
                  onChange([%js.deep wall["hide"].replace(true)], true)
                }>
@@ -200,7 +217,7 @@ let make =
            </Tippy>}
       {Styles.spacer(8)}
       <Tippy content="Delete">
-        <button onClick={_ => onRemove()} className=Styles.multiButton>
+        <button onClick={_ => onRemove()} className=Styles.colorButton>
           <IonIcons.Close fontSize="20px" />
         </button>
       </Tippy>
