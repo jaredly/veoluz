@@ -470,23 +470,11 @@ impl WallType {
                 right,
                 transform,
             }) => match id {
-                // 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 0 => {
                     let pos = transform.inverse_transform_point(pos);
-                    // let transformed =
-                    // Point2::from(transform.translation.vector)
-                    //     +
-                    //     transform
-                    //         .rotation
-                    //         .inverse_transform_point(pos);
-                    // let dist = transform.translation.vector - pos.coords;
-                    // let det = 4.0 * dist.norm_squared().sqrt();
                     let det = 4.0 * pos.y.abs();
                     if det != 0.0 {
                         *a = -1.0 / det;
-                        // transform.rotation = nalgebra::UnitComplex::from_angle(
-                        //     dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
-                        // );
                     }
                 }
                 1 => {
@@ -504,20 +492,21 @@ impl WallType {
                     }
                 }
                 3 => {
-                    // let transformed =
-                    // Point2::from(transform.translation.vector)
-                    //     +
-                    //     transform
-                    //         .rotation
-                    //         .inverse_transform_point(pos);
                     let dist = transform.translation.vector - pos.coords;
-                    let det = 4.0 * dist.norm_squared().sqrt();
-                    // let det = 4.0 * pos.y.abs();
+                    transform.rotation = nalgebra::UnitComplex::from_angle(
+                        dist.y.atan2(dist.x) - PI / 2.0 + PI / 6.0,
+                    );
+                }
+                4 => {
+                    let pos = transform.inverse_transform_point(pos);
+                    let dist = pos.coords.norm_squared().sqrt();
+                    let det = 4.0 * dist;
                     if det != 0.0 {
-                        // *a = -1.0 / det;
-                        transform.rotation = nalgebra::UnitComplex::from_angle(
-                            dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
-                        );
+                        let new_a = -1.0 / det;
+                        let scale = new_a / *a;
+                        *a *= scale;
+                        *left /= scale;
+                        *right /= scale;
                     }
                 }
                 _ => (),
@@ -580,17 +569,22 @@ impl WallType {
                 ),
                 (
                     Point2::from(transform.translation.vector)
-                        + transform
-                            .rotation
-                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0) + 40.0)),
-                    HandleStyle::Resize,
+                        + transform.rotation.transform_vector(&{
+                            // Vector2::new(0.0, -1.0 / (*a * 4.0))
+                            let dist = 1.0 / (*a * 4.0);
+                            let angle = -PI / 6.0 + PI / 2.0;
+                            Vector2::new(angle.cos() * dist, angle.sin() * dist)
+                        }),
+                    HandleStyle::Rotate,
                 ),
                 (
                     Point2::from(transform.translation.vector)
-                        + transform
-                            .rotation
-                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0) - 40.0)),
-                    HandleStyle::Rotate,
+                        + transform.rotation.transform_vector(&{
+                            let dist = 1.0 / (*a * 4.0);
+                            let angle = PI / 6.0 + PI / 2.0;
+                            Vector2::new(angle.cos() * dist, angle.sin() * dist)
+                        }),
+                    HandleStyle::Resize,
                 ),
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
