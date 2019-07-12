@@ -532,7 +532,7 @@ impl WallType {
                 }
                 0 => {
                     let dist = (pos - *center).norm_squared().sqrt();
-                    *circle = Ball::new(dist.max(0.0));
+                    *circle = Ball::new(dist.max(0.1));
                 }
                 _ => (),
             },
