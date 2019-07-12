@@ -178,12 +178,12 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
     state.ctx.set_line_dash(&dashes)?;
 
     for (i, wall) in state.config.main_walls().iter().enumerate() {
-        let selected = match &ui.selection {
-            Some(Selection::Wall(wid, _)) if *wid == i => true,
-            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => true,
+        let (selected, just_sel) = match &ui.selection {
+            Some(Selection::Wall(wid, _)) if *wid == i => (true, true),
+            Some(Selection::Multiple(walls, _)) if walls.contains(&i) => (true, true),
             _ => match hover {
-                Some((wid, _)) if wid == i => true,
-                _ => false,
+                Some((wid, _)) if wid == i => (true, false),
+                _ => (false, false),
             },
         };
 
@@ -213,6 +213,7 @@ fn draw_walls(state: &State, ui: &UiState, hover: Option<(usize, Handle)>) -> Re
             &kind,
             &state.ctx,
             5.0,
+            just_sel,
             match hover {
                 Some((wid, Handle::Handle(id))) => {
                     if wid == i {
@@ -294,12 +295,16 @@ fn find_collision(
     zoom: f32,
     walls: &[Wall],
     pos: &Point2<shared::line::float>,
+    selected_wall: Option<usize>,
 ) -> Option<(usize, Handle)> {
     for (wid, wall) in walls.iter().enumerate() {
         if wall.hide {
             continue;
         }
-        match wall.kind.check_handle(pos, 5.0 / zoom) {
+        match wall
+            .kind
+            .check_handle(pos, 5.0 / zoom, selected_wall == Some(wid))
+        {
             None => (),
             Some(id) => return Some((wid, Handle::Handle(id))),
         }
@@ -572,7 +577,17 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                 return draw(state);
             }
 
-            match find_collision(state.config.rendering.zoom, &state.config.walls, &pos) {
+            let selected_wall = match state.ui.selection {
+                Some(Selection::Wall(wid, _)) => Some(wid),
+                _ => None,
+            };
+
+            match find_collision(
+                state.config.rendering.zoom,
+                &state.config.walls,
+                &pos,
+                selected_wall,
+            ) {
                 None => {
                     state.ui.selection = Some(Selection::Pan {
                         grab: pos,
@@ -698,10 +713,15 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                     state.async_render(true)
                 }
                 _ => {
+                    let selected_wall = match state.ui.selection {
+                        Some(Selection::Wall(wid, _)) => Some(wid),
+                        _ => None,
+                    };
                     match find_collision(
                         state.config.rendering.zoom,
                         &state.config.walls,
                         &mouse_pos(&state.config.rendering, &evt),
+                        selected_wall,
                     ) {
                         Some((wid, id)) => state.ui.hovered = Some((wid, id)),
                         None => state.ui.hovered = None,

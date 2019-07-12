@@ -404,10 +404,28 @@ impl WallType {
             WallType::Parabola(parabola) => ray_parabola_collision(&ray, &parabola),
         }
     }
+}
 
-    pub fn check_handle(&self, pos: &Point2<line::float>, size: line::float) -> Option<usize> {
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+pub enum HandleStyle {
+    Circle,
+    Resize,
+    Rotate,
+}
+
+// Handles things
+impl WallType {
+    pub fn check_handle(
+        &self,
+        pos: &Point2<line::float>,
+        size: line::float,
+        selected: bool,
+    ) -> Option<usize> {
         let dist = size * size;
-        for (i, handle) in self.handles().iter().enumerate() {
+        for (i, (handle, kind)) in self.all_handles().iter().enumerate() {
+            if !selected && *kind != HandleStyle::Circle {
+                continue;
+            }
             if (handle - pos).norm_squared() < dist {
                 return Some(i);
             }
@@ -420,6 +438,30 @@ impl WallType {
             WallType::Line(wall) => match id {
                 0 => *wall = Segment::new(*pos, wall.b().clone()),
                 1 => *wall = Segment::new(wall.a().clone(), *pos),
+                // Resize
+                2 => {
+                    let center = (wall.a().coords + wall.b().coords) / 2.0;
+                    let dist = (pos - center).coords.norm_squared().sqrt();
+                    let adiff = wall.a() - center;
+                    let angle = adiff.y.atan2(adiff.x);
+                    let p0 =
+                        Point2::new(center.x + angle.cos() * dist, center.y + angle.sin() * dist);
+                    let p1 =
+                        Point2::new(center.x - angle.cos() * dist, center.y - angle.sin() * dist);
+                    *wall = Segment::new(p0, p1);
+                }
+                // Rotate
+                3 => {
+                    let center = (wall.a().coords + wall.b().coords) / 2.0;
+                    let dist = (wall.a() - center).coords.norm_squared().sqrt();
+                    let adiff = pos - center;
+                    let angle = adiff.y.atan2(adiff.x) + std::f32::consts::PI / 2.0;
+                    let p0 =
+                        Point2::new(center.x + angle.cos() * dist, center.y + angle.sin() * dist);
+                    let p1 =
+                        Point2::new(center.x - angle.cos() * dist, center.y - angle.sin() * dist);
+                    *wall = Segment::new(p0, p1);
+                }
                 _ => (),
             },
             WallType::Parabola(Parabola {
@@ -430,13 +472,21 @@ impl WallType {
             }) => match id {
                 // 0 => transform.translation = nalgebra::Translation2::from(pos.coords),
                 0 => {
-                    let dist = transform.translation.vector - pos.coords;
-                    let det = 4.0 * dist.norm_squared().sqrt();
+                    let pos = transform.inverse_transform_point(pos);
+                    // let transformed =
+                    // Point2::from(transform.translation.vector)
+                    //     +
+                    //     transform
+                    //         .rotation
+                    //         .inverse_transform_point(pos);
+                    // let dist = transform.translation.vector - pos.coords;
+                    // let det = 4.0 * dist.norm_squared().sqrt();
+                    let det = 4.0 * pos.y.abs();
                     if det != 0.0 {
                         *a = -1.0 / det;
-                        transform.rotation = nalgebra::UnitComplex::from_angle(
-                            dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
-                        );
+                        // transform.rotation = nalgebra::UnitComplex::from_angle(
+                        //     dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
+                        // );
                     }
                 }
                 1 => {
@@ -451,6 +501,23 @@ impl WallType {
                     *right = pos.x;
                     if *left > *right {
                         *left = *right - 10.0;
+                    }
+                }
+                3 => {
+                    // let transformed =
+                    // Point2::from(transform.translation.vector)
+                    //     +
+                    //     transform
+                    //         .rotation
+                    //         .inverse_transform_point(pos);
+                    let dist = transform.translation.vector - pos.coords;
+                    let det = 4.0 * dist.norm_squared().sqrt();
+                    // let det = 4.0 * pos.y.abs();
+                    if det != 0.0 {
+                        // *a = -1.0 / det;
+                        transform.rotation = nalgebra::UnitComplex::from_angle(
+                            dist.y.atan2(dist.x) - std::f32::consts::PI / 2.0,
+                        );
                     }
                 }
                 _ => (),
@@ -472,9 +539,23 @@ impl WallType {
         }
     }
 
-    pub fn handles(&self) -> Vec<Point2<line::float>> {
+    pub fn all_handles(&self) -> Vec<(Point2<line::float>, HandleStyle)> {
         match self {
-            WallType::Line(wall) => vec![wall.a().clone(), wall.b().clone()],
+            WallType::Line(wall) => {
+                let center = (wall.a().coords + wall.b().coords) / 2.0;
+                vec![
+                    (wall.a().clone(), HandleStyle::Circle),
+                    (wall.b().clone(), HandleStyle::Circle),
+                    (
+                        rotate_around(wall.a(), center, std::f32::consts::PI / 2.0),
+                        HandleStyle::Resize,
+                    ),
+                    (
+                        rotate_around(wall.a(), center, std::f32::consts::PI * 3.0 / 2.0),
+                        HandleStyle::Rotate,
+                    ),
+                ]
+            }
             WallType::Parabola(Parabola {
                 a,
                 left,
@@ -482,24 +563,62 @@ impl WallType {
                 transform,
             }) => vec![
                 // transform.translation.vector.into(),
-                Point2::from(transform.translation.vector)
-                    + transform
-                        .rotation
-                        .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
-                transform.transform_point(&Point2::new(*left, 0.0)),
-                transform.transform_point(&Point2::new(*right, 0.0)),
+                (
+                    Point2::from(transform.translation.vector)
+                        + transform
+                            .rotation
+                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
+                    HandleStyle::Circle,
+                ),
+                (
+                    transform.transform_point(&Point2::new(*left, 0.0)),
+                    HandleStyle::Circle,
+                ),
+                (
+                    transform.transform_point(&Point2::new(*right, 0.0)),
+                    HandleStyle::Circle,
+                ),
+                (
+                    Point2::from(transform.translation.vector)
+                        + transform
+                            .rotation
+                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0) + 40.0)),
+                    HandleStyle::Resize,
+                ),
+                (
+                    Point2::from(transform.translation.vector)
+                        + transform
+                            .rotation
+                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0) - 40.0)),
+                    HandleStyle::Rotate,
+                ),
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
                 // center.clone(),
-                Point2::new(
-                    center.x + t0.cos() * circle.radius(),
-                    center.y + t0.sin() * circle.radius(),
+                (
+                    Point2::new(
+                        center.x + t0.cos() * circle.radius(),
+                        center.y + t0.sin() * circle.radius(),
+                    ),
+                    HandleStyle::Circle,
                 ),
-                Point2::new(
-                    center.x + t1.cos() * circle.radius(),
-                    center.y + t1.sin() * circle.radius(),
+                (
+                    Point2::new(
+                        center.x + t1.cos() * circle.radius(),
+                        center.y + t1.sin() * circle.radius(),
+                    ),
+                    HandleStyle::Circle,
                 ),
             ],
         }
     }
 }
+
+pub fn rotate_around(p1: &Point2<float>, center: Vector2<float>, angle: float) -> Point2<float> {
+    let diff = p1.coords - center;
+    let angle = diff.y.atan2(diff.x) + angle;
+    let size = diff.norm_squared().sqrt();
+    Point2::new(center.x + angle.cos() * size, center.y + angle.sin() * size)
+}
+
+// pub fn angle_from

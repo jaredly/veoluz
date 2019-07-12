@@ -10,22 +10,66 @@ pub fn draw_handles(
     wall: &WallType,
     ctx: &CanvasRenderingContext2d,
     size: f64,
+    wall_selected: bool,
     selected: Option<usize>,
 ) -> Result<(), JsValue> {
-    for (i, handle) in wall.handles().iter().enumerate() {
-        ctx.begin_path();
-        ctx.ellipse(
-            handle.x as f64,
-            handle.y as f64,
-            size,
-            size,
-            0.0,
-            0.0,
-            PI as f64 * 2.0,
-        )?;
-        match selected {
-            Some(s) if s == i => ctx.fill(),
-            _ => ctx.stroke(),
+    for (i, (handle, kind)) in wall.all_handles().iter().enumerate() {
+        match kind {
+            shared::wall_type::HandleStyle::Resize => {
+                if !wall_selected {
+                    continue;
+                }
+                ctx.begin_path();
+                let x = handle.x as f64;
+                let y = handle.y as f64;
+                ctx.move_to(x - size, y);
+                ctx.line_to(x - size, y - size);
+                ctx.line_to(x + size, y + size);
+                ctx.line_to(x + size, y);
+                ctx.move_to(x, y - size);
+                ctx.line_to(x - size, y - size);
+                ctx.move_to(x, y + size);
+                ctx.line_to(x + size, y + size);
+                ctx.stroke()
+            }
+            shared::wall_type::HandleStyle::Rotate => {
+                if !wall_selected {
+                    continue;
+                }
+                ctx.begin_path();
+                ctx.ellipse(
+                    handle.x as f64,
+                    handle.y as f64,
+                    size,
+                    size,
+                    0.0,
+                    0.0,
+                    PI as f64 * 1.5,
+                )?;
+                ctx.stroke();
+                let x = handle.x as f64;
+                let y = handle.y as f64;
+                ctx.move_to(x - size / 2.0, y - size * 1.5);
+                ctx.line_to(x, y - size);
+                ctx.move_to(x - size / 2.0, y - size * 0.5);
+                ctx.stroke()
+            }
+            shared::wall_type::HandleStyle::Circle => {
+                ctx.begin_path();
+                ctx.ellipse(
+                    handle.x as f64,
+                    handle.y as f64,
+                    size,
+                    size,
+                    0.0,
+                    0.0,
+                    PI as f64 * 2.0,
+                )?;
+                match selected {
+                    Some(s) if s == i => ctx.fill(),
+                    _ => ctx.stroke(),
+                }
+            }
         }
     }
 
