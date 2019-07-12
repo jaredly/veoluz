@@ -256,8 +256,10 @@ impl WallType {
             }
             WallType::Circle(ball, center, t0, t1) => {
                 *center = new_base;
-                *t0 += angle;
-                *t1 += angle;
+                if *t0 != -PI || *t1 != PI {
+                    *t0 += angle;
+                    *t1 += angle;
+                }
             }
             WallType::Parabola(parabola) => {
                 parabola.transform.translation = nalgebra::Translation2::from(new_base.coords);
@@ -470,7 +472,7 @@ impl WallType {
                 right,
                 transform,
             }) => match id {
-                0 => {
+                4 => {
                     let pos = transform.inverse_transform_point(pos);
                     let det = 4.0 * pos.y.abs();
                     if det != 0.0 {
@@ -497,7 +499,7 @@ impl WallType {
                         dist.y.atan2(dist.x) - PI / 2.0 + PI / 6.0,
                     );
                 }
-                4 => {
+                0 => {
                     let pos = transform.inverse_transform_point(pos);
                     let dist = pos.coords.norm_squared().sqrt();
                     let det = 4.0 * dist;
@@ -512,16 +514,13 @@ impl WallType {
                 _ => (),
             },
             WallType::Circle(circle, center, t0, t1) => match id {
-                // 0 => *center = *pos,
-                0 => {
+                3 => {
                     let d = pos - *center;
                     *t0 = d.y.atan2(d.x);
-                    // *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
                 }
                 1 => {
                     let d = pos - *center;
                     *t1 = d.y.atan2(d.x);
-                    // *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
                 }
                 2 => {
                     let d = *t1 - *t0;
@@ -531,7 +530,7 @@ impl WallType {
                     *t0 += new_a - a;
                     *t1 += new_a - a;
                 }
-                3 => {
+                0 => {
                     let dist = (pos - *center).norm_squared().sqrt();
                     *circle = Ball::new(dist.max(0.0));
                 }
@@ -566,10 +565,12 @@ impl WallType {
                 // transform.translation.vector.into(),
                 (
                     Point2::from(transform.translation.vector)
-                        + transform
-                            .rotation
-                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
-                    HandleStyle::Circle,
+                        + transform.rotation.transform_vector(&{
+                            let dist = 1.0 / (*a * 4.0);
+                            let angle = PI / 6.0 + PI / 2.0;
+                            Vector2::new(angle.cos() * dist, angle.sin() * dist)
+                        }),
+                    HandleStyle::Resize,
                 ),
                 (
                     transform.transform_point(&Point2::new(*left, 0.0)),
@@ -591,22 +592,25 @@ impl WallType {
                 ),
                 (
                     Point2::from(transform.translation.vector)
-                        + transform.rotation.transform_vector(&{
-                            let dist = 1.0 / (*a * 4.0);
-                            let angle = PI / 6.0 + PI / 2.0;
-                            Vector2::new(angle.cos() * dist, angle.sin() * dist)
-                        }),
-                    HandleStyle::Resize,
+                        + transform
+                            .rotation
+                            .transform_vector(&Vector2::new(0.0, 1.0 / (*a * 4.0))),
+                    HandleStyle::Circle,
                 ),
             ], // TODO left & right
             WallType::Circle(circle, center, t0, t1) => vec![
                 // center.clone(),
                 (
-                    Point2::new(
-                        center.x + t0.cos() * circle.radius(),
-                        center.y + t0.sin() * circle.radius(),
-                    ),
-                    HandleStyle::Circle,
+                    {
+                        let d = t1 - t0;
+                        // let a = (t0 + t1) / 2.0;
+                        let a = t0 + d * 2.0 / 3.0;
+                        Point2::new(
+                            center.x + a.cos() * circle.radius(),
+                            center.y + a.sin() * circle.radius(),
+                        )
+                    },
+                    HandleStyle::Resize,
                 ),
                 (
                     Point2::new(
@@ -628,16 +632,11 @@ impl WallType {
                     HandleStyle::Rotate,
                 ),
                 (
-                    {
-                        let d = t1 - t0;
-                        // let a = (t0 + t1) / 2.0;
-                        let a = t0 + d * 2.0 / 3.0;
-                        Point2::new(
-                            center.x + a.cos() * circle.radius(),
-                            center.y + a.sin() * circle.radius(),
-                        )
-                    },
-                    HandleStyle::Resize,
+                    Point2::new(
+                        center.x + t0.cos() * circle.radius(),
+                        center.y + t0.sin() * circle.radius(),
+                    ),
+                    HandleStyle::Circle,
                 ),
             ],
         }

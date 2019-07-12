@@ -565,9 +565,12 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
                         -shared::line::PI,
                         shared::line::PI,
                     ),
-                    AddKindName::Parabola => {
-                        shared::WallType::parabola(pos.clone(), Vector2::new(0.0, 5.0), -50.0, 50.0)
-                    }
+                    AddKindName::Parabola => shared::WallType::parabola(
+                        pos.clone(),
+                        Vector2::new(0.0, -50.0),
+                        50.0,
+                        -50.0,
+                    ),
                 }));
                 state.ui.selection = Some(Selection::Wall(
                     state.config.walls.len() - 1,
