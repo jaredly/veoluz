@@ -516,12 +516,24 @@ impl WallType {
                 0 => {
                     let d = pos - *center;
                     *t0 = d.y.atan2(d.x);
-                    *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
+                    // *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
                 }
                 1 => {
                     let d = pos - *center;
                     *t1 = d.y.atan2(d.x);
-                    *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
+                    // *circle = Ball::new(d.norm_squared().sqrt().max(0.1));
+                }
+                2 => {
+                    let d = *t1 - *t0;
+                    let a = *t0 + d / 3.0;
+                    let d = pos - *center;
+                    let new_a = d.y.atan2(d.x);
+                    *t0 += new_a - a;
+                    *t1 += new_a - a;
+                }
+                3 => {
+                    let dist = (pos - *center).norm_squared().sqrt();
+                    *circle = Ball::new(dist.max(0.0));
                 }
                 _ => (),
             },
@@ -602,6 +614,30 @@ impl WallType {
                         center.y + t1.sin() * circle.radius(),
                     ),
                     HandleStyle::Circle,
+                ),
+                (
+                    {
+                        let d = t1 - t0;
+                        // let a = (t0 + t1) / 2.0;
+                        let a = t0 + d / 3.0;
+                        Point2::new(
+                            center.x + a.cos() * circle.radius(),
+                            center.y + a.sin() * circle.radius(),
+                        )
+                    },
+                    HandleStyle::Rotate,
+                ),
+                (
+                    {
+                        let d = t1 - t0;
+                        // let a = (t0 + t1) / 2.0;
+                        let a = t0 + d * 2.0 / 3.0;
+                        Point2::new(
+                            center.x + a.cos() * circle.radius(),
+                            center.y + a.sin() * circle.radius(),
+                        )
+                    },
+                    HandleStyle::Resize,
                 ),
             ],
         }
