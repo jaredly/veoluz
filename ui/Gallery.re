@@ -180,6 +180,20 @@ let make =
 
   let onClickTag = React.useCallback(id => dispatch(`ToggleTag(id)));
 
+  let filteredScenes =
+    directory.scenes
+    ->Belt.Map.String.valuesToArray
+    ->Array.keep(scene =>
+        (filter.star ? scene.starred : true)
+        && (
+          switch (filter.tags) {
+          | `All(tags) =>
+            tags->Set.String.every(t => scene.tags->Set.String.has(t))
+          | `None => scene.tags->Set.String.isEmpty
+          }
+        )
+      );
+
   <div
     className=Css.(
       style([
@@ -256,34 +270,25 @@ let make =
              }),
          )}
       </div>
-      <div
-        className=Css.(
-          style([
-            color(white),
-            cursor(`pointer),
-            hover([color(hex("aab"))]),
-          ])
-        )>
-        <IonIcons.Compress
-          className=Css.(style([paddingLeft(px(16))]))
-          color="currentcolor"
-          onClick={_evt => {
-            let scenes =
-              directory.scenes
-              ->Belt.Map.String.valuesToArray
-              ->Array.keep(scene =>
-                  (filter.star ? scene.starred : true)
-                  && (
-                    switch (filter.tags) {
-                    | `All(tags) =>
-                      tags->Set.String.every(t =>
-                        scene.tags->Set.String.has(t)
-                      )
-                    | `None => scene.tags->Set.String.isEmpty
-                    }
-                  )
-                )
-              ->Array.map(scene => {
+      <Tippy
+        content={Printf.sprintf(
+          "Download %d scenes",
+          Array.length(filteredScenes),
+        )}>
+        <div
+          className=Css.(
+            style([
+              color(white),
+              cursor(`pointer),
+              hover([color(hex("aab"))]),
+            ])
+          )>
+          <IonIcons.Compress
+            className=Css.(style([paddingLeft(px(16))]))
+            color="currentcolor"
+            onClick={_evt => {
+              let scenes =
+                filteredScenes->Array.map(scene => {
                   let%Lets.Async (config, blob) =
                     Js.Promise.all2((
                       Web.LocalForage.getItem(scene.id),
@@ -298,21 +303,23 @@ let make =
                   Lets.Async.resolve((title, config, blob));
                 });
 
-            let%Lets.Async.Consume datas = scenes->Js.Promise.all;
-            let datas =
-              datas->Belt.Array.keepMap(((title, config, blob)) => {
-                let config = Js.Nullable.toOption(config);
-                let blob = Js.Nullable.toOption(blob);
-                switch (config, blob) {
-                | (Some(config), Some(blob)) => Some((title, config, blob))
-                | _ => None
-                };
-              });
-            downloadZips(datas);
-            ();
-          }}
-        />
-      </div>
+              let%Lets.Async.Consume datas = scenes->Js.Promise.all;
+              let datas =
+                datas->Belt.Array.keepMap(((title, config, blob)) => {
+                  let config = Js.Nullable.toOption(config);
+                  let blob = Js.Nullable.toOption(blob);
+                  switch (config, blob) {
+                  | (Some(config), Some(blob)) =>
+                    Some((title, config, blob))
+                  | _ => None
+                  };
+                });
+              downloadZips(datas);
+              ();
+            }}
+          />
+        </div>
+      </Tippy>
       {Styles.spacer(8)}
       <div
         className=Css.(
@@ -341,18 +348,7 @@ let make =
         ])
       )>
       {React.array(
-         directory.scenes
-         ->Belt.Map.String.valuesToArray
-         ->Array.keep(scene =>
-             (filter.star ? scene.starred : true)
-             && (
-               switch (filter.tags) {
-               | `All(tags) =>
-                 tags->Set.String.every(t => scene.tags->Set.String.has(t))
-               | `None => scene.tags->Set.String.isEmpty
-               }
-             )
-           )
+         filteredScenes
          ->Js.Array2.sortInPlaceWith((a, b) =>
              int_of_float(b.created -. a.created)
            )
