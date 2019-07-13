@@ -36,7 +36,9 @@ const mainJs = {
     // new GenerateSW(),
     new InjectManifest({
       swSrc: "./blank-sw.js",
-      swDest: "service-worker.js"
+      swDest: "service-worker.js",
+      globDirectory: "./docs",
+      globPatterns: ["./examples/*.json", "./examples/*.png"]
     })
   ],
   mode: "development"
@@ -48,7 +50,9 @@ worker.output.path = path.resolve(__dirname, "docs");
 worker.plugins.push(
   new InjectManifest({
     swSrc: "./blank-sw.js",
-    swDest: "worker-worker.js"
+    swDest: "worker-worker.js",
+    globDirectory: path.resolve(__dirname, "./docs"),
+    globPatterns: ["./examples/*/*.json", "./examples/*/*.png"]
   })
 );
 module.exports = [mainJs, worker];
