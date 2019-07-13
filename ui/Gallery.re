@@ -152,6 +152,26 @@ let reduce = (filter, action) =>
     }
   };
 
+let downloadZips: array((string, Rust.config, Web.blob)) => unit = [%bs.raw
+  {|
+(function(items) {
+  var JSZip = require('jszip');
+  var FileSaver = require('file-saver');
+  var zip = new JSZip();
+
+  items.forEach(function (item) {
+    var folder = zip.folder(item[0]);
+    folder.file("config.json", JSON.stringify(item[1]))
+    folder.file("image.png", item[2]);
+  })
+
+  zip.generateAsync({type:"blob"}).then(function(content) {
+    FileSaver.saveAs(content, "veoluz_scenes.zip");
+  });
+})
+|}
+];
+
 [@react.component]
 let make =
     (~onClose, ~directory: Types.directory, ~onChangeScene, ~onUpdateTags) => {
@@ -236,7 +256,64 @@ let make =
              }),
          )}
       </div>
-      // Styles.fullSpace
+      <div
+        className=Css.(
+          style([
+            color(white),
+            cursor(`pointer),
+            hover([color(hex("aab"))]),
+          ])
+        )>
+        <IonIcons.Compress
+          className=Css.(style([paddingLeft(px(16))]))
+          color="currentcolor"
+          onClick={_evt => {
+            let scenes =
+              directory.scenes
+              ->Belt.Map.String.valuesToArray
+              ->Array.keep(scene =>
+                  (filter.star ? scene.starred : true)
+                  && (
+                    switch (filter.tags) {
+                    | `All(tags) =>
+                      tags->Set.String.every(t =>
+                        scene.tags->Set.String.has(t)
+                      )
+                    | `None => scene.tags->Set.String.isEmpty
+                    }
+                  )
+                )
+              ->Array.map(scene => {
+                  let%Lets.Async (config, blob) =
+                    Js.Promise.all2((
+                      Web.LocalForage.getItem(scene.id),
+                      Web.LocalForage.getItem(scene.id ++ ":image"),
+                    ));
+                  let title =
+                    switch (scene.title) {
+                    | Some(title) => title
+                    | None =>
+                      Js.Date.toISOString(Js.Date.fromFloat(scene.created))
+                    };
+                  Lets.Async.resolve((title, config, blob));
+                });
+
+            let%Lets.Async.Consume datas = scenes->Js.Promise.all;
+            let datas =
+              datas->Belt.Array.keepMap(((title, config, blob)) => {
+                let config = Js.Nullable.toOption(config);
+                let blob = Js.Nullable.toOption(blob);
+                switch (config, blob) {
+                | (Some(config), Some(blob)) => Some((title, config, blob))
+                | _ => None
+                };
+              });
+            downloadZips(datas);
+            ();
+          }}
+        />
+      </div>
+      {Styles.spacer(8)}
       <div
         className=Css.(
           style([
@@ -246,7 +323,7 @@ let make =
           ])
         )>
         <IonIcons.Close
-          className=Css.(style([paddingLeft(px(16))]))
+          className=Css.(style([paddingLeft(px(0))]))
           color="currentcolor"
           onClick={_evt => onClose()}
         />
