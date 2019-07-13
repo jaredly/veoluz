@@ -29,6 +29,7 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-ionicons": "^3.0.1",
-    "reason-react": "^0.7.0"
+    "reason-react": "^0.7.0",
+    "workbox-webpack-plugin": "^4.3.1"
   }
 }
