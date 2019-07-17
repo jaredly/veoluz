@@ -223,19 +223,33 @@ let make =
       </Tippy>
     </div>
     {
+      let blurb = Css.(style([fontSize(`percent(60.0))]));
       let s =
         Css.(
           style([
             padding(px(16)),
             border(px(2), `solid, Colors.accent),
             margin(px(8)),
+            display(`flex),
+            flexDirection(`column),
           ])
         );
       selected
         ? switch (status) {
-          | `Absorb => React.null
+          | `Absorb =>
+            <div className=s>
+              <div className=blurb>
+                {React.string("This wall absorbes all light on contact.")}
+              </div>
+            </div>
           | `Reflect =>
             <div className=s>
+              <div className=blurb>
+                {React.string(
+                   "This wall acts as a mirror, with all light bouncing off of it. The scatter percentage determines how much light is reflected directly (no scatter) and how much bounces off at a random angle.",
+                 )}
+              </div>
+              {Styles.spacer(16)}
               <WallEditor.ScatterEditor
                 wall
                 wide=true
@@ -244,6 +258,12 @@ let make =
             </div>
           | `Refract =>
             <div className=s>
+              <div className=blurb>
+                {React.string(
+                   "This wall acts as a prism. Light will pass through, and refract or reflect according to the index of refraction and the light ray's angle of incidence. ",
+                 )}
+              </div>
+              {Styles.spacer(16)}
               <WallEditor.RefractionEditor
                 wall
                 onChange={wall => onChange(wall, false)}
