@@ -5,6 +5,7 @@ module Scene = {
         ~scene: Types.scene,
         ~onChangeScene,
         ~tags,
+        ~onUseScene,
         ~onUpdateTags,
         ~onClickTag,
         ~highlightedTags,
@@ -92,6 +93,18 @@ module Scene = {
            </div>
          : React.null}
       <div className=Css.(style([flex(1)])) />
+      <button
+        className=Css.(style([alignSelf(`center)]))
+        onClick={_evt => {
+          let%Lets.Async.Consume config = Web.LocalForage.getItem(scene.id);
+          switch (Js.toOption(config)) {
+          | None => ()
+          | Some((config: Rust.config)) => onUseScene(scene.id, config)
+          };
+        }}>
+        {React.string("Open")}
+      </button>
+      <div className=Css.(style([flex(1)])) />
       <TagsEditor
         tags
         highlightedTags
@@ -174,7 +187,13 @@ let downloadZips: array((string, Rust.config, Web.blob)) => unit = [%bs.raw
 
 [@react.component]
 let make =
-    (~onClose, ~directory: Types.directory, ~onChangeScene, ~onUpdateTags) => {
+    (
+      ~onClose,
+      ~directory: Types.directory,
+      ~onChangeScene,
+      ~onUpdateTags,
+      ~onUseScene,
+    ) => {
   let (filter, dispatch) =
     React.useReducer(reduce, {star: false, tags: `All(Set.String.empty)});
 
@@ -359,6 +378,7 @@ let make =
                onClickTag
                scene
                onUpdateTags
+               onUseScene
                highlightedTags={
                  switch (filter.tags) {
                  | `None => Belt.Set.String.empty

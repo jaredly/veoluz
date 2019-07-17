@@ -212,16 +212,26 @@ let make =
                    hover([backgroundColor(Colors.accent)]),
                  ])
                )>
-               <div className=Css.(style([padding2(~v=px(3), ~h=px(8))]))>
+               <div
+                 className=Css.(
+                   style([
+                     padding2(~v=px(3), ~h=px(8)),
+                     paddingRight(`zero),
+                     fontSize(px(16)),
+                   ])
+                 )>
                  {React.string(tag.title)}
                </div>
                <button
-                 className={Styles.join([Styles.iconButton])}
+                 className={Styles.join([
+                   Styles.iconButton,
+                   Css.(style([backgroundColor(`transparent)])),
+                 ])}
                  onClick={evt => {
                    ReactEvent.Mouse.stopPropagation(evt);
                    onChange(sceneTags->Belt.Set.String.remove(tag.id));
                  }}>
-                 <IonIcons.Close color="currentcolor" />
+                 <IonIcons.Close fontSize="14px" color="currentcolor" />
                </button>
              </div>
            }

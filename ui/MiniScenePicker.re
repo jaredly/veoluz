@@ -54,6 +54,10 @@ let make =
        ? ReactDOMRe.createPortal(
            <Gallery
              onClose=onCloseGallery
+             onUseScene={(id, config) => {
+               onSelect(id, config);
+               toggleGallery(false);
+             }}
              onUpdateTags
              directory
              onChangeScene

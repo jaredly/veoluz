@@ -48,68 +48,74 @@ module AddWall = {
       | _ => None
       };
     <div className=Styles.row>
-      <button
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                adding == Some("Line")
-                  ? Js.Null.empty
-                  : Js.Null.return({
-                      "Adding": Some("Line"),
-                      "Multiple": None,
-                      "Light": None,
-                      "Wall": None,
-                    }),
-              )
-            ],
-          )
-        }
-        className={Styles.toggleButton(adding == Some("Line"))}>
-        line
-      </button>
+      <Tippy content="Add line wall">
+        <button
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  adding == Some("Line")
+                    ? Js.Null.empty
+                    : Js.Null.return({
+                        "Adding": Some("Line"),
+                        "Multiple": None,
+                        "Light": None,
+                        "Wall": None,
+                      }),
+                )
+              ],
+            )
+          }
+          className={Styles.toggleButton(adding == Some("Line"))}>
+          line
+        </button>
+      </Tippy>
       {Styles.spacer(8)}
-      <button
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                adding == Some("Parabola")
-                  ? Js.Null.empty
-                  : Js.Null.return({
-                      "Adding": Some("Parabola"),
-                      "Multiple": None,
-                      "Light": None,
-                      "Wall": None,
-                    }),
-              )
-            ],
-          )
-        }
-        className={Styles.toggleButton(adding == Some("Parabola"))}>
-        parabola
-      </button>
+      <Tippy content="Add parabola wall">
+        <button
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  adding == Some("Parabola")
+                    ? Js.Null.empty
+                    : Js.Null.return({
+                        "Adding": Some("Parabola"),
+                        "Multiple": None,
+                        "Light": None,
+                        "Wall": None,
+                      }),
+                )
+              ],
+            )
+          }
+          className={Styles.toggleButton(adding == Some("Parabola"))}>
+          parabola
+        </button>
+      </Tippy>
       {Styles.spacer(8)}
-      <button
-        onClick={_evt =>
-          updateUi(
-            [%js.deep
-              ui["selection"].replace(
-                adding == Some("Circle")
-                  ? Js.Null.empty
-                  : Js.Null.return({
-                      "Adding": Some("Circle"),
-                      "Multiple": None,
-                      "Light": None,
-                      "Wall": None,
-                    }),
-              )
-            ],
-          )
-        }
-        className={Styles.toggleButton(adding == Some("Circle"))}>
-        arc
-      </button>
+      <Tippy content="Add circle wall">
+        <button
+          onClick={_evt =>
+            updateUi(
+              [%js.deep
+                ui["selection"].replace(
+                  adding == Some("Circle")
+                    ? Js.Null.empty
+                    : Js.Null.return({
+                        "Adding": Some("Circle"),
+                        "Multiple": None,
+                        "Light": None,
+                        "Wall": None,
+                      }),
+                )
+              ],
+            )
+          }
+          className={Styles.toggleButton(adding == Some("Circle"))}>
+          arc
+        </button>
+      </Tippy>
     </div>;
   };
 };

@@ -138,7 +138,25 @@ module Scene = {
       ) => {
     let url = useCachedSceneImage(scene);
     switch (url) {
-    | None => <div> {React.string("Loading...")} </div>
+    | None =>
+      <div
+        className=Css.(
+          style(
+            [display(`flex), flexDirection(`row), padding(px(4))]
+            @ (selected ? [backgroundColor(hex("5af"))] : []),
+          )
+        )>
+        <div
+          className=Css.(
+            style([
+              width(px(50)),
+              backgroundColor(black),
+              height(px(50)),
+            ])
+          )>
+          {React.string("Loading...")}
+        </div>
+      </div>
     | Some(url) =>
       <div
         className=Css.(

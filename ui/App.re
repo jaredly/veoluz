@@ -407,13 +407,78 @@ module Inner = {
         </div>
         <div
           className=Css.(
-            style([color(white), fontSize(px(Styles.Text.small))])
+            style([
+              color(white),
+              fontSize(px(Styles.Text.small)),
+              display(`flex),
+              alignItems(`center),
+              flexDirection(`row),
+            ])
           )>
           {React.string("Rays: ")}
+          {Styles.spacer(4)}
           <span id="total_rays" />
+          {Styles.spacer(8)}
           {React.string(" Rays/second: ")}
+          {Styles.spacer(4)}
           <span id="fps" />
+          Styles.fullSpace
+          <div> {React.string("x:")} </div>
+          <Tippy content="Reset x to 0">
+            <button
+              className={Styles.flatButton(Css.white)}
+              onClick={_evt =>
+                update(
+                  [%js.deep
+                    state.config["rendering"]["center"].map(((_x, y)) =>
+                      (0.0, y)
+                    )
+                  ],
+                  true,
+                )
+              }>
+              {React.string(
+                 Printf.sprintf(
+                   "%0.2f",
+                   state.config##rendering##center |> fst,
+                 ),
+               )}
+            </button>
+          </Tippy>
+          {Styles.spacer(4)}
+          <div> {React.string("y:")} </div>
+          <Tippy content="Reset y to 0">
+            <button
+              className={Styles.flatButton(Css.white)}
+              onClick={_evt =>
+                update(
+                  [%js.deep
+                    state.config["rendering"]["center"].map(((x, _y)) =>
+                      (x, 0.0)
+                    )
+                  ],
+                  true,
+                )
+              }>
+              {React.string(
+                 Printf.sprintf(
+                   "%0.2f",
+                   state.config##rendering##center |> snd,
+                 ),
+               )}
+            </button>
+          </Tippy>
         </div>
+        // <span>
+        //   {React.string(
+        //      Printf.sprintf(
+        //        "%0.2f,%0.2f - %0.2fx",
+        //        state.config##rendering##center |> fst,
+        //        state.config##rendering##center |> snd,
+        //        state.config##rendering##zoom,
+        //      ),
+        //    )}
+        // </span>
         <MiniScenePicker
           onUpdateTags={React.useCallback(tags =>
             dispatch(`UpdateTags(tags))

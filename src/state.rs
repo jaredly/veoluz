@@ -278,7 +278,7 @@ impl State {
             config: self.config.clone(),
             id: self.render_id,
             // count: if small { 10_000 } else { 500_000 },
-            count: 500_000,
+            count: 200_000,
         };
         if self.workers.is_empty() {
             return self.debug_render();
