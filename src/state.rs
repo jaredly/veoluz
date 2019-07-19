@@ -260,15 +260,36 @@ impl State {
     }
 
     pub fn async_render(&mut self, small: bool) -> Result<(), JsValue> {
+        // log!("Async nreder folks");
         match &self.last_rendered_config {
-            Some(config) if *config == self.config => {
-                // Ignore it probably
-                return Ok(());
+            Some(config) => {
+                if *config == self.config {
+                    return Ok(());
+                }
+                let mut old_config_with_new_exposure = config.clone();
+                old_config_with_new_exposure.rendering.exposure =
+                    self.config.rendering.exposure.clone();
+                old_config_with_new_exposure.rendering.coloration =
+                    self.config.rendering.coloration.clone();
+                // let old_json = serde_json::to_string(&old_config_with_new_exposure).unwrap();
+                // let json = serde_json::to_string(&self.config).unwrap();
+                if old_config_with_new_exposure == self.config {
+                    // if old_json == json {
+                    // Ignore it probably
+                    // log!("No need to re-render");
+                    self.send_on_change();
+                    self.reexpose();
+                    return Ok(());
+                } else {
+                    log!("Not the same")
+                    // log!("Not the same! {} vs {}", old_json, json)
+                }
             }
             _ => (),
         }
 
-        println!("Render new config");
+        // log!("Render new config");
+        // web_sys::console::log_1(&JsValue::from_serde(&self.config).unwrap());
         self.send_on_change();
 
         self.last_rendered_config = Some(self.config.clone());

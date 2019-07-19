@@ -182,7 +182,7 @@ fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
         if reset || checkpoint {
             state.maybe_save_history();
         }
-        state.last_rendered_config = None;
+        // state.last_rendered_config = None;
         state.async_render(false)
     })
 }

@@ -41,29 +41,36 @@ pub fn grayscale(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
 //     ((amt - min).max(0.0) * scale).min(255.0)
 // }
 
-fn exposer2(exposure: &Exposure, min: line::float, max: line::float) -> Box<Fn(line::float, line::uint) -> f32> {
+fn exposer2(
+    exposure: &Exposure,
+    min: line::float,
+    max: line::float,
+) -> Box<Fn(line::float, line::uint) -> f32> {
     let max: line::float = max.max(min + 0.01);
     let scale: line::float = 255.0 / (max - min);
     let scaler = move |amt: line::float| ((amt - min).max(0.0) * scale).min(255.0);
     match exposure.curve {
-        Curve::FourthRoot => {
-            Box::new(move |top: line::float, brightness: line::uint| {
-                scaler((brightness as line::float / top).sqrt().sqrt())
-            })
-        }
-        Curve::SquareRoot => {
-            Box::new(move |top: line::float, brightness: line::uint| {
-                scaler((brightness as line::float / top).sqrt())
-            })
-        }
+        Curve::FourthRoot => Box::new(move |top: line::float, brightness: line::uint| {
+            scaler((brightness as line::float / top).sqrt().sqrt())
+        }),
+        Curve::SquareRoot => Box::new(move |top: line::float, brightness: line::uint| {
+            scaler((brightness as line::float / top).sqrt())
+        }),
         Curve::Linear => Box::new(move |top, brightness| scaler(brightness as line::float / top)),
     }
 }
 
-fn exposer(exposure: &Exposure, config: &Config, brightness_data: &[line::uint]) -> Box<Fn(line::float, line::uint) -> f32> {
+fn exposer(
+    exposure: &Exposure,
+    config: &Config,
+    brightness_data: &[line::uint],
+) -> Box<Fn(line::float, line::uint) -> f32> {
     match exposure.limits {
         Some((min, max)) => exposer2(exposure, min, max),
-        None => exposer2(exposure, 0.0, hist_max(config, brightness_data))
+        None => {
+            let (min, max) = hist_max(config, brightness_data);
+            exposer2(exposure, min, max)
+        }
     }
 }
 
@@ -88,7 +95,7 @@ pub fn histogram(config: &Config, brightness_data: &[line::uint], bin_count: usi
             top = top.max(brightness_data[x + y * width]);
         }
     }
-    
+
     let expose = exposer(&config.rendering.exposure, config, brightness_data);
 
     let top = top as line::float;
@@ -117,7 +124,7 @@ fn blend(front: u8, back: u8, front_alpha: f32) -> f32 {
     res * 255.0
 }
 
-pub fn hist_max(config: &Config, brightness_data: &[line::uint]) -> line::float {
+pub fn hist_max(config: &Config, brightness_data: &[line::uint]) -> (line::float, line::float) {
     let width = config.rendering.width as usize;
     let height = config.rendering.height as usize;
 
@@ -144,16 +151,25 @@ pub fn hist_max(config: &Config, brightness_data: &[line::uint]) -> line::float 
         }
     }
 
+    let low_end = ((width * height) as f32 * 0.00001) as usize;
+    let low_end = ((width * height) as f32 * 0.50) as usize;
+
+    let mut low = 0.0;
+
     let ninetyfive = ((width * height) as f32 * 0.9999) as usize;
     let mut covered = 0;
     for i in 0..100 {
         covered += bins[i];
+        // Ummm not sure how to do the auto low-end -- this didn't work super well
+        // if covered < low_end {
+        //     low = i as f32 / 100.0;
+        // }
         if covered > ninetyfive {
-            return i as f32 / 100.0;
+            return (low, i as f32 / 100.0);
         }
     }
 
-    1.0
+    (low, 1.0)
 }
 
 pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
@@ -180,24 +196,24 @@ pub fn colorize(config: &Config, brightness_data: &[line::uint]) -> Vec<u8> {
                 data[index + 1] = blend(front.1, back.1, exposed) as u8;
                 data[index + 2] = blend(front.2, back.2, exposed) as u8;
             })
-        },
-        Coloration::HueRange { 
+        }
+        Coloration::HueRange {
             start,
             end,
             saturation,
-            lightness
-         } => {
-             let range = (end - start) as f64;
-             let start = start as f64;
-             Box::new(move |exposed, data: &mut [u8], index| {
-                 let hue = start + range * exposed as f64;
-                 let hsl = colorsys::Hsl::new(hue, saturation as f64, lightness as f64, None);
-                 let rgb: colorsys::Rgb = hsl.into();
+            lightness,
+        } => {
+            let range = (end - start) as f64;
+            let start = start as f64;
+            Box::new(move |exposed, data: &mut [u8], index| {
+                let hue = start + range * exposed as f64;
+                let hsl = colorsys::Hsl::new(hue, saturation as f64, lightness as f64, None);
+                let rgb: colorsys::Rgb = hsl.into();
                 data[index] = rgb.get_red() as u8;
                 data[index + 1] = rgb.get_green() as u8;
                 data[index + 2] = rgb.get_blue() as u8;
-             })
-         }
+            })
+        }
     };
 
     let expose = exposer(&config.rendering.exposure, config, brightness_data);

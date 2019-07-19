@@ -94,54 +94,66 @@ module Formation = {
       };
     <div className=Styles.column>
       <div className=Styles.row>
-        <button
-          className=colorButton
-          disabled={kind == `Single}
-          onClick={_ =>
-            onChange({
-              "Single": Some(Js.Null.empty),
-              "Line": None,
-              "Circle": None,
-            })
-          }>
-          single
-        </button>
+        <Tippy content="Single light">
+          <span>
+            <button
+              className=colorButton
+              disabled={kind == `Single}
+              onClick={_ =>
+                onChange({
+                  "Single": Some(Js.Null.empty),
+                  "Line": None,
+                  "Circle": None,
+                })
+              }>
+              single
+            </button>
+          </span>
+        </Tippy>
         {Styles.spacer(16)}
-        <button
-          className=colorButton
-          disabled={
-            switch (kind) {
-            | `Line(_) => true
-            | _ => false
-            }
-          }
-          onClick={_ =>
-            onChange({
-              "Single": None,
-              "Line": Some((3, 50.0)),
-              "Circle": None,
-            })
-          }>
-          line
-        </button>
+        <Tippy content="Line of lights">
+          <span>
+            <button
+              className=colorButton
+              disabled={
+                switch (kind) {
+                | `Line(_) => true
+                | _ => false
+                }
+              }
+              onClick={_ =>
+                onChange({
+                  "Single": None,
+                  "Line": Some((3, 50.0)),
+                  "Circle": None,
+                })
+              }>
+              line
+            </button>
+          </span>
+        </Tippy>
         {Styles.spacer(16)}
-        <button
-          className=colorButton
-          disabled={
-            switch (kind) {
-            | `Circle(_) => true
-            | _ => false
-            }
-          }
-          onClick={_ =>
-            onChange({
-              "Single": None,
-              "Line": None,
-              "Circle": Some((5, 50.0, false)),
-            })
-          }>
-          circle
-        </button>
+        <Tippy content="Circle of lights">
+          <span>
+            <button
+              className=colorButton
+              disabled={
+                switch (kind) {
+                | `Circle(_) => true
+                | _ => false
+                }
+              }
+              onClick={_ =>
+                onChange({
+                  "Single": None,
+                  "Line": None,
+                  "Circle": Some((5, 50.0, false)),
+                })
+              }>
+              circle
+            </button>
+          </span>
+        </Tippy>
       </div>
       {
         let smallLabel =
@@ -267,29 +279,31 @@ module LightMod = {
       || abs_float(kind##t1 -. Js.Math._PI) > 0.00001;
     <div className=Styles.column>
       <div className=Styles.row>
-        <button
-          className={Styles.toggleButton(kind##offset != 0.0)}
-          onClick={_ =>
-            onChange(
-              [%js.deep
-                light["kind"]["Point"]["offset"].map(offset =>
-                  offset == 0.0 ? 10.0 : 0.0
-                )
-              ],
-              true,
-            )
-          }>
-          <svg width="50" height="50">
-            <defs>
-              <radialGradient id="myGradient">
-                <stop offset="10%" stopColor="white" />
-                <stop offset="50%" stopColor="black" />
-              </radialGradient>
-            </defs>
-            <circle cx="25" cy="25" r="50" fill="url('#myGradient')" />
-            <circle cx="25" cy="25" r="5" fill="black" />
-          </svg>
-        </button>
+        <Tippy content="Eclipse">
+          <button
+            className={Styles.toggleButton(kind##offset != 0.0)}
+            onClick={_ =>
+              onChange(
+                [%js.deep
+                  light["kind"]["Point"]["offset"].map(offset =>
+                    offset == 0.0 ? 10.0 : 0.0
+                  )
+                ],
+                true,
+              )
+            }>
+            <svg width="50" height="50">
+              <defs>
+                <radialGradient id="myGradient">
+                  <stop offset="10%" stopColor="white" />
+                  <stop offset="50%" stopColor="black" />
+                </radialGradient>
+              </defs>
+              <circle cx="25" cy="25" r="50" fill="url('#myGradient')" />
+              <circle cx="25" cy="25" r="5" fill="black" />
+            </svg>
+          </button>
+        </Tippy>
         {kind##offset != 0.0
            ? <div className=Css.(style([padding(px(0))]))>
                <Ui.Slider
@@ -311,42 +325,74 @@ module LightMod = {
       </div>
       {Styles.spacer(16)}
       <div className=Styles.row>
-        <button
-          className={Styles.toggleButton(modified)}
-          onClick={_ =>
-            if (modified) {
-              onChange(
-                [%js.deep
-                  light["kind"]["Point"]["t0"].replace(-. Js.Math._PI)["kind"]["Point"]["t1"].
-                    replace(
-                    Js.Math._PI,
-                  )
-                ],
-                true,
-              );
-            } else {
-              onChange(
-                [%js.deep
-                  light["kind"]["Point"]["t0"].replace(-. Js.Math._PI /. 5.0)["kind"]["Point"]["t1"].
-                    replace(
-                    Js.Math._PI /. 5.0,
-                  )
-                ],
-                true,
-              );
-            }
-          }>
-          <svg width="50" height="50">
-            <defs>
-              <radialGradient id="myGradient">
-                <stop offset="10%" stopColor="white" />
-                <stop offset="50%" stopColor="black" />
-              </radialGradient>
-            </defs>
-            <circle cx="15" cy="20" r="50" fill="url('#myGradient')" />
-            <path fill="black" d="M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z" />
-          </svg>
-        </button>
+        <Tippy content="Cone">
+
+            <button
+              className={Styles.toggleButton(modified)}
+              onClick={_ =>
+                if (modified) {
+                  onChange(
+                    [%js.deep
+                      light["kind"]["Point"]["t0"].replace(-. Js.Math._PI)["kind"]["Point"]["t1"].
+                        replace(
+                        Js.Math._PI,
+                      )
+                    ],
+                    true,
+                  );
+                } else {
+                  onChange(
+                    [%js.deep
+                      light["kind"]["Point"]["t0"].replace(
+                        -. Js.Math._PI /. 5.0,
+                      )["kind"]["Point"]["t1"].
+                        replace(
+                        Js.Math._PI /. 5.0,
+                      )
+                    ],
+                    true,
+                  );
+                }
+              }>
+              <svg
+                width="50"
+                height="50"
+                style={ReactDOMRe.Style.make(~backgroundColor="black", ())}>
+                <defs>
+                  <radialGradient id="myGradient">
+                    <stop offset="10%" stopColor="white" />
+                    <stop offset="50%" stopColor="black" />
+                  </radialGradient>
+                </defs>
+                <circle
+                  cx="25"
+                  cy="25"
+                  r="50"
+                  fill="url('#myGradient')"
+                  clipPath="polygon(50% 50%, 100% 0%, 100% 100%"
+                           /* let t0 = [%js.deep light##kind["Point"]##t0];
+                              // let t1 = [%js.deep light##kind["Point"]##t1];
+                              // Printf.sprintf(
+                              //   "polygon(50%% 50%%, %0.2f%% %0.2f%%, %0.2f%%  %0.2f%%)",
+                              //   50.0 +. cos(t0) *. 50.0,
+                              //   50.0 +. sin(t0) *. 50.0,
+                              //   50.0 +. cos(t1) *. 50.0,
+                              //   50.0 +. sin(t1) *. 50.0,
+                              );*/
+                />
+              </svg>
+            </button>
+          </Tippy>
+          // <path
+          //   fill="black"
+          //   d={
+          //       let t0 = [%js.deep light##kind["Point"]##t0];
+          //       let t1 = [%js.deep light##kind["Point"]##t1];
+          //       let size = 50.0;
+          //       Printf.sprintf("M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z");
+          //       "M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z";
+          //     }
+          // />
         {modified
            ? <div className=Styles.column>
                <Ui.Slider
@@ -397,7 +443,7 @@ module LightMod = {
 [@react.component]
 let make = (~config: Rust.config, ~onChange) => {
   <div className=Styles.column>
-    <div className=Styles.title> {React.string("Light source")} </div>
+    <div className=Styles.title> {React.string("Light formation")} </div>
     <Formation
       formation=config##light_formation
       onChange={lf =>
@@ -405,6 +451,7 @@ let make = (~config: Rust.config, ~onChange) => {
       }
     />
     {Styles.spacer(16)}
+    <div className=Styles.title> {React.string("Light shape")} </div>
     <LightMod
       light={Array.get(config##lights, 0)}
       onChange={(light, checkpoint) =>
