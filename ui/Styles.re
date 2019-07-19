@@ -45,8 +45,18 @@ let controlColumn = join([control, column]);
 
 let spacer = v =>
   <div
+    style={ReactDOMRe.Style.make(
+      ~flexBasis=string_of_int(v) ++ "px",
+      ~flexShrink="0",
+      (),
+    )}
+  />;
+
+let flexSpacer = v =>
+  <div
     style={ReactDOMRe.Style.make(~flexBasis=string_of_int(v) ++ "px", ())}
   />;
+
 let fullSpace = <div style={ReactDOMRe.Style.make(~flex="1", ())} />;
 
 let row =

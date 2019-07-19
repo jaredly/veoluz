@@ -271,12 +271,9 @@ impl State {
                     self.config.rendering.exposure.clone();
                 old_config_with_new_exposure.rendering.coloration =
                     self.config.rendering.coloration.clone();
-                // let old_json = serde_json::to_string(&old_config_with_new_exposure).unwrap();
-                // let json = serde_json::to_string(&self.config).unwrap();
+                // We've only changed settings that don't require recalculation
                 if old_config_with_new_exposure == self.config {
-                    // if old_json == json {
-                    // Ignore it probably
-                    // log!("No need to re-render");
+                    self.last_rendered_config = Some(self.config.clone());
                     self.send_on_change();
                     self.reexpose();
                     return Ok(());

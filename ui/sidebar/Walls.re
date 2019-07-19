@@ -129,6 +129,13 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
     {Styles.spacer(16)}
     <div className=Styles.title> {React.string("Walls")} </div>
     {Styles.spacer(8)}
+    {config##walls->Array.length == 0
+       ? <div className=Css.(style([padding(px(16))]))>
+           {React.string(
+              "No walls defined! Click one of the 'Add wall' buttons, and then click & drag on the canvas to create your first wall.",
+            )}
+         </div>
+       : React.null}
     {config##walls
      ->Belt.Array.mapWithIndex((i, wall) => {
          let selected =
