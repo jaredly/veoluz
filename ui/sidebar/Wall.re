@@ -123,7 +123,10 @@ let make =
           <button
             className=Styles.colorButton
             disabled={status == `Reflect}
-            onClick={_evt =>
+            onClick={_evt => {
+              if (!selected) {
+                onSelect();
+              };
               onChange(
                 [%js.deep
                   wall["properties"].map(p =>
@@ -131,8 +134,8 @@ let make =
                   )
                 ],
                 true,
-              )
-            }>
+              );
+            }}>
             mirror
           </button>
         </span>
@@ -143,7 +146,10 @@ let make =
           <button
             className=Styles.colorButton
             disabled={status == `Refract}
-            onClick={_evt =>
+            onClick={_evt => {
+              if (!selected) {
+                onSelect();
+              };
               onChange(
                 [%js.deep
                   wall["properties"].map(p =>
@@ -151,8 +157,8 @@ let make =
                   )
                 ],
                 true,
-              )
-            }>
+              );
+            }}>
             prism
           </button>
         </span>
@@ -163,14 +169,17 @@ let make =
           <button
             className=Styles.colorButton
             disabled={status == `Absorb}
-            onClick={_evt =>
+            onClick={_evt => {
+              if (!selected) {
+                onSelect();
+              };
               onChange(
                 [%js.deep
                   wall["properties"].map(p => p["absorb"].replace(1.0))
                 ],
                 true,
-              )
-            }>
+              );
+            }}>
             block
           </button>
         </span>
@@ -181,7 +190,10 @@ let make =
           <button
             className=Styles.colorButton
             disabled={status == `Custom}
-            onClick={_evt =>
+            onClick={_evt => {
+              if (!selected) {
+                onSelect();
+              };
               onChange(
                 [%js.deep
                   wall["properties"].map(p =>
@@ -189,8 +201,8 @@ let make =
                   )
                 ],
                 true,
-              )
-            }>
+              );
+            }}>
             <IonIcons.Settings fontSize="20px" color="currentcolor" />
           </button>
         </span>
@@ -199,9 +211,11 @@ let make =
       {wall##hide
          ? <Tippy content="Show">
              <button
-               onClick={_ =>
-                 onChange([%js.deep wall["hide"].replace(false)], true)
-               }
+               onClick={evt => {
+                 ReactEvent.Mouse.stopPropagation(evt);
+
+                 onChange([%js.deep wall["hide"].replace(false)], true);
+               }}
                className=Styles.colorButton>
                <IonIcons.EyeOff fontSize="20px" />
              </button>
@@ -209,9 +223,10 @@ let make =
          : <Tippy content="Hide">
              <button
                className=Styles.colorButton
-               onClick={_ =>
-                 onChange([%js.deep wall["hide"].replace(true)], true)
-               }>
+               onClick={evt => {
+                 ReactEvent.Mouse.stopPropagation(evt);
+                 onChange([%js.deep wall["hide"].replace(true)], true);
+               }}>
                <IonIcons.Eye fontSize="20px" />
              </button>
            </Tippy>}

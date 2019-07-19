@@ -502,7 +502,7 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
         (_, Some(Selection::Adding(_))) => "crosshair",
         (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
         (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
-        (_, Some(Selection::Pan { .. })) => "pointer",
+        (_, Some(Selection::Pan { .. })) => "all-scroll",
         _ => "default",
     };
     // log!("cursor {} - {:?} - {:?}", cursor, ui.hovered, ui.selection);

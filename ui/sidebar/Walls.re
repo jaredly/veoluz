@@ -190,17 +190,7 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
                true,
              )
            }
-           onChange={(wall, checkpoint) => {
-             if (!selected) {
-               updateUi(
-                 [%js.deep
-                   ui["selection"].replace(
-                     Js.Null.return(Rust.selectWall(i)),
-                   )
-                 ],
-               );
-             };
-
+           onChange={(wall, checkpoint) =>
              update(
                [%js.deep
                  config["walls"].map(walls => {
@@ -210,8 +200,8 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
                  })
                ],
                checkpoint,
-             );
-           }}
+             )
+           }
            wall
            key={string_of_int(i)}
          />;

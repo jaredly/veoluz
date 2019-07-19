@@ -468,6 +468,22 @@ module Inner = {
                )}
             </button>
           </Tippy>
+          {Styles.spacer(4)}
+          <div> {React.string("zoom:")} </div>
+          <Tippy content="Reset zoom to 1.0">
+            <button
+              className={Styles.flatButton(Css.white)}
+              onClick={_evt =>
+                update(
+                  [%js.deep state.config["rendering"]["zoom"].replace(1.0)],
+                  true,
+                )
+              }>
+              {React.string(
+                 Printf.sprintf("%0.2f", state.config##rendering##zoom),
+               )}
+            </button>
+          </Tippy>
         </div>
         // <span>
         //   {React.string(
