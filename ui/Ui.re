@@ -44,6 +44,41 @@ module NumInput = {
   };
 };
 
+module IntInput = {
+  [@react.component]
+  let make = (~width=50, ~value, ~min=?, ~max=?, ~step=?, ~onChange) => {
+    let (tmp, setTmp) = Hooks.useUpdatingState(Js.Int.toString(value));
+    <input
+      type_="number"
+      ?min
+      max=?{
+        switch (max) {
+        | None => None
+        | Some(max) => Some(Js.Int.toString(max))
+        }
+      }
+      value=tmp
+      className={Css.style([Css.width(Css.px(width))])}
+      ?step
+      onChange={evt => {
+        let text = evt->ReactEvent.Form.target##value;
+        let num = Js.Float.fromString(text);
+        if (Js.Float.isNaN(num)
+            || text == ""
+            || int_of_float(num) == value
+            || abs_float(
+                 num -. Js.Float.fromString(Js.Float.toString(num)),
+               )
+            > 0.1) {
+          setTmp(text);
+        } else {
+          onChange(int_of_float(num));
+        };
+      }}
+    />;
+  };
+};
+
 module LogSlider = {
   [@react.component]
   let make = (~value, ~disabled=?, ~min, ~max, ~step, ~onChange) => {

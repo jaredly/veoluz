@@ -164,8 +164,8 @@ module Formation = {
         | `Single => React.null
         | `Line(count, dist) =>
           <div className=Styles.column>
-            {Styles.spacer(8)}
 
+              {Styles.spacer(8)}
               <div
                 className={Styles.join([
                   Styles.row,
@@ -176,42 +176,41 @@ module Formation = {
                     ])
                   ),
                 ])}>
-
-                  {Styles.spacer(8)}
-                  <div className=smallLabel> {React.string("Count")} </div>
-                  {Styles.spacer(8)}
-                  <Ui.NumInput
-                    value={float_of_int(count)}
-                    min=2
-                    onChange={count =>
-                      onChange({
-                        "Single": None,
-                        "Line": Some((int_of_float(count), dist)),
-                        "Circle": None,
-                      })
-                    }
-                  />
-                  {Styles.spacer(8)}
-                  <div className=smallLabel> {React.string("Spacing")} </div>
-                  {Styles.spacer(8)}
-                  <Ui.NumInput
-                    value=dist
-                    min=2
-                    onChange={dist =>
-                      onChange({
-                        "Single": None,
-                        "Line": Some((count, dist)),
-                        "Circle": None,
-                      })
-                    }
-                  />
-                </div>
-                // {Styles.spacer(8)}
+                {Styles.spacer(8)}
+                <div className=smallLabel> {React.string("Count")} </div>
+                {Styles.spacer(8)}
+                <Ui.IntInput
+                  value=count
+                  min=2
+                  onChange={count =>
+                    onChange({
+                      "Single": None,
+                      "Line": Some((count, dist)),
+                      "Circle": None,
+                    })
+                  }
+                />
+                {Styles.spacer(8)}
+                <div className=smallLabel> {React.string("Spacing")} </div>
+                {Styles.spacer(8)}
+                <Ui.NumInput
+                  value=dist
+                  min=2
+                  onChange={dist =>
+                    onChange({
+                      "Single": None,
+                      "Line": Some((count, dist)),
+                      "Circle": None,
+                    })
+                  }
+                />
+              </div>
             </div>
+            // {Styles.spacer(8)}
         | `Circle(count, dist, center) =>
           <div className=Styles.column>
-            {Styles.spacer(8)}
 
+              {Styles.spacer(8)}
               <div
                 className={Styles.join([
                   Styles.row,
@@ -222,38 +221,37 @@ module Formation = {
                     ])
                   ),
                 ])}>
-
-                  {Styles.spacer(8)}
-                  <div className=smallLabel> {React.string("Count")} </div>
-                  {Styles.spacer(8)}
-                  <Ui.NumInput
-                    value={float_of_int(count)}
-                    min=2
-                    onChange={count =>
-                      onChange({
-                        "Single": None,
-                        "Circle": Some((int_of_float(count), dist, center)),
-                        "Line": None,
-                      })
-                    }
-                  />
-                  {Styles.spacer(8)}
-                  <div className=smallLabel> {React.string("Spacing")} </div>
-                  {Styles.spacer(8)}
-                  <Ui.NumInput
-                    value=dist
-                    min=2
-                    onChange={dist =>
-                      onChange({
-                        "Single": None,
-                        "Circle": Some((count, dist, center)),
-                        "Line": None,
-                      })
-                    }
-                  />
-                </div>
-                // {Styles.spacer(8)}
+                {Styles.spacer(8)}
+                <div className=smallLabel> {React.string("Count")} </div>
+                {Styles.spacer(8)}
+                <Ui.IntInput
+                  value=count
+                  min=2
+                  onChange={count =>
+                    onChange({
+                      "Single": None,
+                      "Circle": Some((count, dist, center)),
+                      "Line": None,
+                    })
+                  }
+                />
+                {Styles.spacer(8)}
+                <div className=smallLabel> {React.string("Spacing")} </div>
+                {Styles.spacer(8)}
+                <Ui.NumInput
+                  value=dist
+                  min=2
+                  onChange={dist =>
+                    onChange({
+                      "Single": None,
+                      "Circle": Some((count, dist, center)),
+                      "Line": None,
+                    })
+                  }
+                />
+              </div>
             </div>
+            // {Styles.spacer(8)}
         };
       }
     </div>;
