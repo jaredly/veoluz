@@ -165,91 +165,95 @@ module Formation = {
         | `Line(count, dist) =>
           <div className=Styles.column>
             {Styles.spacer(8)}
-            <div
-              className={Styles.join([
-                Styles.row,
-                Css.(
-                  style([
-                    padding(px(8)),
-                    border(px(2), `solid, Colors.accent),
-                  ])
-                ),
-              ])}>
-              {Styles.spacer(8)}
-              <div className=smallLabel> {React.string("Count")} </div>
-              {Styles.spacer(8)}
-              <Ui.NumInput
-                value={float_of_int(count)}
-                min=2
-                onChange={count =>
-                  onChange({
-                    "Single": None,
-                    "Line": Some((int_of_float(count), dist)),
-                    "Circle": None,
-                  })
-                }
-              />
-              {Styles.spacer(16)}
-              <div className=smallLabel> {React.string("Spacing")} </div>
-              {Styles.spacer(8)}
-              <Ui.NumInput
-                value=dist
-                min=2
-                onChange={dist =>
-                  onChange({
-                    "Single": None,
-                    "Line": Some((count, dist)),
-                    "Circle": None,
-                  })
-                }
-              />
-              {Styles.spacer(8)}
+
+              <div
+                className={Styles.join([
+                  Styles.row,
+                  Css.(
+                    style([
+                      padding(px(8)),
+                      border(px(2), `solid, Colors.accent),
+                    ])
+                  ),
+                ])}>
+
+                  {Styles.spacer(8)}
+                  <div className=smallLabel> {React.string("Count")} </div>
+                  {Styles.spacer(8)}
+                  <Ui.NumInput
+                    value={float_of_int(count)}
+                    min=2
+                    onChange={count =>
+                      onChange({
+                        "Single": None,
+                        "Line": Some((int_of_float(count), dist)),
+                        "Circle": None,
+                      })
+                    }
+                  />
+                  {Styles.spacer(8)}
+                  <div className=smallLabel> {React.string("Spacing")} </div>
+                  {Styles.spacer(8)}
+                  <Ui.NumInput
+                    value=dist
+                    min=2
+                    onChange={dist =>
+                      onChange({
+                        "Single": None,
+                        "Line": Some((count, dist)),
+                        "Circle": None,
+                      })
+                    }
+                  />
+                </div>
+                // {Styles.spacer(8)}
             </div>
-          </div>
         | `Circle(count, dist, center) =>
           <div className=Styles.column>
             {Styles.spacer(8)}
-            <div
-              className={Styles.join([
-                Styles.row,
-                Css.(
-                  style([
-                    padding(px(8)),
-                    border(px(2), `solid, Colors.accent),
-                  ])
-                ),
-              ])}>
-              {Styles.spacer(8)}
-              <div className=smallLabel> {React.string("Count")} </div>
-              {Styles.spacer(8)}
-              <Ui.NumInput
-                value={float_of_int(count)}
-                min=2
-                onChange={count =>
-                  onChange({
-                    "Single": None,
-                    "Circle": Some((int_of_float(count), dist, center)),
-                    "Line": None,
-                  })
-                }
-              />
-              {Styles.spacer(16)}
-              <div className=smallLabel> {React.string("Spacing")} </div>
-              {Styles.spacer(8)}
-              <Ui.NumInput
-                value=dist
-                min=2
-                onChange={dist =>
-                  onChange({
-                    "Single": None,
-                    "Circle": Some((count, dist, center)),
-                    "Line": None,
-                  })
-                }
-              />
-              {Styles.spacer(8)}
+
+              <div
+                className={Styles.join([
+                  Styles.row,
+                  Css.(
+                    style([
+                      padding(px(8)),
+                      border(px(2), `solid, Colors.accent),
+                    ])
+                  ),
+                ])}>
+
+                  {Styles.spacer(8)}
+                  <div className=smallLabel> {React.string("Count")} </div>
+                  {Styles.spacer(8)}
+                  <Ui.NumInput
+                    value={float_of_int(count)}
+                    min=2
+                    onChange={count =>
+                      onChange({
+                        "Single": None,
+                        "Circle": Some((int_of_float(count), dist, center)),
+                        "Line": None,
+                      })
+                    }
+                  />
+                  {Styles.spacer(8)}
+                  <div className=smallLabel> {React.string("Spacing")} </div>
+                  {Styles.spacer(8)}
+                  <Ui.NumInput
+                    value=dist
+                    min=2
+                    onChange={dist =>
+                      onChange({
+                        "Single": None,
+                        "Circle": Some((count, dist, center)),
+                        "Line": None,
+                      })
+                    }
+                  />
+                </div>
+                // {Styles.spacer(8)}
             </div>
-          </div>
         };
       }
     </div>;
@@ -326,73 +330,72 @@ module LightMod = {
       {Styles.spacer(16)}
       <div className=Styles.row>
         <Tippy content="Cone">
-
-            <button
-              className={Styles.toggleButton(modified)}
-              onClick={_ =>
-                if (modified) {
-                  onChange(
-                    [%js.deep
-                      light["kind"]["Point"]["t0"].replace(-. Js.Math._PI)["kind"]["Point"]["t1"].
-                        replace(
-                        Js.Math._PI,
-                      )
-                    ],
-                    true,
-                  );
-                } else {
-                  onChange(
-                    [%js.deep
-                      light["kind"]["Point"]["t0"].replace(
-                        -. Js.Math._PI /. 5.0,
-                      )["kind"]["Point"]["t1"].
-                        replace(
-                        Js.Math._PI /. 5.0,
-                      )
-                    ],
-                    true,
-                  );
-                }
-              }>
-              <svg
-                width="50"
-                height="50"
-                style={ReactDOMRe.Style.make(~backgroundColor="black", ())}>
-                <defs>
-                  <radialGradient id="myGradient">
-                    <stop offset="10%" stopColor="white" />
-                    <stop offset="50%" stopColor="black" />
-                  </radialGradient>
-                </defs>
-                <circle
-                  cx="25"
-                  cy="25"
-                  r="50"
-                  fill="url('#myGradient')"
-                  clipPath="polygon(50% 50%, 100% 0%, 100% 100%"
-                           /* let t0 = [%js.deep light##kind["Point"]##t0];
-                              // let t1 = [%js.deep light##kind["Point"]##t1];
-                              // Printf.sprintf(
-                              //   "polygon(50%% 50%%, %0.2f%% %0.2f%%, %0.2f%%  %0.2f%%)",
-                              //   50.0 +. cos(t0) *. 50.0,
-                              //   50.0 +. sin(t0) *. 50.0,
-                              //   50.0 +. cos(t1) *. 50.0,
-                              //   50.0 +. sin(t1) *. 50.0,
-                              );*/
-                />
-              </svg>
-            </button>
-          </Tippy>
-          // <path
-          //   fill="black"
-          //   d={
-          //       let t0 = [%js.deep light##kind["Point"]##t0];
-          //       let t1 = [%js.deep light##kind["Point"]##t1];
-          //       let size = 50.0;
-          //       Printf.sprintf("M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z");
-          //       "M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z";
-          //     }
-          // />
+          <button
+            className={Styles.toggleButton(modified)}
+            onClick={_ =>
+              if (modified) {
+                onChange(
+                  [%js.deep
+                    light["kind"]["Point"]["t0"].replace(-. Js.Math._PI)["kind"]["Point"]["t1"].
+                      replace(
+                      Js.Math._PI,
+                    )
+                  ],
+                  true,
+                );
+              } else {
+                onChange(
+                  [%js.deep
+                    light["kind"]["Point"]["t0"].replace(
+                      -. Js.Math._PI /. 5.0,
+                    )["kind"]["Point"]["t1"].
+                      replace(
+                      Js.Math._PI /. 5.0,
+                    )
+                  ],
+                  true,
+                );
+              }
+            }>
+            <svg
+              width="50"
+              height="50"
+              style={ReactDOMRe.Style.make(~backgroundColor="black", ())}>
+              <defs>
+                <radialGradient id="myGradient">
+                  <stop offset="10%" stopColor="white" />
+                  <stop offset="50%" stopColor="black" />
+                </radialGradient>
+              </defs>
+              <circle
+                cx="25"
+                cy="25"
+                r="50"
+                fill="url('#myGradient')"
+                clipPath="polygon(50% 50%, 100% 0%, 100% 100%"
+                /* let t0 = [%js.deep light##kind["Point"]##t0];
+                   // let t1 = [%js.deep light##kind["Point"]##t1];
+                   // Printf.sprintf(
+                   //   "polygon(50%% 50%%, %0.2f%% %0.2f%%, %0.2f%%  %0.2f%%)",
+                   //   50.0 +. cos(t0) *. 50.0,
+                   //   50.0 +. sin(t0) *. 50.0,
+                   //   50.0 +. cos(t1) *. 50.0,
+                   //   50.0 +. sin(t1) *. 50.0,
+                   );*/
+              />
+            </svg>
+          </button>
+        </Tippy>
+        // <path
+        //   fill="black"
+        //   d={
+        //       let t0 = [%js.deep light##kind["Point"]##t0];
+        //       let t1 = [%js.deep light##kind["Point"]##t1];
+        //       let size = 50.0;
+        //       Printf.sprintf("M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z");
+        //       "M0 0 L50 0 L50 20 L15 20 L50 50 L0 50z";
+        //     }
+        // />
         {modified
            ? <div className=Styles.column>
                <Ui.Slider

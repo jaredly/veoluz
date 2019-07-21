@@ -365,7 +365,7 @@ module Inner = {
           display(`flex),
           flexDirection(`row),
           alignItems(`stretch),
-          maxWidth(px(1300)),
+          maxWidth(px(1350)),
           margin2(~v=`zero, ~h=`auto),
           height(`vh(100.0)),
           // flexWrap(`wrap),

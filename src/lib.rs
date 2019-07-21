@@ -154,8 +154,11 @@ pub fn deserialize_jsvalue(encoded: &JsValue) -> Result<shared::Config, serde_js
         })
 }
 
-fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
+fn update_config(config: shared::Config, mut reset: bool, checkpoint: bool) {
     state::try_with(|state| {
+        if config == state.config {
+            reset = false;
+        }
         if reset {
             state.invalidate_past_renders();
             ui::reset(&config, &mut state.ui)?;
@@ -178,11 +181,11 @@ fn update_config(config: shared::Config, reset: bool, checkpoint: bool) {
         }
         if reset {
             state.clear();
+            state.last_rendered_config = None;
         }
         if reset || checkpoint {
             state.maybe_save_history();
         }
-        // state.last_rendered_config = None;
         state.async_render(false)
     })
 }

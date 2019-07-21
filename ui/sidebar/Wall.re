@@ -117,7 +117,7 @@ let make =
         {Styles.spacer(4)}
         {React.string(WallEditor.wallType(wall##kind))}
       </div>
-      {Styles.spacer(8)}
+      Styles.fullSpace
       <Tippy content="Mirror">
         <span>
           <button
@@ -184,7 +184,6 @@ let make =
           </button>
         </span>
       </Tippy>
-      // {Styles.spacer(4)}
       <Tippy content="Custom behavior">
         <span>
           <button
@@ -207,7 +206,6 @@ let make =
           </button>
         </span>
       </Tippy>
-      Styles.fullSpace
       {wall##hide
          ? <Tippy content="Show">
              <button

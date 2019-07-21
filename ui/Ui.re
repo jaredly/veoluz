@@ -1,14 +1,17 @@
 module NumInput = {
   [@react.component]
   let make = (~width=50, ~value, ~min=?, ~max=?, ~step=?, ~onChange) => {
-    let (tmp, setTmp) = Hooks.useUpdatingState(Js.Float.toString(value));
+    let (tmp, setTmp) =
+      Hooks.useUpdatingState(
+        Js.Float.toFixedWithPrecision(value, ~digits=3),
+      );
     <input
       type_="number"
       ?min
       max=?{
         switch (max) {
         | None => None
-        | Some(max) => Some(Js.Float.toString(max))
+        | Some(max) => Some(Js.Float.toFixedWithPrecision(max, ~digits=3))
         }
       }
       value=tmp
@@ -68,7 +71,7 @@ module LogSlider = {
         ?disabled
         className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
-        value={Js.Float.toString(value)}
+        value={Js.Float.toFixedWithPrecision(value, ~digits=3)}
         onChange={evt => {
           let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
           onChange(v);
@@ -120,7 +123,7 @@ module Slider = {
         ?disabled
         className=Css.(style([fontSize(px(8)), width(px(50))]))
         // value={Js.Float.toString(Js.Math.log(value))}
-        value={Js.Float.toString(value)}
+        value={Js.Float.toFixedWithPrecision(value, ~digits=3)}
         onChange={evt => {
           let v = Js.Float.fromString(evt->ReactEvent.Form.target##value);
           onChange(v);
