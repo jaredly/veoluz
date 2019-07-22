@@ -231,6 +231,7 @@ module Inner = {
     directory,
     hoverUrl: option(string),
     current: option(string),
+    savedConfig: Rust.config,
     config: Rust.config,
     ui: Rust.ui,
   };
@@ -248,6 +249,7 @@ module Inner = {
           | `Route(parentId, parentConfig) => {
               ...state,
               current: parentId,
+              savedConfig: parentConfig,
               config: parentConfig,
             }
           | `UpdateTags(tags) =>
@@ -261,6 +263,7 @@ module Inner = {
             }
           | `SaveInPlace((scene: scene)) => {
               ...state,
+              savedConfig: state.config,
               directory: {
                 ...state.directory,
                 scenes:
@@ -278,6 +281,7 @@ module Inner = {
                   state.directory.scenes
                   ->Belt.Map.String.set(scene.id, scene),
               },
+              savedConfig: state.config,
               current: Some(scene.id),
             };
           | `Update(config, ui) => {...state, config, ui}
@@ -290,26 +294,34 @@ module Inner = {
           directory,
           current: None,
           config: blank,
+          savedConfig: blank,
           ui: Rust.blankUi,
           hoverUrl: None,
         },
       );
 
+    let stateRef = React.useRef(state);
+    stateRef->React.Ref.setCurrent(state);
+
     React.useEffect0(() => {
-      // Js.log3("Setting up here", anyHash(state.config), state.config);
       let update =
-        debounced(
-          ((config, ui)) =>
-            // configRef->React.Ref.setCurrent(config);
-            dispatch(`Update((config, ui))),
-          200,
-        );
-      wasm##setup(state.config, (config, ui)
-        // Prevent a render loop
-        // Js.log("Setting current from wasm (TODO debounce)");
-        // configRef->React.Ref.setCurrent(config);
-        // dispatch(`Update(config))
-        => update((config, ui)));
+        debounced(((config, ui)) => dispatch(`Update((config, ui))), 200);
+      wasm##setup(state.config, (config, ui) => update((config, ui)));
+      None;
+    });
+
+    React.useEffect0(() => {
+      Web.window->Web.addEventListener(
+        "beforeunload",
+        evt => {
+          let {config, savedConfig} = stateRef->React.Ref.current;
+          if (config != savedConfig) {
+            ReactEvent.Mouse.preventDefault(evt);
+            evt->Web.eventReturnValue("");
+          };
+        },
+        false,
+      );
       None;
     });
 
@@ -485,16 +497,6 @@ module Inner = {
             </button>
           </Tippy>
         </div>
-        // <span>
-        //   {React.string(
-        //      Printf.sprintf(
-        //        "%0.2f,%0.2f - %0.2fx",
-        //        state.config##rendering##center |> fst,
-        //        state.config##rendering##center |> snd,
-        //        state.config##rendering##zoom,
-        //      ),
-        //    )}
-        // </span>
         <MiniScenePicker
           onUpdateTags={React.useCallback(tags =>
             dispatch(`UpdateTags(tags))

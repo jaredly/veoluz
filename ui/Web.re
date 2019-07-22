@@ -58,6 +58,7 @@ type window;
 [@bs.send] external createElement: (Dom.element, string) => Dom.element = "";
 [@bs.send]
 external addEventListener: (window, string, 'event => unit, bool) => unit = "";
+[@bs.set] external eventReturnValue: ('event, string) => unit = "returnValue";
 [@bs.send]
 external removeEventListener: (window, string, 'event => unit, bool) => unit =
   "";
