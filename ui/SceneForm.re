@@ -81,7 +81,7 @@ let make =
           <button onClick={_ => onDownload()}> <IonIcons.Download /> </button>
         </Tippy>
         {Styles.spacer(4)}
-        <Tippy content="Download zip">
+        <Tippy content="Download image + json config">
           <button onClick={_ => onDownloadZip()}>
             <IonIcons.Compress />
           </button>

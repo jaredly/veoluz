@@ -438,8 +438,20 @@ impl WallType {
     pub fn move_handle(&mut self, id: usize, pos: &Point2<line::float>) {
         match self {
             WallType::Line(wall) => match id {
-                0 => *wall = Segment::new(*pos, wall.b().clone()),
-                1 => *wall = Segment::new(wall.a().clone(), *pos),
+                0 => {
+                    let b = wall.b().clone();
+                    let a = *pos;
+                    if a != b {
+                        *wall = Segment::new(a, b)
+                    }
+                }
+                1 => {
+                    let a = wall.a().clone();
+                    let b = *pos;
+                    if a != b {
+                        *wall = Segment::new(a, b)
+                    }
+                }
                 // Resize
                 2 => {
                     let center = (wall.a().coords + wall.b().coords) / 2.0;

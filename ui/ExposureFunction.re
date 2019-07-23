@@ -97,10 +97,7 @@ let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
      | Some((min, max)) =>
        <div className=Styles.column>
          {Styles.spacer(8)}
-         <div className=Css.(style([
-           fontSize(px(12)),
-           margin(px(4)),
-         ]))>
+         <div className=Css.(style([fontSize(px(12)), margin(px(4))]))>
            {React.string(
               "Manual exposure control allows you to fine-tune the lights & darks and achieve a polished final image. However, as it does not automatically adjust, changing the scene configuration while manual control is enabled often results in over- or under-exposed images. It is recommended to only turn on manual exposure control once you are happy with the placement of walls, and are making final adjustments.",
             )}
@@ -152,75 +149,7 @@ let make = (~config: Rust.config, ~update, ~wasm: Rust.wasm) => {
        </div>
      }}
     {Styles.spacer(16)}
-    <div className=Styles.title> {React.string("Colors")} </div>
-    {Styles.spacer(8)}
-    <div className=Styles.row>
-      {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-       | None => React.string("not rgb")
-       | Some(rgb) =>
-         //  className="color-picker-wrapper"
-         <div
-           style={ReactDOMRe.Style.make//  ~width="10px",
-                                       () //  ~marginTop="2px",
- //  ~marginLeft="-13px",
-                                       //  ~height="30px",
-}>
-           <ExposureControl.Colorpickr
-             color={ExposureControl.rgbToColor(rgb##background)}
-             onChange={color => {
-               Js.log2("Color", color);
-               let config = [%js.deep
-                 config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                   switch (rgb) {
-                   | None => None
-                   | Some(v) =>
-                     Some(
-                       v["background"].replace(
-                         ExposureControl.colorToRgb(color##color),
-                       ),
-                     )
-                   }
-                 )
-               ];
-               update(config, false);
-             }}
-           />
-         </div>
-       }}
-      {Styles.spacer(8)}
-      {switch ([%js.deep config##rendering##coloration["Rgb"]]) {
-       | None => React.string("not rgb")
-       | Some(rgb) =>
-         //  className="color-picker-wrapper"
-         <div
-           style={ReactDOMRe.Style.make//  ~width="10px",
-                                       () //  ~marginTop="2px",
- //  ~marginLeft="-13px",
-                                       //  ~height="30px",
-}>
-           <ExposureControl.Colorpickr
-             color={ExposureControl.rgbToColor(rgb##highlight)}
-             onChange={color => {
-               Js.log2("Color", color);
-               let config = [%js.deep
-                 config["rendering"]["coloration"]["Rgb"].map(rgb =>
-                   switch (rgb) {
-                   | None => None
-                   | Some(v) =>
-                     Some(
-                       v["highlight"].replace(
-                         ExposureControl.colorToRgb(color##color),
-                       ),
-                     )
-                   }
-                 )
-               ];
-               update(config, false);
-             }}
-           />
-         </div>
-       }}
-    </div>
+    <Coloration update config />
     {Styles.spacer(8)}
   </div>;
 };

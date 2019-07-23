@@ -558,7 +558,9 @@ pub fn init(config: &shared::Config) -> Result<web_sys::CanvasRenderingContext2d
             if let Some(Selection::Adding(kind)) = &mut state.ui.selection {
                 state.config.walls.push(Wall::new(match kind {
                     AddKindName::Light => unimplemented!(),
-                    AddKindName::Line => shared::WallType::line(pos.clone(), pos),
+                    AddKindName::Line => {
+                        shared::WallType::line(pos.clone() + Vector2::new(1.0, 1.0), pos)
+                    }
                     AddKindName::Circle => shared::WallType::circle(
                         pos.clone(),
                         5.0,
