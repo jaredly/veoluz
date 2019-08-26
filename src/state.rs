@@ -320,13 +320,13 @@ lazy_static! {
     static ref STATE: Mutex<Option<State>> = Mutex::new(None);
 }
 
-pub fn withOptState<F: FnOnce(&mut Option<State>)>(f: F) {
-    f(&mut STATE.lock().unwrap())
-}
+// pub fn withOptState<F: FnOnce(&mut Option<State>)>(f: F) {
+//     f(&mut STATE.lock().unwrap())
+// }
 
-pub fn setState(state: State) {
-    withOptState(|wrapper| *wrapper = Some(state))
-}
+// pub fn setState(state: State) {
+//     withOptState(|wrapper| *wrapper = Some(state))
+// }
 
 pub fn has_state() -> bool {
     match STATE.lock().unwrap().as_mut() {

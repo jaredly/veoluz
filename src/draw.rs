@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Vector2};
+use nalgebra::Point2;
 use std::f32::consts::PI;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;

@@ -25,6 +25,11 @@ let palettes = [
     background: (148.0, 68.0, 41.0),
     highlight: (255.0, 255.0, 255.0),
   },
+  {
+    name: "Halloween",
+    background: (0.0, 0.0, 0.0),
+    highlight: (255.0, 167.0, 0.0),
+  },
 ];
 
 [@react.component]
