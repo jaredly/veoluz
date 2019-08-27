@@ -165,6 +165,7 @@ module Scene = {
               display(`flex),
               flexDirection(`row),
               cursor(`pointer),
+              Css.hover([outline(px(2), `solid, Colors.accent)]),
               padding(px(4)),
             ]
             @ (selected ? [backgroundColor(hex("5af"))] : []),

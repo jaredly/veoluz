@@ -298,7 +298,7 @@ pub fn setup(config: &JsValue, on_change: &js_sys::Function) {
                 state.on_change = on_change.to_owned();
             })
         } else {
-            state::setState(state::State::new(config, on_change.to_owned()));
+            state::set_state(state::State::new(config, on_change.to_owned()));
             state::try_with(|state| {
                 state.add_worker(make_worker(0)?);
                 state.async_render(false)?;
@@ -402,7 +402,7 @@ pub fn test_run(canvas: web_sys::HtmlCanvasElement) {
 pub fn run(on_change: &js_sys::Function) -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
 
-    state::setState(state::State::new(initial_config(), on_change.to_owned()));
+    state::set_state(state::State::new(initial_config(), on_change.to_owned()));
 
     state::try_with(|state| {
         state.add_worker(make_worker(0)?);

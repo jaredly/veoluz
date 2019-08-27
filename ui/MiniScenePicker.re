@@ -92,9 +92,26 @@ let make =
           alignSelf(`stretch),
           alignItems(`center),
           flexDirection(`row),
+          position(`relative),
           overflow(`auto),
         ])
       )>
+      <div
+        className=Css.(
+          style([
+            position(`absolute),
+            left(px(0)),
+            top(`percent(50.0)),
+            color(white),
+            marginTop(px(-50)),
+            fontSize(px(12)),
+          ])
+        )>
+        {React.string(
+           directory.scenes->Belt.Map.String.isEmpty
+             ? "Saved scenes" : "Saved scenes",
+         )}
+      </div>
       {React.array(
          directory.scenes
          ->Belt.Map.String.toArray

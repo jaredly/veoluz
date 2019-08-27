@@ -1,3 +1,5 @@
+let openButton = Css.(style([alignSelf(`center), display(`none)]));
+
 module Scene = {
   [@react.component]
   let make =
@@ -24,6 +26,7 @@ module Scene = {
       className=Css.(
         // 500 * 576 / 1024
         style([
+          hover([`selector(("." ++ openButton, [display(`block)]))]),
           margin(px(4)),
           padding(px(8)),
           width(px(500)),
@@ -94,7 +97,7 @@ module Scene = {
          : React.null}
       <div className=Css.(style([flex(1)])) />
       <button
-        className=Css.(style([alignSelf(`center)]))
+        className=openButton
         onClick={_evt => {
           let%Lets.Async.Consume config = Web.LocalForage.getItem(scene.id);
           switch (Js.toOption(config)) {

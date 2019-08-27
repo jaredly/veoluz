@@ -130,9 +130,18 @@ let make = (~config: Rust.config, ~ui: Rust.ui, ~update, ~updateUi) => {
     <div className=Styles.title> {React.string("Walls")} </div>
     {Styles.spacer(8)}
     {config##walls->Array.length == 0
-       ? <div className=Css.(style([padding(px(16))]))>
+       ? <div
+           className=Css.(
+             style([
+               padding(px(16)),
+               backgroundColor(Colors.accent),
+               borderRadius(px(8)),
+               color(white),
+               fontWeight(`bold),
+             ])
+           )>
            {React.string(
-              "No walls defined! Click one of the 'Add wall' buttons, and then click & drag on the canvas to create your first wall.",
+              {j|Hello 👋, looks like you're just starting out. Click one of the 'Add wall' buttons 👆, and then click & drag on the canvas to create your first wall.|j},
             )}
          </div>
        : React.null}

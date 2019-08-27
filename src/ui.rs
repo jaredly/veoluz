@@ -500,8 +500,10 @@ fn update_cursor(ui: &UiState) -> Result<(), JsValue> {
         .dyn_into::<web_sys::HtmlElement>()?;
     let cursor = match (ui.hovered, &ui.selection) {
         (_, Some(Selection::Adding(_))) => "crosshair",
+        (_, Some(Selection::Wall(_, Some((Handle::Move(_), _)))))
+        | (Some((_, Handle::Move(_))), _) => "grab",
         (_, Some(Selection::Wall(_, Some(_)))) | (Some(_), _) => "pointer",
-        (_, Some(Selection::Multiple(_, Some(_)))) => "drag",
+        (_, Some(Selection::Multiple(_, Some(_)))) => "grab",
         (_, Some(Selection::Pan { .. })) => "all-scroll",
         _ => "default",
     };
