@@ -9,6 +9,10 @@
   "entries": [
     {
       "file": "ui/Types.re",
+      "type": "scene"
+    },
+    {
+      "file": "ui/Types.re",
       "type": "directory"
     }
   ],

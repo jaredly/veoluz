@@ -168,7 +168,9 @@ let reduce = (filter, action) =>
     }
   };
 
-let downloadZips: array((string, Rust.config, string, Web.blob)) => unit = [%bs.raw
+let downloadZips:
+  array((string, Rust.config, Js.Json.t, string, Web.blob)) =>
+  Js.Promise.t(unit) = [%bs.raw
   {|
 (function(items) {
   var JSZip = require('jszip');
@@ -176,13 +178,14 @@ let downloadZips: array((string, Rust.config, string, Web.blob)) => unit = [%bs.
   var zip = new JSZip();
 
   items.forEach(function (item) {
-    var folder = zip.folder(item[0]);
+    var folder = zip.folder(item[0].replace(/\//g, '_'));
     folder.file("config.json", JSON.stringify(item[1]))
-    folder.file("url.txt", item[2]);
-    folder.file("image.png", item[3]);
+    folder.file("meta.json", JSON.stringify(item[2]));
+    folder.file("url.txt", item[3]);
+    folder.file("image.png", item[4]);
   })
 
-  zip.generateAsync({type:"blob"}).then(function(content) {
+  return zip.generateAsync({type:"blob"}).then(function(content) {
     FileSaver.saveAs(content, "veoluz_scenes.zip");
   });
 })
@@ -203,6 +206,8 @@ let make =
     React.useReducer(reduce, {star: false, tags: `All(Set.String.empty)});
 
   let onClickTag = React.useCallback(id => dispatch(`ToggleTag(id)));
+
+  let (downloading, setDownloading) = Hooks.useState(false);
 
   let filteredScenes =
     directory.scenes
@@ -308,8 +313,13 @@ let make =
             ])
           )>
           <IonIcons.Compress
-            className=Css.(style([paddingLeft(px(16))]))
-            color="currentcolor"
+            className=Css.(
+              style([
+                paddingLeft(px(16)),
+                cursor(downloading ? `wait : `pointer),
+              ])
+            )
+            color={downloading ? "red" : "currentcolor"}
             onClick={_evt => {
               let scenes =
                 filteredScenes->Array.map(scene => {
@@ -324,12 +334,30 @@ let make =
                     | None =>
                       Js.Date.toISOString(Js.Date.fromFloat(scene.created))
                     };
-                  Lets.Async.resolve((title, config, blob));
+                  Lets.Async.resolve((
+                    {
+                      ...scene,
+                      tags:
+                        scene.tags
+                        ->Belt.Set.String.toArray
+                        ->Belt.Array.map(id =>
+                            directory.tags
+                            ->Belt.Map.String.get(id)
+                            ->Lets.Opt.force.
+                              title
+                          )
+                        ->Belt.Set.String.fromArray,
+                    },
+                    title,
+                    config,
+                    blob,
+                  ));
                 });
+              setDownloading(true);
 
               let%Lets.Async.Consume datas = scenes->Js.Promise.all;
               let datas =
-                datas->Belt.Array.keepMap(((title, config, blob)) => {
+                datas->Belt.Array.keepMap(((scene, title, config, blob)) => {
                   let config =
                     switch (Js.Nullable.toOption(config)) {
                     | None => None
@@ -342,13 +370,15 @@ let make =
                     Some((
                       title,
                       config,
+                      TypeSerde.serializeScene(scene),
                       wasm##serialize_url_config(config),
                       blob,
                     ))
                   | _ => None
                   };
                 });
-              downloadZips(datas);
+              let%Lets.Async.Consume () = downloadZips(datas);
+              setDownloading(false);
               ();
             }}
           />

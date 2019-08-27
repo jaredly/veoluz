@@ -835,6 +835,28 @@ let wrapWithVersion = (version, payload) =>
     Js.Json.object_(dict);
   | _ => Js.Json.array([|Js.Json.number(float_of_int(version)), payload|])
   };
+let serializeScene = data =>
+  wrapWithVersion(currentVersion, Version2.serialize_Types____scene(data))
+and deserializeScene = data =>
+  switch (parseVersion(data)) {
+  | Error(err) => Error([err])
+  | [@implicit_arity] Ok(version, data) =>
+    switch (version) {
+    | 2 =>
+      switch (Version2.deserialize_Types____scene(data)) {
+      | Error(error) => Error(error)
+      | Ok(data) => Ok(data)
+      }
+    | 1 =>
+      switch (Version1.deserialize_Types____scene(data)) {
+      | Error(error) => Error(error)
+      | Ok(data) =>
+        let data = Types2.migrate_Types____scene(data);
+        Ok(data);
+      }
+    | _ => Error(["Unexpected version " ++ string_of_int(version)])
+    }
+  };
 let serializeDirectory = data =>
   wrapWithVersion(
     currentVersion,
@@ -861,6 +883,11 @@ and deserializeDirectory = data =>
     }
   };
 module Modules = {
+  module Scene = {
+    type t = Types2._Types__scene;
+    let serialize = serializeScene;
+    let deserialize = deserializeScene;
+  };
   module Directory = {
     type t = Types2._Types__directory;
     let serialize = serializeDirectory;

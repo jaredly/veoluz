@@ -976,6 +976,47 @@ function wrapWithVersion(version, payload) {
   }
 }
 
+function serializeScene(data) {
+  return wrapWithVersion(2, serialize_Types____scene(data));
+}
+
+function deserializeScene(data) {
+  var match = parseVersion(data);
+  if (match.tag) {
+    return /* Error */Block.__(1, [/* :: */[
+                match[0],
+                /* [] */0
+              ]]);
+  } else {
+    var match$1 = match[0];
+    var data$1 = match$1[1];
+    var version = match$1[0];
+    if (version !== 1) {
+      if (version !== 2) {
+        return /* Error */Block.__(1, [/* :: */[
+                    "Unexpected version " + String(version),
+                    /* [] */0
+                  ]]);
+      } else {
+        var match$2 = deserialize_Types____scene$1(data$1);
+        if (match$2.tag) {
+          return /* Error */Block.__(1, [match$2[0]]);
+        } else {
+          return /* Ok */Block.__(0, [match$2[0]]);
+        }
+      }
+    } else {
+      var match$3 = deserialize_Types____scene(data$1);
+      if (match$3.tag) {
+        return /* Error */Block.__(1, [match$3[0]]);
+      } else {
+        var data$2 = migrate_Types____scene(match$3[0]);
+        return /* Ok */Block.__(0, [data$2]);
+      }
+    }
+  }
+}
+
 function serializeDirectory(data) {
   return wrapWithVersion(2, serialize_Types____directory(data));
 }
@@ -1017,12 +1058,20 @@ function deserializeDirectory(data) {
   }
 }
 
+var Scene = /* module */[
+  /* serialize */serializeScene,
+  /* deserialize */deserializeScene
+];
+
 var Directory = /* module */[
   /* serialize */serializeDirectory,
   /* deserialize */deserializeDirectory
 ];
 
-var Modules = /* module */[/* Directory */Directory];
+var Modules = /* module */[
+  /* Scene */Scene,
+  /* Directory */Directory
+];
 
 var currentVersion = 2;
 
@@ -1037,6 +1086,8 @@ exports.Version2 = Version2;
 exports.Current = Current;
 exports.parseVersion = parseVersion;
 exports.wrapWithVersion = wrapWithVersion;
+exports.serializeScene = serializeScene;
+exports.deserializeScene = deserializeScene;
 exports.serializeDirectory = serializeDirectory;
 exports.deserializeDirectory = deserializeDirectory;
 exports.Modules = Modules;

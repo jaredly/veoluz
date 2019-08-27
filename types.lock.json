@@ -367,6 +367,17 @@
               1
             ]
           ],
+          "name": "scene"
+        },
+        {
+          "moduleName": "Types",
+          "modulePath": [],
+          "engines": [
+            [
+              ["Js.Json"],
+              1
+            ]
+          ],
           "name": "directory"
         }
       ],
