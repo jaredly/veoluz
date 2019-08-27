@@ -8,7 +8,7 @@ const { InjectManifest } = require("workbox-webpack-plugin");
 const mainJs = {
   entry: "./index.js",
   output: {
-    path: path.resolve(__dirname, "docs"),
+    path: path.resolve(__dirname, "docs", "app"),
     filename: "index.js"
   },
   module: {
@@ -37,7 +37,7 @@ const mainJs = {
     new InjectManifest({
       swSrc: "./blank-sw.js",
       swDest: "service-worker.js",
-      globDirectory: "./docs",
+      globDirectory: "./docs/app",
       globPatterns: ["./examples/*.json", "./examples/*.png"]
     })
   ],
@@ -45,13 +45,13 @@ const mainJs = {
 };
 
 const worker = require("./worker/webpack.config");
-worker.output.path = path.resolve(__dirname, "docs");
+worker.output.path = path.resolve(__dirname, "docs", "app");
 // worker.plugins.push(new GenerateSW({ swDest: "worker-worker.js" }));
 worker.plugins.push(
   new InjectManifest({
     swSrc: "./blank-sw.js",
     swDest: "worker-worker.js",
-    globDirectory: path.resolve(__dirname, "./docs"),
+    globDirectory: path.resolve(__dirname, "./docs", "app"),
     globPatterns: ["./examples/*/*.json", "./examples/*/*.png"]
   })
 );
