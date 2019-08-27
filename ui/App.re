@@ -498,6 +498,7 @@ module Inner = {
           </Tippy>
         </div>
         <MiniScenePicker
+          wasm
           onUpdateTags={React.useCallback(tags =>
             dispatch(`UpdateTags(tags))
           )}

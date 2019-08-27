@@ -212,6 +212,19 @@ pub fn update(config: &JsValue, checkpoint: bool) {
 }
 
 #[wasm_bindgen]
+pub fn upvert(config: &JsValue) -> JsValue {
+    if let Ok(mut config) = deserialize_jsvalue(config) {
+        config.rendering.width = 1024;
+        config.rendering.height = 576;
+        let js = JsValue::from_serde(&config).unwrap();
+        js
+    } else {
+        println!("Bad config");
+        JsValue::null()
+    }
+}
+
+#[wasm_bindgen]
 pub fn restore(config: &JsValue) -> JsValue {
     if let Ok(mut config) = deserialize_jsvalue(config) {
         config.rendering.width = 1024;

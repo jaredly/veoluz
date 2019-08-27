@@ -168,7 +168,7 @@ let reduce = (filter, action) =>
     }
   };
 
-let downloadZips: array((string, Rust.config, Web.blob)) => unit = [%bs.raw
+let downloadZips: array((string, Rust.config, string, Web.blob)) => unit = [%bs.raw
   {|
 (function(items) {
   var JSZip = require('jszip');
@@ -178,7 +178,8 @@ let downloadZips: array((string, Rust.config, Web.blob)) => unit = [%bs.raw
   items.forEach(function (item) {
     var folder = zip.folder(item[0]);
     folder.file("config.json", JSON.stringify(item[1]))
-    folder.file("image.png", item[2]);
+    folder.file("url.txt", item[2]);
+    folder.file("image.png", item[3]);
   })
 
   zip.generateAsync({type:"blob"}).then(function(content) {
@@ -193,6 +194,7 @@ let make =
     (
       ~onClose,
       ~directory: Types.directory,
+      ~wasm: Rust.wasm,
       ~onChangeScene,
       ~onUpdateTags,
       ~onUseScene,
@@ -328,11 +330,21 @@ let make =
               let%Lets.Async.Consume datas = scenes->Js.Promise.all;
               let datas =
                 datas->Belt.Array.keepMap(((title, config, blob)) => {
-                  let config = Js.Nullable.toOption(config);
+                  let config =
+                    switch (Js.Nullable.toOption(config)) {
+                    | None => None
+                    | Some(config) =>
+                      Js.Nullable.toOption(wasm##upvert(config))
+                    };
                   let blob = Js.Nullable.toOption(blob);
                   switch (config, blob) {
                   | (Some(config), Some(blob)) =>
-                    Some((title, config, blob))
+                    Some((
+                      title,
+                      config,
+                      wasm##serialize_url_config(config),
+                      blob,
+                    ))
                   | _ => None
                   };
                 });

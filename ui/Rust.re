@@ -162,6 +162,7 @@ type wasm = {
   "undo": [@bs.meth] (unit => unit),
   "test_run": [@bs.meth] (Web.canvas => unit),
   "redo": [@bs.meth] (unit => unit),
+  "upvert": [@bs.meth] (config => Js.nullable(config)),
   "parse_url_config": [@bs.meth] (string => Js.nullable(config)),
   "serialize_url_config": [@bs.meth] (config => string),
 };

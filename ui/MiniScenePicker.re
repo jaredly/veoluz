@@ -25,6 +25,7 @@ let iconButton =
 [@react.component]
 let make =
     (
+      ~wasm,
       ~directory,
       ~current,
       ~onSelect,
@@ -53,6 +54,7 @@ let make =
     {gallery
        ? ReactDOMRe.createPortal(
            <Gallery
+             wasm
              onClose=onCloseGallery
              onUseScene={(id, config) => {
                onSelect(id, config);
