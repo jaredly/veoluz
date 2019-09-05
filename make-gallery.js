@@ -44,7 +44,6 @@ const images = fs
     const meta = require(path.join(full, "meta.json"));
     const config = require(path.join(full, "config.json"));
     const url = fs.readFileSync(path.join(full, "url.txt"), "utf8");
-    // const image = fs.readFileSync(path.join(full, "image.png"));
     const src = `scenes/${name}/image.png`;
     return { full, meta, config, url, src };
   })
@@ -54,12 +53,9 @@ const images = fs
       ? b.meta.created - a.meta.created
       : b.meta.starred - a.meta.starred
   );
-// .sort((a, b) => a.meta.starred < b.meta.starred);
 
 const htmlBody = images
   .map(({ full, meta, config, url, src }, i) => {
-    // const imageName = meta.id.replace(/[^\w]/g, "-") + ".png";
-    // fs.writeFileSync(path.join(dest, "images", imageName), image);
     const link = "../app#" + url;
     if (i >= 6) {
       return `
