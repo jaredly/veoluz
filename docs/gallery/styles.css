@@ -1,0 +1,44 @@
+.images {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.image img {
+  width: 30vw;
+  height: auto;
+  object-fit: contain;
+  background-color: black;
+  margin-right: 1vw;
+  margin-bottom: 1vw;
+}
+
+.title {
+  margin: 32px auto;
+  text-align: center;
+  font-size: 64px;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background-color: black;
+  margin: 0;
+  padding: 32px 2vw;
+  color: white;
+}
+
+.description {
+  margin: 32px auto;
+  max-width: 90vw;
+  width: 800px;
+  padding: 0px 16px;
+}
+
+.image.loading {
+  width: 30vw;
+  height: 15vw;
+  text-align: center;
+  margin-right: 1vw;
+  margin-bottom: 1vw;
+  vertical-align: center;
+}
