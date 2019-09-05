@@ -18,11 +18,8 @@ const htmlTop = `
   Made with VeoLuz
 </div>
 <div class="description">
-<p>
-  Use these examples as inspiration, or use them however you want. All images on this page are CC-BY-SA, in attribution list "Jared Forsyth".
-  </p>
   <p>
-    Tap an image to remix.
+    Tap an image to remix in VeoLuz. All images on this page are <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, in attribution credit "Jared Forsyth".
   </p>
 </div>
 <div class="images">

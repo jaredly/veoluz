@@ -19,6 +19,11 @@
   font-size: 64px;
 }
 
+a,
+a:visited {
+  color: white;
+}
+
 body {
   font-family: system-ui, sans-serif;
   background-color: black;
