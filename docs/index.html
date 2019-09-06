@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Josefin+Sans&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Josefin Sans", sans-serif;
+        background-color: black;
+        color: white;
+      }
+      #main {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        z-index: 1;
+        line-height: 1.5;
+      }
+      #bg {
+        opacity: 0.5;
+        z-index: -1;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        pointer-events: none;
+      }
+      #main {
+        max-width: 90vw;
+        width: 800px;
+        font-size: 2em;
+        margin: 0 auto;
+      }
+      h1 {
+        margin-bottom: 0;
+        font-size: 64px;
+      }
+      h2 {
+        font-size: 24px;
+      }
+      a,
+      a:visited {
+        color: inherit;
+      }
+      a.button {
+        display: inline-block;
+        margin: 4px;
+        text-decoration: none;
+        background: black;
+        padding: 8px 16px;
+        border: 1px solid;
+        border-radius: 6px;
+        line-height: 1;
+        padding-top: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      a.button:hover {
+        background-color: #333;
+      }
+      .examples {
+        display: flex;
+        flex-direction: row;
+      }
+      .examples img {
+        width: 15vw;
+        height: 15vw;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="bg" src="gallery/scenes/2019-07-06T13:06:46.431Z/image.png" />
+    <div id="main">
+      <h1>VėoLūz</h1>
+      <h2><em>I see light</em></h2>
+      <p>
+        <a class="button" href="app">Launch the App</a>
+        <a class="button" href="gallery">View gallery</a>
+      </p>
+      <p>
+        VeoLuz is an exploration-focused playground and an artistic tool. It
+        attempts to mimic the behavior of photons as they interact with barriers
+        of various kinds − those that absorb light, those that reflect light,
+        and those that refract light.
+      </p>
+      <div class="examples">
+        <img src="gallery/scenes/2019-07-12T07:06:58.684Z/image.png" />
+        <img src="gallery/scenes/2019-07-07T16:44:58.121Z/image.png" />
+        <img src="gallery/scenes/2019-07-05T05:18:37.269Z/image.png" />
+        <img src="gallery/scenes/2019-07-12T06:29:58.051Z/image.png" />
+        <img src="gallery/scenes/2019-07-09T05:55:54.571Z/image.png" />
+      </div>
+      <p>
+        What you see rendered is the "trace" of those photons as they bounce
+        around a two-dimensional world, colliding, reflecting, and refracting.
+      </p>
+      <p>
+        This project is heavily inspired by
+        <a href="https://scanlime.org/">scanlime's</a>
+        <a href="https://zenphoton.com/">Zen photon garden</a>.
+      </p>
+    </div>
+  </body>
+</html>
