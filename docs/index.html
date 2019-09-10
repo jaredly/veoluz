@@ -3,11 +3,20 @@
   <head>
     <meta charset="utf8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="./favicon.png" />
     <link
       href="https://fonts.googleapis.com/css?family=Josefin+Sans&display=swap"
       rel="stylesheet"
     />
     <style>
+      .made-with img {
+        height: 40px;
+        margin-bottom: -10px;
+      }
+      .made-with {
+        text-align: center;
+        line-height: 2;
+      }
       body {
         font-family: "Josefin Sans", sans-serif;
         background-color: black;
@@ -21,7 +30,7 @@
         line-height: 1.5;
       }
       #bg {
-        opacity: 0.5;
+        opacity: 0.3;
         z-index: -1;
         position: fixed;
         top: 0;
@@ -93,9 +102,9 @@
         and those that refract light.
       </p>
       <iframe
-        width="560"
-        height="315"
-        src="https://www.youtube-nocookie.com/embed/TSzTkqiT030"
+        width="853"
+        height="480"
+        src="https://www.youtube.com/embed/J1vvCaAoRKQ?rel=0&showinfo=0&autoplay=1&mute=1"
         frameborder="0"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen
@@ -115,6 +124,39 @@
         This project is heavily inspired by
         <a href="https://scanlime.org/">scanlime's</a>
         <a href="https://zenphoton.com/">Zen photon garden</a>.
+      </p>
+      <iframe
+        width="560"
+        height="315"
+        src="https://www.youtube-nocookie.com/embed/TSzTkqiT030"
+        frameborder="0"
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+      <p class="made-with">
+        Made with
+        <img src="file_type_rust.svg" />
+        Rust,
+        <img src="file_type_wasm.svg" />
+        Wasm, and
+        <img src="file_type_reason.svg" />
+        ReasonML.
+        <br />
+        <!-- <a href="https://github.com/jaredly/veoluz"
+          >View on GitHub
+          <img src="github-white.svg" />
+        </a> -->
+        <!-- Place this tag where you want the button to render. -->
+        <a
+          class="github-button"
+          href="https://github.com/jaredly/veoluz"
+          data-size="large"
+          data-show-count="true"
+          aria-label="Star jaredly/veoluz on GitHub"
+          >Star on github</a
+        >
+        <!-- Place this tag in your head or just before your close body tag. -->
+        <script async defer src="https://buttons.github.io/buttons.js"></script>
       </p>
     </div>
   </body>
